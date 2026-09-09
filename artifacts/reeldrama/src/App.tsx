@@ -203,7 +203,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 
 function useAppValue() {
   const context = useContext(AppContext);
-  if (!context) throw new Error('ReelDrama context is missing');
+  if (!context) throw new Error('VEYRA app context is missing');
   return context;
 }
 
@@ -229,10 +229,10 @@ function Logo() {
   return (
     <Link href="/" className="group inline-flex items-center gap-2.5" data-testid="link-logo">
       <span className="relative grid h-8 w-8 place-items-center rounded-[10px] bg-[#f47e68] text-[#171720] shadow-[0_0_24px_rgba(244,126,104,.22)]">
-        <span className="absolute h-3 w-3 translate-x-[1px] rotate-45 rounded-[3px] border-[2px] border-[#171720]" />
-        <span className="absolute h-1.5 w-1.5 translate-x-[1px] rotate-45 rounded-[1px] bg-[#f47e68]" />
+        <span className="font-display text-[17px] font-bold tracking-[-.12em]">V</span>
+        <span className="absolute bottom-[6px] h-[2px] w-3 rounded-full bg-[#171720]/70" />
       </span>
-      <span className="font-display text-xl font-semibold tracking-[-.04em] text-[#f7f1e8] transition-colors group-hover:text-[#f47e68]">reel<span className="text-[#f47e68]">drama</span></span>
+      <span className="font-display text-[19px] font-bold tracking-[.16em] text-[#f7f1e8] transition-colors group-hover:text-[#f47e68]">VEYRA</span>
     </Link>
   );
 }
@@ -244,9 +244,9 @@ function PageFrame({ children }: { children: ReactNode }) {
         <div className="mx-auto flex h-[4.5rem] max-w-[1180px] items-center justify-between px-5 lg:px-8">
           <Logo />
           <nav className="hidden items-center gap-7 md:flex">
-            <Link href="/" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-home-nav">Browse</Link>
-            <Link href="/search" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-search-nav">Discover</Link>
-            <Link href="/saved" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-saved-nav">My list</Link>
+            <Link href="/" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-home-nav">Home</Link>
+            <Link href="/search" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-search-nav">Search</Link>
+            <Link href="/saved" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-saved-nav">My List</Link>
           </nav>
           <Link href="/search" aria-label="Search dramas" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#f47e68]/50 hover:text-[#f47e68]" data-testid="link-search-button">
             <Search size={16} strokeWidth={2} />
@@ -257,7 +257,7 @@ function PageFrame({ children }: { children: ReactNode }) {
       <nav className="glass fixed inset-x-4 bottom-4 z-40 flex h-[3.9rem] items-center justify-around rounded-2xl md:hidden">
         <MobileNavLink href="/" icon={<HomeIcon size={18} />} label="Home" />
         <MobileNavLink href="/search" icon={<Search size={18} />} label="Search" />
-        <MobileNavLink href="/saved" icon={<Library size={18} />} label="My list" />
+        <MobileNavLink href="/saved" icon={<Library size={18} />} label="My List" />
       </nav>
     </div>
   );
@@ -302,7 +302,7 @@ function DramaCard({ drama, compact = false }: { drama: Drama; compact?: boolean
         type="button"
         className={`absolute right-1 top-2 grid h-8 w-8 place-items-center rounded-full border backdrop-blur-md transition-all ${saved ? 'border-[#f47e68]/50 bg-[#f47e68] text-[#171720]' : 'border-white/20 bg-[#111118]/45 text-white/75 hover:border-white/60 hover:text-white'}`}
         onClick={() => toggleSaved(drama.id)}
-        aria-label={saved ? `Remove ${drama.title} from my list` : `Save ${drama.title}`}
+        aria-label={saved ? `Remove ${drama.title} from My List` : `Save ${drama.title}`}
         data-testid={`button-save-${drama.id}`}
       >
         {saved ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
@@ -333,7 +333,7 @@ function HomePage() {
             </Link>
             <button type="button" onClick={() => toggleSaved(featured.id)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-all ${saved ? 'border-[#f47e68]/60 bg-[#f47e68]/15 text-[#f47e68]' : 'border-white/15 bg-white/[.06] text-white/80 hover:border-white/35'}`} data-testid="button-featured-save">
               {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-              {saved ? 'In my list' : 'My list'}
+              {saved ? 'In My List' : 'My List'}
             </button>
           </div>
         </div>
@@ -362,8 +362,8 @@ function HomePage() {
           <div className="absolute bottom-[-45px] right-[-15px] h-48 w-48 rounded-full border border-[#6eabb2]/20" />
           <div className="relative">
             <Sparkles size={18} className="text-[#e7b769]" />
-            <p className="mt-8 max-w-[230px] font-display text-2xl leading-[.98] text-[#edf3ef]">Small episodes.<br />Big feelings.</p>
-            <p className="mt-4 max-w-[240px] text-xs leading-relaxed text-white/45">A new story to disappear into, whenever the night gets too loud.</p>
+             <p className="mt-8 max-w-[230px] font-display text-2xl leading-[.98] text-[#edf3ef]">Short stories.<br />Deep impact.</p>
+            <p className="mt-4 max-w-[240px] text-xs leading-relaxed text-white/45">A global slate of short stories, mini-series, and AI-generated films to carry with you.</p>
             <Link href="/search" className="mt-6 inline-flex items-center gap-1 text-xs font-semibold text-[#e7b769] hover:text-white" data-testid="link-explore-all">Explore the collection <ChevronRight size={13} /></Link>
           </div>
         </div>
@@ -394,7 +394,7 @@ function DramaDetailPage() {
   const saved = isSaved(drama.id);
   return (
     <div className="animate-rise">
-      <Link href="/" className="mb-7 inline-flex items-center gap-2 text-xs text-white/50 transition-colors hover:text-white" data-testid="link-detail-back"><ArrowLeft size={15} /> Back to browse</Link>
+      <Link href="/" className="mb-7 inline-flex items-center gap-2 text-xs text-white/50 transition-colors hover:text-white" data-testid="link-detail-back"><ArrowLeft size={15} /> Back to Home</Link>
       <section className="relative overflow-hidden rounded-[1.5rem] border border-white/[.08] bg-[#1c1b27]">
         <div className="absolute inset-0 bg-cover bg-center opacity-45" style={{ backgroundImage: `linear-gradient(90deg, #1b1b27 3%, rgba(27,27,39,.82) 46%, rgba(27,27,39,.2)), url("${drama.image}")` }} />
         <div className="relative grid gap-7 p-5 sm:p-8 md:grid-cols-[210px_1fr] md:gap-10 md:p-10">
@@ -410,7 +410,7 @@ function DramaDetailPage() {
             <p className="mt-5 max-w-[590px] text-sm leading-relaxed text-white/65">{drama.description}</p>
             <div className="mt-7 flex gap-3">
               <Link href={`/watch/${drama.id}/1`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#f47e68] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff987f]" data-testid="link-detail-play"><Play size={15} fill="currentColor" /> Play episode 1</Link>
-              <button type="button" onClick={() => toggleSaved(drama.id)} className={`grid h-11 w-11 place-items-center rounded-full border transition-all ${saved ? 'border-[#f47e68]/60 bg-[#f47e68]/15 text-[#f47e68]' : 'border-white/15 bg-white/[.05] text-white/75 hover:border-white/40'}`} aria-label={saved ? 'Remove from my list' : 'Save to my list'} data-testid="button-detail-save">{saved ? <BookmarkCheck size={17} /> : <Bookmark size={17} />}</button>
+              <button type="button" onClick={() => toggleSaved(drama.id)} className={`grid h-11 w-11 place-items-center rounded-full border transition-all ${saved ? 'border-[#f47e68]/60 bg-[#f47e68]/15 text-[#f47e68]' : 'border-white/15 bg-white/[.05] text-white/75 hover:border-white/40'}`} aria-label={saved ? 'Remove from My List' : 'Save to My List'} data-testid="button-detail-save">{saved ? <BookmarkCheck size={17} /> : <Bookmark size={17} />}</button>
             </div>
           </div>
         </div>
@@ -492,8 +492,8 @@ function SavedPage() {
   return (
     <div className="animate-rise">
       <div className="mb-9">
-        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Your private screening room</p>
-        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.2rem]">My list<span className="text-[#f47e68]">.</span></h1>
+        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Your VEYRA collection</p>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.2rem]">My List<span className="text-[#f47e68]">.</span></h1>
         <p className="mt-4 text-sm text-white/45">{savedDramas.length ? `${savedDramas.length} stories waiting for you` : 'Save something for a later night.'}</p>
       </div>
       {savedDramas.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{savedDramas.map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}
