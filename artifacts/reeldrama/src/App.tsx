@@ -34,6 +34,15 @@ type Episode = {
   runtime: string;
   released: string;
   synopsis: string;
+  videoUrl: string;
+  captions: CaptionCue[];
+};
+
+type CaptionCue = {
+  language: string;
+  start: number;
+  end: number;
+  text: string;
 };
 
 type Drama = {
@@ -61,7 +70,11 @@ const posterImages = {
   after: 'https://images.pexels.com/photos/1647962/pexels-photo-1647962.jpeg?auto=compress&cs=tinysrgb&w=900',
 };
 
-const placeholderVideo = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+const placeholderVideos = [
+  'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+  'https://media.w3.org/2010/05/sintel/trailer.mp4',
+  'https://media.w3.org/2010/05/bunny/trailer.mp4',
+];
 
 const getLastEpisode = (dramaId: string) => {
   if (typeof window === 'undefined') return 1;
@@ -70,13 +83,18 @@ const getLastEpisode = (dramaId: string) => {
 };
 
 const createEpisodes = (titles: string[], runtimes: string[], synopses: string[]): Episode[] =>
-  titles.map((title, index) => ({
-    number: index + 1,
-    title,
-    runtime: runtimes[index] ?? '08:10',
-    released: index === 0 ? 'Today' : `${index}d ago`,
-    synopsis: synopses[index] ?? 'A small decision turns the night in an unexpected direction.',
-  }));
+  titles.map((title, index) => {
+    const synopsis = synopses[index] ?? 'A small decision turns the night in an unexpected direction.';
+    return {
+      number: index + 1,
+      title,
+      runtime: runtimes[index] ?? '08:10',
+      released: index === 0 ? 'Today' : `${index}d ago`,
+      synopsis,
+      videoUrl: placeholderVideos[index % placeholderVideos.length],
+      captions: [{ language: 'en', start: 0, end: 90, text: synopsis }],
+    };
+  });
 
 const dramas: Drama[] = [
   {
@@ -543,6 +561,8 @@ function WatchPage() {
   const [muted, setMuted] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [episodeFinished, setEpisodeFinished] = useState(false);
   const nextEpisode = drama.episodes[episodeIndex + 1];
   const previousEpisode = drama.episodes[episodeIndex - 1];
 
@@ -552,6 +572,8 @@ function WatchPage() {
     localStorage.setItem(`veyra:last-episode:${drama.id}`, String(episode.number));
     setProgress(0);
     setDuration(0);
+    setCurrentTime(0);
+    setEpisodeFinished(false);
     setPlaying(false);
   }, [progressKey]);
 
@@ -565,9 +587,11 @@ function WatchPage() {
     const video = videoRef.current;
     if (!video) return;
     setDuration(video.duration);
+    setCurrentTime(video.currentTime);
     const resumePosition = resumePositionRef.current;
     if (resumePosition > 0 && resumePosition < video.duration - 2) {
       video.currentTime = resumePosition;
+      setCurrentTime(resumePosition);
       setProgress((resumePosition / video.duration) * 100);
     }
   };
@@ -597,6 +621,7 @@ function WatchPage() {
   const handleTimeUpdate = () => {
     const video = videoRef.current;
     if (!video || !video.duration) return;
+    setCurrentTime(video.currentTime);
     setProgress((video.currentTime / video.duration) * 100);
     saveProgress(video.currentTime);
   };
@@ -608,8 +633,14 @@ function WatchPage() {
   const handleEnded = () => {
     setPlaying(false);
     setProgress(100);
+    setCurrentTime(duration);
+    setEpisodeFinished(true);
     localStorage.setItem(progressKey, String(duration || 0));
   };
+
+  const secondsRemaining = duration > 0 ? duration - currentTime : Number.POSITIVE_INFINITY;
+  const showNextEpisode = Boolean(nextEpisode && (episodeFinished || secondsRemaining <= Math.min(10, Math.max(4, duration * 0.12))));
+  const activeCaption = episode.captions.find((caption) => caption.language === 'en' && currentTime >= caption.start && currentTime <= caption.end);
 
   return (
     <div className="grain min-h-[100dvh] bg-[#0d0d13] text-white">
@@ -618,8 +649,8 @@ function WatchPage() {
           <video
             key={`${drama.id}-${episode.number}`}
             ref={videoRef}
-            className="absolute inset-0 h-full w-full object-cover"
-            src={placeholderVideo}
+            className="absolute inset-0 h-full w-full bg-[#09090d] object-contain"
+            src={episode.videoUrl}
             poster={drama.image}
             playsInline
             preload="metadata"
@@ -635,6 +666,25 @@ function WatchPage() {
             aria-label={`${drama.title}, episode ${episode.number}: ${episode.title}`}
           />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(13,13,19,.62),rgba(13,13,19,.04)_38%,rgba(13,13,19,.95)_100%)]" />
+          {activeCaption && (
+            <div className="pointer-events-none absolute inset-x-5 bottom-40 z-10 flex justify-center sm:bottom-44" aria-live="polite" data-testid="player-caption">
+              <div className="max-w-[88%] rounded-md bg-black/45 px-3 py-1.5 text-center text-sm leading-snug text-white shadow-lg backdrop-blur-sm">
+                {activeCaption.text}
+                <span className="ml-2 font-mono-ui text-[9px] uppercase tracking-[.16em] text-white/45">{activeCaption.language}</span>
+              </div>
+            </div>
+          )}
+          {episodeFinished && nextEpisode && (
+            <div className="absolute inset-x-5 bottom-36 z-20 flex justify-center sm:bottom-40" data-testid="player-complete-card">
+              <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-[#111118]/85 px-4 py-3 shadow-2xl backdrop-blur-xl">
+                <div>
+                  <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#f47e68]">Episode complete</p>
+                  <p className="mt-1 text-xs text-white/65">Ready for the next chapter?</p>
+                </div>
+                <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#f47e68] px-3 py-2 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="link-player-next-complete">Next Episode <ChevronRight size={13} /></Link>
+              </div>
+            </div>
+          )}
           <div className="relative flex items-center justify-between px-5 py-5 sm:px-8">
             <Link href={`/drama/${drama.id}`} className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/20 transition-colors hover:border-white/50" aria-label="Back to drama" data-testid="link-player-back"><ArrowLeft size={16} /></Link>
             <div className="text-center"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/50">{drama.title}</p><p className="mt-1 text-xs text-white/80">Episode {episode.number} <span className="text-white/30">·</span> {episode.title}</p></div>
@@ -657,7 +707,7 @@ function WatchPage() {
             </div>
             <div className="mt-5 flex items-center justify-between gap-3 text-xs">
               {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 hover:text-white" data-testid="link-player-previous-mobile">Previous episode</Link> : <span className="text-white/15">First episode</span>}
-              {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#f47e68] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/45">End of story</span>}
+              {showNextEpisode && nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#f47e68] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/35">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
             </div>
           </div>
         </section>
@@ -679,7 +729,7 @@ function WatchPage() {
           <div className="hidden border-t border-white/[.08] px-5 py-4 lg:block">
             <div className="flex items-center justify-between text-xs">
               {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 hover:text-white" data-testid="link-player-previous">Previous</Link> : <span className="text-white/15">Previous</span>}
-              {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 text-[#f47e68] hover:text-white" data-testid="link-player-next">Next episode <ChevronRight size={13} /></Link> : <span className="text-white/15">End of story</span>}
+              {showNextEpisode && nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 text-[#f47e68] hover:text-white" data-testid="link-player-next">Next episode <ChevronRight size={13} /></Link> : <span className="text-white/15">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
             </div>
           </div>
         </aside>
