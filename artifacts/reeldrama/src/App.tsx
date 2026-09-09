@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   ArrowLeft,
   Bookmark,
@@ -59,6 +59,14 @@ const posterImages = {
   saints: 'https://images.pexels.com/photos/713149/pexels-photo-713149.jpeg?auto=compress&cs=tinysrgb&w=900',
   orbit: 'https://images.pexels.com/photos/2150/sky-space-dark-galaxy.jpg?auto=compress&cs=tinysrgb&w=900',
   after: 'https://images.pexels.com/photos/1647962/pexels-photo-1647962.jpeg?auto=compress&cs=tinysrgb&w=900',
+};
+
+const placeholderVideo = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+
+const getLastEpisode = (dramaId: string) => {
+  if (typeof window === 'undefined') return 1;
+  const storedEpisode = Number(localStorage.getItem(`veyra:last-episode:${dramaId}`) ?? 1);
+  return Number.isFinite(storedEpisode) && storedEpisode > 0 ? storedEpisode : 1;
 };
 
 const createEpisodes = (titles: string[], runtimes: string[], synopses: string[]): Episode[] =>
@@ -328,7 +336,7 @@ function HomePage() {
           <h1 className="max-w-[500px] font-display text-[3.25rem] leading-[.88] tracking-[-.065em] text-[#fcf4e8] sm:text-[4.4rem]">The Last<br />Voicemail</h1>
           <p className="mt-5 max-w-[430px] text-sm leading-relaxed text-white/62 md:text-[15px]">{featured.description}</p>
           <div className="mt-7 flex items-center gap-3">
-            <Link href="/watch/the-last-voicemail/1" className="inline-flex h-11 items-center gap-2 rounded-full bg-[#f47e68] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff987f] hover:shadow-[0_10px_30px_rgba(244,126,104,.2)]" data-testid="link-featured-play">
+            <Link href={`/drama/${featured.id}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#f47e68] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff987f] hover:shadow-[0_10px_30px_rgba(244,126,104,.2)]" data-testid="link-featured-play">
               <Play size={15} fill="currentColor" /> Start watching
             </Link>
             <button type="button" onClick={() => toggleSaved(featured.id)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-all ${saved ? 'border-[#f47e68]/60 bg-[#f47e68]/15 text-[#f47e68]' : 'border-white/15 bg-white/[.06] text-white/80 hover:border-white/35'}`} data-testid="button-featured-save">
@@ -392,6 +400,12 @@ function DramaDetailPage() {
   const { isSaved, toggleSaved } = useAppValue();
   const drama = dramas.find((entry) => entry.id === id) ?? dramas[0];
   const saved = isSaved(drama.id);
+  const [resumeEpisode, setResumeEpisode] = useState(1);
+
+  useEffect(() => {
+    setResumeEpisode(Math.min(getLastEpisode(drama.id), drama.episodeCount));
+  }, [drama.id, drama.episodeCount]);
+
   return (
     <div className="animate-rise">
       <Link href="/" className="mb-7 inline-flex items-center gap-2 text-xs text-white/50 transition-colors hover:text-white" data-testid="link-detail-back"><ArrowLeft size={15} /> Back to Home</Link>
@@ -409,7 +423,7 @@ function DramaDetailPage() {
             </div>
             <p className="mt-5 max-w-[590px] text-sm leading-relaxed text-white/65">{drama.description}</p>
             <div className="mt-7 flex gap-3">
-              <Link href={`/watch/${drama.id}/1`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#f47e68] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff987f]" data-testid="link-detail-play"><Play size={15} fill="currentColor" /> Play episode 1</Link>
+              <Link href={`/watch/${drama.id}/${resumeEpisode}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#f47e68] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff987f]" data-testid="link-detail-play"><Play size={15} fill="currentColor" /> {resumeEpisode > 1 ? `Continue episode ${resumeEpisode}` : 'Play episode 1'}</Link>
               <button type="button" onClick={() => toggleSaved(drama.id)} className={`grid h-11 w-11 place-items-center rounded-full border transition-all ${saved ? 'border-[#f47e68]/60 bg-[#f47e68]/15 text-[#f47e68]' : 'border-white/15 bg-white/[.05] text-white/75 hover:border-white/40'}`} aria-label={saved ? 'Remove from My List' : 'Save to My List'} data-testid="button-detail-save">{saved ? <BookmarkCheck size={17} /> : <Bookmark size={17} />}</button>
             </div>
           </div>
@@ -521,23 +535,113 @@ function WatchPage() {
   const selectedNumber = Math.max(1, Number(episodeParam) || 1);
   const episodeIndex = Math.min(selectedNumber - 1, drama.episodes.length - 1);
   const episode = drama.episodes[episodeIndex];
-  const [playing, setPlaying] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const playerRef = useRef<HTMLElement>(null);
+  const resumePositionRef = useRef(0);
+  const progressKey = `veyra:progress:${drama.id}:${episode.number}`;
+  const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
-  const [progress, setProgress] = useState(34);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
   const nextEpisode = drama.episodes[episodeIndex + 1];
   const previousEpisode = drama.episodes[episodeIndex - 1];
+
+  useEffect(() => {
+    const storedProgress = Number(localStorage.getItem(progressKey) ?? 0);
+    resumePositionRef.current = Number.isFinite(storedProgress) ? storedProgress : 0;
+    localStorage.setItem(`veyra:last-episode:${drama.id}`, String(episode.number));
+    setProgress(0);
+    setDuration(0);
+    setPlaying(false);
+  }, [progressKey]);
+
+  const saveProgress = (currentTime: number) => {
+    if (Number.isFinite(currentTime) && currentTime > 0) {
+      localStorage.setItem(progressKey, String(currentTime));
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setDuration(video.duration);
+    const resumePosition = resumePositionRef.current;
+    if (resumePosition > 0 && resumePosition < video.duration - 2) {
+      video.currentTime = resumePosition;
+      setProgress((resumePosition / video.duration) * 100);
+    }
+  };
+
+  const togglePlay = async () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      try {
+        await video.play();
+      } catch {
+        setPlaying(false);
+      }
+    } else {
+      video.pause();
+    }
+  };
+
+  const handleSeek = (value: number) => {
+    const video = videoRef.current;
+    if (!video || !duration) return;
+    video.currentTime = (value / 100) * duration;
+    setProgress(value);
+    saveProgress(video.currentTime);
+  };
+
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video || !video.duration) return;
+    setProgress((video.currentTime / video.duration) * 100);
+    saveProgress(video.currentTime);
+  };
+
+  const handleFullscreen = () => {
+    playerRef.current?.requestFullscreen?.();
+  };
+
+  const handleEnded = () => {
+    setPlaying(false);
+    setProgress(100);
+    localStorage.setItem(progressKey, String(duration || 0));
+  };
+
   return (
     <div className="grain min-h-[100dvh] bg-[#0d0d13] text-white">
       <div className="mx-auto flex min-h-[100dvh] max-w-[1440px] flex-col lg:flex-row">
-        <section className="relative flex min-h-[min(78dvh,700px)] flex-1 flex-col overflow-hidden bg-[#181622] lg:min-h-[100dvh]">
-          <div className="absolute inset-0 bg-cover bg-center opacity-70" style={{ backgroundImage: `linear-gradient(180deg, rgba(13,13,19,.42), rgba(13,13,19,.02) 35%, rgba(13,13,19,.94) 100%), url("${drama.image}")` }} />
+        <section ref={playerRef} className="relative flex min-h-[100dvh] flex-1 flex-col overflow-hidden bg-[#181622] lg:min-h-[100dvh]" data-testid="player-surface">
+          <video
+            key={`${drama.id}-${episode.number}`}
+            ref={videoRef}
+            className="absolute inset-0 h-full w-full object-cover"
+            src={placeholderVideo}
+            poster={drama.image}
+            playsInline
+            preload="metadata"
+            onLoadedMetadata={handleLoadedMetadata}
+            onTimeUpdate={handleTimeUpdate}
+            onPlay={() => setPlaying(true)}
+            onPause={() => {
+              setPlaying(false);
+              if (videoRef.current) saveProgress(videoRef.current.currentTime);
+            }}
+            onEnded={handleEnded}
+            onError={() => setPlaying(false)}
+            aria-label={`${drama.title}, episode ${episode.number}: ${episode.title}`}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(13,13,19,.62),rgba(13,13,19,.04)_38%,rgba(13,13,19,.95)_100%)]" />
           <div className="relative flex items-center justify-between px-5 py-5 sm:px-8">
             <Link href={`/drama/${drama.id}`} className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/20 transition-colors hover:border-white/50" aria-label="Back to drama" data-testid="link-player-back"><ArrowLeft size={16} /></Link>
             <div className="text-center"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/50">{drama.title}</p><p className="mt-1 text-xs text-white/80">Episode {episode.number} <span className="text-white/30">·</span> {episode.title}</p></div>
             <button type="button" className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/20 text-white/75 transition-colors hover:border-white/50" aria-label="More options" data-testid="button-player-more"><MoreHorizontal size={17} /></button>
           </div>
           <div className="relative flex flex-1 items-center justify-center">
-            <button type="button" onClick={() => setPlaying(!playing)} className={`grid h-16 w-16 place-items-center rounded-full border border-white/30 bg-[#111118]/35 text-white backdrop-blur-md transition-all hover:scale-105 hover:border-[#f47e68] hover:text-[#f47e68] ${playing ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`} aria-label={playing ? 'Pause episode' : 'Play episode'} data-testid="button-player-toggle">
+            <button type="button" onClick={togglePlay} className={`grid h-16 w-16 place-items-center rounded-full border border-white/30 bg-[#111118]/35 text-white backdrop-blur-md transition-all hover:scale-105 hover:border-[#f47e68] hover:text-[#f47e68] ${playing ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`} aria-label={playing ? 'Pause episode' : 'Play episode'} data-testid="button-player-toggle">
               {playing ? <Pause size={23} fill="currentColor" /> : <Play size={23} fill="currentColor" className="translate-x-0.5" />}
             </button>
           </div>
@@ -545,11 +649,15 @@ function WatchPage() {
             <p className="max-w-[470px] font-display text-2xl leading-[.95] sm:text-3xl">{episode.title}</p>
             <p className="mt-2 max-w-[450px] text-xs leading-relaxed text-white/55">{episode.synopsis}</p>
             <div className="mt-6 flex items-center gap-3">
-              <button type="button" onClick={() => setPlaying(!playing)} aria-label={playing ? 'Pause episode' : 'Play episode'} className="text-white" data-testid="button-player-play-bottom">{playing ? <Pause size={17} fill="currentColor" /> : <Play size={17} fill="currentColor" />}</button>
-              <input type="range" min="0" max="100" value={progress} onChange={(event) => setProgress(Number(event.target.value))} className="h-1 min-w-0 flex-1 accent-[#f47e68]" aria-label="Episode progress" data-testid="input-player-progress" />
+              <button type="button" onClick={togglePlay} aria-label={playing ? 'Pause episode' : 'Play episode'} className="text-white" data-testid="button-player-play-bottom">{playing ? <Pause size={17} fill="currentColor" /> : <Play size={17} fill="currentColor" />}</button>
+              <input type="range" min="0" max="100" step="0.1" value={progress} onChange={(event) => handleSeek(Number(event.target.value))} className="h-1 min-w-0 flex-1 accent-[#f47e68]" aria-label="Episode progress" data-testid="input-player-progress" />
               <span className="font-mono-ui text-[10px] text-white/45">{episode.runtime}</span>
-              <button type="button" onClick={() => setMuted(!muted)} aria-label={muted ? 'Unmute' : 'Mute'} className="text-white/65 hover:text-white" data-testid="button-player-mute">{muted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
-              <button type="button" onClick={() => document.documentElement.requestFullscreen?.()} aria-label="Fullscreen" className="hidden text-white/65 hover:text-white sm:block" data-testid="button-player-fullscreen"><Maximize2 size={15} /></button>
+              <button type="button" onClick={() => { const video = videoRef.current; if (video) { video.muted = !video.muted; setMuted(video.muted); } }} aria-label={muted ? 'Unmute' : 'Mute'} className="text-white/65 hover:text-white" data-testid="button-player-mute">{muted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
+              <button type="button" onClick={handleFullscreen} aria-label="Fullscreen" className="text-white/65 hover:text-white" data-testid="button-player-fullscreen"><Maximize2 size={15} /></button>
+            </div>
+            <div className="mt-5 flex items-center justify-between gap-3 text-xs">
+              {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 hover:text-white" data-testid="link-player-previous-mobile">Previous episode</Link> : <span className="text-white/15">First episode</span>}
+              {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#f47e68] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/45">End of story</span>}
             </div>
           </div>
         </section>
