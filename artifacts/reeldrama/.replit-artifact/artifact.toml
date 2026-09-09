@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "ReelDrama"
+description = "A mobile-first vertical short-drama streaming app with a dark, cinematic browsing experience, fictional drama catalog, detail pages, episode lists, and an immersive vertical video player."
+version = "1.0.0"
+id = "artifacts/reeldrama"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22067
+
+[services.development]
+run = "pnpm --filter @workspace/reeldrama run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/reeldrama", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/reeldrama/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22067"
+BASE_PATH = "/"
