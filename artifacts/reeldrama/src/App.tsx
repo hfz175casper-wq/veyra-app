@@ -6,6 +6,9 @@ import {
   ChevronRight,
   CirclePlay,
   Clock3,
+  BarChart3,
+  Coins,
+  Gift,
   Home as HomeIcon,
   Library,
   Maximize2,
@@ -17,7 +20,11 @@ import {
   SlidersHorizontal,
   Volume2,
   VolumeX,
+  UserCircle,
+  UsersRound,
 } from 'lucide-react';
+import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton, useAuth, useUser } from '@clerk/react';
+import { useUpload } from '@workspace/object-storage-web';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
@@ -271,19 +278,27 @@ function PageFrame({ children }: { children: ReactNode }) {
           <Logo />
           <nav className="hidden items-center gap-7 md:flex">
             <Link href="/" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-home-nav">Home</Link>
-            <Link href="/search" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-search-nav">Search</Link>
-            <Link href="/saved" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-saved-nav">My List</Link>
+            <Link href="/discover" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-discover-nav">Discover</Link>
+            <Link href="/rewards" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-rewards-nav">Rewards</Link>
+            <Link href="/following" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-following-nav">Following</Link>
+            <Link href="/profile" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-profile-nav">Profile</Link>
           </nav>
-          <Link href="/search" aria-label="Search dramas" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#f47e68]/50 hover:text-[#f47e68]" data-testid="link-search-button">
-            <Search size={16} strokeWidth={2} />
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/discover" aria-label="Search dramas" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#f47e68]/50 hover:text-[#f47e68]" data-testid="link-search-button">
+              <Search size={16} strokeWidth={2} />
+            </Link>
+            <SignedIn><UserButton appearance={{ elements: { avatarBox: 'h-8 w-8' } }} /></SignedIn>
+            <SignedOut><SignInButton mode="modal"><button type="button" className="hidden h-9 rounded-full border border-white/10 px-3 text-xs text-white/70 transition-colors hover:border-[#f47e68]/60 hover:text-white sm:block">Sign in</button></SignInButton></SignedOut>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-[1180px] px-5 pb-28 pt-7 md:px-8 md:pb-12 md:pt-10">{children}</main>
       <nav className="glass fixed inset-x-4 bottom-4 z-40 flex h-[3.9rem] items-center justify-around rounded-2xl md:hidden">
         <MobileNavLink href="/" icon={<HomeIcon size={18} />} label="Home" />
-        <MobileNavLink href="/search" icon={<Search size={18} />} label="Search" />
-        <MobileNavLink href="/saved" icon={<Library size={18} />} label="My List" />
+         <MobileNavLink href="/discover" icon={<Search size={18} />} label="Discover" />
+         <MobileNavLink href="/rewards" icon={<Gift size={18} />} label="Rewards" />
+         <MobileNavLink href="/following" icon={<UsersRound size={18} />} label="Following" />
+         <MobileNavLink href="/profile" icon={<UserCircle size={18} />} label="Profile" />
       </nav>
     </div>
   );
@@ -533,6 +548,86 @@ function SavedPage() {
   );
 }
 
+function FollowingPage() {
+  const [following, setFollowing] = useState<Drama[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    fetch('/api/me/following', { credentials: 'include' })
+      .then((response) => response.ok ? response.json() : [])
+      .then((items: Array<{ slug?: string; id?: number }>) => {
+        const ids = new Set(items.map((item) => String(item.slug ?? item.id)));
+        setFollowing(dramas.filter((drama) => ids.has(drama.id)));
+      })
+      .catch(() => setFollowing([]))
+      .finally(() => setLoading(false));
+  }, []);
+  return (
+    <div className="animate-rise">
+      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Your watch circle</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.2rem]">Following<span className="text-[#f47e68]">.</span></h1><p className="mt-4 text-sm text-white/45">{loading ? 'Loading your followed stories…' : `${following.length} stories in your circle`}</p></div>
+      {following.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{following.map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}
+    </div>
+  );
+}
+
+function RewardsPage() {
+  const [status, setStatus] = useState<'loading' | 'signed-out' | 'ready'>('loading');
+  const [data, setData] = useState<{ rewards: Array<{ id: number; key: string; name: string; coinAmount: number; bonusAmount: number }>; missions: Array<{ id: number; name: string; description: string; target: number; progress?: { progress: number } | null }> }>({ rewards: [], missions: [] });
+  const [message, setMessage] = useState('');
+  useEffect(() => {
+    fetch('/api/me/rewards', { credentials: 'include' }).then(async (response) => {
+      if (response.status === 401) { setStatus('signed-out'); return; }
+      if (response.ok) { setData(await response.json()); setStatus('ready'); }
+    }).catch(() => setStatus('signed-out'));
+  }, []);
+  const claim = async (key: string) => {
+    const response = await fetch(`/api/rewards/${key}/claim`, { method: 'POST', credentials: 'include' });
+    const body = await response.json().catch(() => ({}));
+    setMessage(response.ok ? 'Reward added to your wallet.' : body.error ?? 'This reward is not available.');
+  };
+  if (status === 'signed-out') return <AuthPrompt title="Rewards are waiting" copy="Sign in to collect coins, complete missions, and keep your balance across devices." />;
+  return (
+    <div className="animate-rise">
+      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#e7b769]">Your VEYRA wallet</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.2rem]">Rewards<span className="text-[#e7b769]">.</span></h1><p className="mt-4 text-sm text-white/45">Watch, return, and unlock more stories.</p></div>
+      {message && <div className="mb-5 rounded-xl border border-[#e7b769]/30 bg-[#e7b769]/10 px-4 py-3 text-sm text-[#f5d68c]">{message}</div>}
+      <div className="grid gap-5 md:grid-cols-2">
+        <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-3"><Coins className="text-[#e7b769]" /><div><p className="text-xs text-white/45">Available balance</p><p className="mt-1 font-display text-3xl text-white">Sign in to view</p></div></div><p className="mt-5 text-xs leading-relaxed text-white/40">Coins are granted by verified server-side ledger entries. Payments and ads remain unavailable until a provider is configured.</p></section>
+        <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#f47e68]">Missions</p>{data.missions.length ? data.missions.map((mission) => <div key={mission.id} className="mt-4 flex items-center justify-between gap-3"><div><p className="text-sm text-white/85">{mission.name}</p><p className="mt-1 text-xs text-white/40">{mission.description}</p></div><span className="font-mono-ui text-[10px] text-[#e7b769]">{mission.progress?.progress ?? 0}/{mission.target}</span></div>) : <p className="mt-5 text-sm text-white/40">Missions will appear here when the catalog team activates them.</p>}</section>
+      </div>
+      <section className="mt-8"><SectionHeader eyebrow="Collect" title="Available rewards" href="/rewards" /><div className="grid gap-3 sm:grid-cols-2">{data.rewards.length ? data.rewards.map((reward) => <div key={reward.id} className="flex items-center justify-between rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div><p className="font-display text-lg text-white/90">{reward.name}</p><p className="mt-1 text-xs text-[#e7b769]">+{reward.coinAmount} coins{reward.bonusAmount ? ` · +${reward.bonusAmount} bonus` : ''}</p></div><button type="button" onClick={() => claim(reward.key)} className="rounded-full bg-[#e7b769] px-3 py-2 text-xs font-semibold text-[#171720]">Claim</button></div>) : <p className="text-sm text-white/40">No rewards are active yet.</p>}</div></section>
+    </div>
+  );
+}
+
+function ProfilePage() {
+  const { isSignedIn, user } = useUser();
+  const { savedIds } = useAppValue();
+  if (!isSignedIn) return <AuthPrompt title="Make VEYRA yours" copy="Sign in to sync your list, watch progress, notifications, and profile across devices." />;
+  return <div className="animate-rise"><div className="mb-9 flex items-center gap-4"><div className="grid h-16 w-16 place-items-center rounded-2xl bg-[#f47e68]/15 text-[#f47e68]"><UserCircle size={30} /></div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Your profile</p><h1 className="mt-1 font-display text-3xl text-white">{user?.firstName ?? user?.username ?? 'VEYRA viewer'}</h1><p className="mt-1 text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? 'Signed in'}</p></div></div><div className="grid gap-4 sm:grid-cols-3"><ProfileStat label="My List" value={String(savedIds.length)} /><ProfileStat label="Wallet" value="View rewards" href="/rewards" /><ProfileStat label="Admin" value="Console" href="/admin" /></div><section className="mt-10"><SectionHeader eyebrow="Saved for later" title="My List" href="/saved" />{savedIds.length ? <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">{dramas.filter((drama) => savedIds.includes(drama.id)).map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}</section></div>;
+}
+
+function ProfileStat({ label, value, href }: { label: string; value: string; href?: string }) {
+  const content = <div className="rounded-2xl border border-white/[.08] bg-white/[.03] p-4"><p className="text-xs text-white/40">{label}</p><p className="mt-2 font-display text-xl text-white/90">{value}</p></div>;
+  return href ? <Link href={href}>{content}</Link> : content;
+}
+
+function AuthPrompt({ title, copy }: { title: string; copy: string }) {
+  return <div className="mx-auto max-w-xl rounded-[1.5rem] border border-white/[.08] bg-white/[.03] px-6 py-16 text-center"><UserCircle size={28} className="mx-auto text-[#f47e68]" /><h1 className="mt-5 font-display text-3xl text-white">{title}</h1><p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/45">{copy}</p><SignInButton mode="modal"><button type="button" className="mt-7 rounded-full bg-[#f47e68] px-5 py-3 text-sm font-semibold text-[#171720]">Sign in to continue</button></SignInButton></div>;
+}
+
+function AdminPage() {
+  const { isSignedIn } = useUser();
+  const [data, setData] = useState<{ users: number; series: number; episodes: number; events: number; revenueMinor: number } | null>(null);
+  const [error, setError] = useState('');
+  const [uploadNote, setUploadNote] = useState('');
+  const { uploadFile, isUploading, progress } = useUpload({ onSuccess: (response) => setUploadNote(`Uploaded ${response.metadata.name} to ${response.objectPath}`), onError: (uploadError) => setUploadNote(uploadError.message) });
+  useEffect(() => {
+    if (!isSignedIn) return;
+    fetch('/api/admin/overview', { credentials: 'include' }).then(async (response) => { const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.error ?? 'Admin access denied'); setData(body); }).catch((reason: Error) => setError(reason.message));
+  }, [isSignedIn]);
+  if (!isSignedIn) return <AuthPrompt title="VEYRA Console" copy="This is a protected administration area. Sign in with an authorized admin account." />;
+  return <div className="animate-rise"><div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Protected workspace</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8]">Admin Console<span className="text-[#f47e68]">.</span></h1></div><span className="inline-flex items-center gap-2 rounded-full border border-[#76b7bd]/30 bg-[#76b7bd]/10 px-3 py-2 text-xs text-[#a9d6d8]"><ShieldCheck size={14} /> Server protected</span></div>{error ? <div className="rounded-xl border border-[#f47e68]/30 bg-[#f47e68]/10 px-4 py-3 text-sm text-[#ffb2a3]">{error}</div> : <><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{[['Users', data?.users ?? '—'], ['Series', data?.series ?? '—'], ['Episodes', data?.episodes ?? '—'], ['Events', data?.events ?? '—'], ['Revenue', data ? `$${(data.revenueMinor / 100).toFixed(2)}` : '—']].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/[.08] bg-white/[.03] p-4"><p className="text-xs text-white/40">{label}</p><p className="mt-2 font-display text-2xl text-white">{value}</p></div>)}</div><div className="mt-8 grid gap-5 lg:grid-cols-[1fr_.8fr]"><section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-2"><Library size={16} className="text-[#f47e68]" /><h2 className="font-display text-xl text-white">Catalog operations</h2></div><p className="mt-3 text-sm leading-relaxed text-white/45">Series, episode, media, user, transaction, monetization, reward, and analytics endpoints are now available under the protected admin API.</p><div className="mt-5 grid grid-cols-2 gap-2 text-xs text-white/55"><span className="rounded-lg bg-white/[.04] px-3 py-2">Catalog CRUD surface</span><span className="rounded-lg bg-white/[.04] px-3 py-2">User moderation</span><span className="rounded-lg bg-white/[.04] px-3 py-2">Coin ledger review</span><span className="rounded-lg bg-white/[.04] px-3 py-2">Analytics summary</span></div></section><section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-2"><Upload size={16} className="text-[#e7b769]" /><h2 className="font-display text-xl text-white">Media intake</h2></div><p className="mt-3 text-sm leading-relaxed text-white/45">Uploads use a server-issued presigned URL. No storage credentials are exposed to the browser.</p><label className="mt-5 flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-white/15 bg-white/[.025] px-3 py-3 text-xs text-white/65 hover:border-[#e7b769]/50"><span>{isUploading ? `Uploading ${progress}%` : 'Choose MP4, HLS manifest, image, or subtitle'}</span><input type="file" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadFile(file); }} /></label>{uploadNote && <p className="mt-3 text-xs text-[#a9d6d8]">{uploadNote}</p>}</section></div></>}</div>;
+}
+
 function EmptySaved() {
   return (
     <div className="relative overflow-hidden rounded-[1.4rem] border border-white/[.08] bg-[#181a25] px-6 py-16 text-center">
@@ -751,7 +846,12 @@ function AppRouter() {
         <Route path="/" component={() => <PageFrame><HomePage /></PageFrame>} />
         <Route path="/drama/:id" component={() => <PageFrame><DramaDetailPage /></PageFrame>} />
         <Route path="/search" component={() => <PageFrame><SearchPage /></PageFrame>} />
+         <Route path="/discover" component={() => <PageFrame><SearchPage /></PageFrame>} />
         <Route path="/saved" component={() => <PageFrame><SavedPage /></PageFrame>} />
+         <Route path="/following" component={() => <PageFrame><FollowingPage /></PageFrame>} />
+         <Route path="/rewards" component={() => <PageFrame><RewardsPage /></PageFrame>} />
+         <Route path="/profile" component={() => <PageFrame><ProfilePage /></PageFrame>} />
+         <Route path="/admin" component={() => <PageFrame><AdminPage /></PageFrame>} />
         <Route component={NotFound} />
       </Switch>
     </RoutedErrorBoundary>
@@ -760,22 +860,39 @@ function AppRouter() {
 
 function App() {
   const [savedIds, setSavedIds] = useState<string[]>(['after-midnight']);
+  const { isSignedIn } = useAuth();
+  useEffect(() => {
+    if (!isSignedIn) return;
+    fetch('/api/me/list', { credentials: 'include' }).then((response) => response.ok ? response.json() : []).then((items: Array<{ slug?: string }>) => {
+      const remoteIds = items.map((item) => item.slug).filter((slug): slug is string => Boolean(slug));
+      if (remoteIds.length) setSavedIds(remoteIds);
+    }).catch(() => undefined);
+  }, [isSignedIn]);
   const value = useMemo<AppContextValue>(() => ({
     savedIds,
-    toggleSaved: (id) => setSavedIds((current) => current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id]),
+    toggleSaved: (id) => {
+      const saving = !savedIds.includes(id);
+      setSavedIds((current) => saving ? [...current, id] : current.filter((entry) => entry !== id));
+      if (isSignedIn) {
+        const method = saving ? 'POST' : 'DELETE';
+        void fetch(saving ? '/api/me/list' : `/api/me/list/${encodeURIComponent(id)}`, { method, credentials: 'include', headers: saving ? { 'Content-Type': 'application/json' } : undefined, body: saving ? JSON.stringify({ seriesId: id }) : undefined });
+      }
+    },
     isSaved: (id) => savedIds.includes(id),
-  }), [savedIds]);
+  }), [isSignedIn, savedIds]);
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AppContext.Provider value={value}>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-            <AppRouter />
-          </WouterRouter>
-        </AppContext.Provider>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AppContext.Provider value={value}>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+              <AppRouter />
+            </WouterRouter>
+          </AppContext.Provider>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ClerkProvider>
   );
 }
 
