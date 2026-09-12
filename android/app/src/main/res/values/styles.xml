@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      VEYRA — koyu sinematik tema.
+      Capacitor şablonunun açık (Light) tabanları, açılışta beyaz flaş ve
+      açık renkli sistem çubukları ürettiği için tabanlar koyu sürümlerle
+      değiştirildi. Pencere arka planı VEYRA'nın zeminiyle (#111118) aynıdır;
+      böylece WebView ilk karesini çizene kadar ekran koyu kalır.
+    -->
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowBackground">@color/veyraNight</item>
+        <item name="android:statusBarColor">@color/veyraNight</item>
+        <item name="android:navigationBarColor">@color/veyraNight</item>
+        <!-- Koyu zemin üzerinde AÇIK (beyaz) sistem çubuğu ikonları. -->
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:background">@null</item>
+        <item name="android:windowBackground">@color/veyraNight</item>
+        <item name="android:statusBarColor">@color/veyraNight</item>
+        <item name="android:navigationBarColor">@color/veyraNight</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+
+    <!--
+      Açılış teması.
+      - android:background        → Android 12 öncesi sistem splash'i (splash.png)
+      - windowSplashScreen*       → Android 12+ sistem splash'i (koyu zemin + VEYRA rozeti)
+      - postSplashScreenTheme     → splash sonrası temaya yumuşak geçiş
+    -->
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/veyraNight</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+        <item name="android:statusBarColor">@color/veyraNight</item>
+        <item name="android:navigationBarColor">@color/veyraNight</item>
+    </style>
+</resources>

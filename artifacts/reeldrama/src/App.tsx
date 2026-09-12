@@ -16,14 +16,16 @@ import {
   Pause,
   Play,
   Search,
+  ShieldCheck,
   Sparkles,
   SlidersHorizontal,
+  Upload,
   Volume2,
   VolumeX,
   UserCircle,
   UsersRound,
 } from 'lucide-react';
-import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton, useAuth, useUser } from '@clerk/react';
+import { ClerkProvider, Show, SignInButton, UserButton, useAuth, useUser } from '@clerk/react';
 import { useUpload } from '@workspace/object-storage-web';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -287,8 +289,8 @@ function PageFrame({ children }: { children: ReactNode }) {
             <Link href="/discover" aria-label="Search dramas" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#f47e68]/50 hover:text-[#f47e68]" data-testid="link-search-button">
               <Search size={16} strokeWidth={2} />
             </Link>
-            <SignedIn><UserButton appearance={{ elements: { avatarBox: 'h-8 w-8' } }} /></SignedIn>
-            <SignedOut><SignInButton mode="modal"><button type="button" className="hidden h-9 rounded-full border border-white/10 px-3 text-xs text-white/70 transition-colors hover:border-[#f47e68]/60 hover:text-white sm:block">Sign in</button></SignInButton></SignedOut>
+            <Show when="signed-in"><UserButton appearance={{ elements: { avatarBox: 'h-8 w-8' } }} /></Show>
+            <Show when="signed-out"><SignInButton mode="modal"><button type="button" className="hidden h-9 rounded-full border border-white/10 px-3 text-xs text-white/70 transition-colors hover:border-[#f47e68]/60 hover:text-white sm:block">Sign in</button></SignInButton></Show>
           </div>
         </div>
       </header>

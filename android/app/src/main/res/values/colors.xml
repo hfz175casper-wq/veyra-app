@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      VEYRA marka paleti.
+      Capacitor kütüphane modülünün varsayılan renklerini (colorPrimary #3F51B5 vb.)
+      ezer; uygulama modülü kaynakları kütüphane kaynaklarından önceliklidir.
+      Kaynak: artifacts/reeldrama/src/index.css (:root değişkenleri) ve public/favicon.svg
+    -->
+    <color name="colorPrimary">#F47E68</color>
+    <color name="colorPrimaryDark">#111118</color>
+    <color name="colorAccent">#F47E68</color>
+
+    <color name="veyraNight">#111118</color>
+    <color name="veyraInk">#171720</color>
+    <color name="veyraCoral">#F47E68</color>
+    <color name="veyraCream">#F7F1E8</color>
+    <color name="splashBackground">#111118</color>
+</resources>

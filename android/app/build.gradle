@@ -1,0 +1,141 @@
+apply plugin: 'com.android.application'
+
+// ---------------------------------------------------------------------------
+// VEYRA — release imza çözümü
+// ---------------------------------------------------------------------------
+// İki kaynak desteklenir (öncelik: ortam değişkeni → keystore.properties):
+//
+//   1) CI / gizli ortam:
+//        VEYRA_KEYSTORE_PATH     (keystore dosyasının yolu; CI'da base64'ten açılır)
+//        VEYRA_KEYSTORE_PASSWORD
+//        VEYRA_KEY_ALIAS
+//        VEYRA_KEY_PASSWORD
+//   2) Yerel geliştirme:
+//        android/keystore.properties   (şablon: keystore.properties.example)
+//
+// Hiçbiri tanımlı değilse Gradle ÇALIŞMAYA DEVAM EDER ancak release derlemesi
+// imzasız olur ve bir uyarı basılır (APK Play Store'a yüklenemez; test için
+// yine de kurulabilir değildir — imza için make-keystore.sh kullanın).
+// ---------------------------------------------------------------------------
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
+def resolveSigningValue = { String envName, String propKey ->
+    def value = System.getenv(envName)
+    if (value == null || value.trim().isEmpty()) {
+        value = keystoreProperties.getProperty(propKey)
+    }
+    return value
+}
+
+def signingStorePath = resolveSigningValue('VEYRA_KEYSTORE_PATH', 'storeFile')
+def signingStorePassword = resolveSigningValue('VEYRA_KEYSTORE_PASSWORD', 'storePassword')
+def signingKeyAliasValue = resolveSigningValue('VEYRA_KEY_ALIAS', 'keyAlias')
+def signingKeyPassword = resolveSigningValue('VEYRA_KEY_PASSWORD', 'keyPassword')
+
+// Göreli yollar android/ dizinine göre çözülür.
+def signingStoreFile = null
+if (signingStorePath != null && !signingStorePath.trim().isEmpty()) {
+    def candidate = new File(signingStorePath)
+    signingStoreFile = candidate.isAbsolute() ? candidate : new File(rootProject.projectDir, signingStorePath)
+}
+
+def hasReleaseSigning = signingStoreFile != null && signingStoreFile.isFile() &&
+        signingStorePassword != null && !signingStorePassword.isEmpty() &&
+        signingKeyAliasValue != null && !signingKeyAliasValue.isEmpty() &&
+        signingKeyPassword != null && !signingKeyPassword.isEmpty()
+
+if (hasReleaseSigning) {
+    logger.lifecycle("[VEYRA] Release keystore bulundu: ${signingStoreFile.name}")
+} else {
+    logger.warn("[VEYRA] Release keystore BULUNAMADI → assembleRelease imzasız üretilir.")
+    logger.warn("[VEYRA] İmza için: scripts/android/make-keystore.sh  veya  CI secret'ları (docs/ANDROID.md).")
+}
+
+// Sürüm bilgisi: CI, tag'den besleyebilir (ör. VEYRA_VERSION_NAME=1.2.0).
+def ciVersionCode = System.getenv('VEYRA_VERSION_CODE')
+def ciVersionName = System.getenv('VEYRA_VERSION_NAME')
+
+android {
+    namespace = "app.veyra.mobile"
+    compileSdk = rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        applicationId "app.veyra.mobile"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode ciVersionCode ? ciVersionCode.toInteger() : 1
+        versionName ciVersionName ?: "1.0.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile signingStoreFile
+                storePassword signingStorePassword
+                keyAlias signingKeyAliasValue
+                keyPassword signingKeyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            // NOT: minify kapalı. Capacitor eklentileri reflection ile kayıt olur;
+            // R8 etkinleştirilirse plugin sınıfları kırpılabilir.
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    // Çıktı adlarını markala: veyra-1.0.0-release.apk
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            output.outputFileName = "veyra-${variant.versionName}-${variant.buildType.name}.apk"
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    // VeyraWebChromeClient'in sistem çubuğu yönetimi (WindowInsetsControllerCompat).
+    implementation "androidx.core:core:$androidxCoreVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push notifications won't work")
+}
