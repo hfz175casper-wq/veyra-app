@@ -1,35 +1,35 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 /**
- * VEYRA ? Capacitor (Android) yap?land?rmas?
+ * VEYRA — Capacitor (Android) yapılandırması
  * ---------------------------------------------------------------------------
- * Bu dosya VEYRA web uygulamas?n? DE???T?RMEZ; yaln?zca Vite ?retim ??kt?s?n?
- * (`artifacts/reeldrama/dist/public`) bir Android WebView i?ine sarar.
+ * Bu dosya VEYRA web uygulamasını DEĞİŞTİRMEZ; yalnızca Vite üretim çıktısını
+ * (`artifacts/reeldrama/dist/public`) bir Android WebView içine sarar.
  *
- * ?K? ?ALI?MA MODU (hibrit):
+ * İKİ ÇALIŞMA MODU (hibrit):
  *
- *  1) BUNDLE (varsay?lan) ? web varl?klar? APK'n?n i?indedir.
- *     Uygulama `https://localhost` origin'inden a??l?r, katalog + dikey player
- *     g?m?l? veriyle ?al???r. Poster/video uzak CDN'lerden geldi?i i?in
- *     INTERNET izni gerekir. Bu modda g?reli `/api/...` ?a?r?lar? bir yere
- *     gitmez; backend'e ba?lanmak i?in `VITE_API_BASE_URL` ile mutlak adres
+ *  1) BUNDLE (varsayılan) — web varlıkları APK'nın içindedir.
+ *     Uygulama `https://localhost` origin'inden açılır, katalog + dikey player
+ *     gömülü veriyle çalışır. Poster/video uzak CDN'lerden geldiği için
+ *     INTERNET izni gerekir. Bu modda göreli `/api/...` çağrıları bir yere
+ *     gitmez; backend'e bağlanmak için `VITE_API_BASE_URL` ile mutlak adres
  *     verin (bkz. artifacts/reeldrama/.env.example).
  *
- *  2) REMOTE (opsiyonel) ? a?a??daki ortam de?i?keni doluysa APK, canl? siteyi
- *     y?kler. Clerk auth ve g?reli `/api/...` ?a?r?lar? birebir ?al???r:
+ *  2) REMOTE (opsiyonel) — aşağıdaki ortam değişkeni doluysa APK, canlı siteyi
+ *     yükler. Clerk auth ve göreli `/api/...` çağrıları birebir çalışır:
  *
  *         VEYRA_ANDROID_SERVER_URL="https://veyra-ornek.replit.app" pnpm run mobile:apk
  *
- *     ya da `capacitor.config.ts` i?indeki `server.url` sat?r?n? a??n.
+ *     ya da `capacitor.config.ts` içindeki `server.url` satırını açın.
  *
- * S?r?mler (Capacitor 8.5.1 resm? Android ?ablonuyla birebir):
- *   Gradle 8.14.3 ? AGP 8.13.0 ? compileSdk/targetSdk 36 ? minSdk 24 ? JDK 21
+ * Sürümler (Capacitor 8.5.1 resmî Android şablonuyla birebir):
+ *   Gradle 8.14.3 · AGP 8.13.0 · compileSdk/targetSdk 36 · minSdk 24 · JDK 21
  */
 
-/** Uzaktan (remote kabuk) mod: ortam de?i?keni doluysa etkinle?ir. */
+/** Uzaktan (remote kabuk) mod: ortam değişkeni doluysa etkinleşir. */
 const remoteWebUrl = (process.env.VEYRA_ANDROID_SERVER_URL ?? '').trim();
 
-/** Release imzas? ? `npx cap build android` kullananlar i?in opsiyonel k?pr?. */
+/** Release imzası — `npx cap build android` kullananlar için opsiyonel köprü. */
 const keystorePath = (process.env.VEYRA_KEYSTORE_PATH ?? '').trim();
 const keystorePassword = (process.env.VEYRA_KEYSTORE_PASSWORD ?? '').trim();
 const keystoreAlias = (process.env.VEYRA_KEY_ALIAS ?? '').trim();
@@ -38,9 +38,9 @@ const keystoreAliasPassword = (process.env.VEYRA_KEY_PASSWORD ?? '').trim();
 const hasKeystore = Boolean(keystorePath && keystorePassword && keystoreAlias);
 
 /**
- * Clerk oturum ak???n?n WebView i?inde kalabilmesi i?in izin verilen hostlar.
- * (Otomatik y?nlendirmeler ? ?r. Google OAuth ? sistem taray?c?s?na a??l?rsa
- * oturum geri d?nemez; bu liste o ak??lar? uygulama i?inde tutar.)
+ * Clerk oturum akışının WebView içinde kalabilmesi için izin verilen hostlar.
+ * (Otomatik yönlendirmeler — ör. Google OAuth — sistem tarayıcısına açılırsa
+ * oturum geri dönemez; bu liste o akışları uygulama içinde tutar.)
  */
 const allowNavigation = [
   '*.clerk.dev',
@@ -55,7 +55,7 @@ const config: CapacitorConfig = {
   appName: 'VEYRA',
   webDir: 'artifacts/reeldrama/dist/public',
 
-  // VEYRA'n?n koyu sinematik zemini ? a??l??ta beyaz fla? olmamas? i?in.
+  // VEYRA'nın koyu sinematik zemini — açılışta beyaz flaş olmaması için.
   backgroundColor: '#111118',
   loggingBehavior: 'production',
   zoomEnabled: false,
@@ -65,7 +65,7 @@ const config: CapacitorConfig = {
     captureInput: true,
     webContentsDebuggingEnabled: false,
     backgroundColor: '#111118',
-    // `npx cap build android` ile imzal? APK/AAB ?retmek isterseniz env ?zerinden dolar.
+    // `npx cap build android` ile imzalı APK/AAB üretmek isterseniz env üzerinden dolar.
     ...(hasKeystore
       ? {
           buildOptions: {
@@ -81,7 +81,7 @@ const config: CapacitorConfig = {
 
   server: {
     androidScheme: 'https',
-    // REMOTE MOD: VEYRA_ANDROID_SERVER_URL tan?ml?ysa APK canl? siteyi y?kler.
+    // REMOTE MOD: VEYRA_ANDROID_SERVER_URL tanımlıysa APK canlı siteyi yükler.
     ...(remoteWebUrl ? { url: remoteWebUrl } : {}),
     allowNavigation,
   },
@@ -99,9 +99,9 @@ const config: CapacitorConfig = {
       splashImmersive: true,
       useDialog: false,
     },
-    // Capacitor 8'de sistem ?ubuklar? core'a g?m?l?d?r (ayr? status-bar paketi gerekmez).
-    // Kaynak: SystemBars.setStyle ? setAppearanceLightStatusBars(!style.equals("DARK"))
-    // Yani "DARK" = koyu zemin ?zerinde A?IK (beyaz) ikon/yaz?. VEYRA'n?n temas? i?in do?ru de?er budur.
+    // Capacitor 8'de sistem çubukları core'a gömülüdür (ayrı status-bar paketi gerekmez).
+    // Kaynak: SystemBars.setStyle → setAppearanceLightStatusBars(!style.equals("DARK"))
+    // Yani "DARK" = koyu zemin üzerinde AÇIK (beyaz) ikon/yazı. VEYRA'nın teması için doğru değer budur.
     SystemBars: {
       insetsHandling: 'css',
       style: 'DARK',

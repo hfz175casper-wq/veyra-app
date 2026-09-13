@@ -1,22 +1,22 @@
 # ============================================================================
-# VEYRA Android ? release APK + AAB ?retim hatt?
+# VEYRA Android — release APK + AAB üretim hattı
 # ----------------------------------------------------------------------------
 # Ne yapar?
-#   1. Web uygulamas?n?n production derlemesini ?retir (mevcut Vite komutu)
+#   1. Web uygulamasının production derlemesini üretir (mevcut Vite komutu)
 #   2. Capacitor ile Android projesine senkronlar
-#   3. Release keystore secret'lar? tan?ml?ysa ?MZALI, de?ilse imzas?z derler
-#   4. APK + AAB'yi Actions artifact olarak y?kler
-#   5. `v*` tag'inde GitHub Release olu?turup dosyalar? ekler
+#   3. Release keystore secret'ları tanımlıysa İMZALI, değilse imzasız derler
+#   4. APK + AAB'yi Actions artifact olarak yükler
+#   5. `v*` tag'inde GitHub Release oluşturup dosyaları ekler
 #
-# Gerekli secret'lar (opsiyonel ama imza i?in ?art) ? Settings ? Secrets:
+# Gerekli secret'lar (opsiyonel ama imza için şart) — Settings → Secrets:
 #   VEYRA_KEYSTORE_B64          base64 -w0 android/veyra-release.keystore
 #   VEYRA_KEYSTORE_PASSWORD
 #   VEYRA_KEY_ALIAS
 #   VEYRA_KEY_PASSWORD
-#   VEYRA_CLERK_PUBLISHABLE_KEY (tan?ml? de?ilse auth pasif, uygulama ?al???r)
-#   VEYRA_API_BASE_URL          (bundle modda /api i?in mutlak adres)
+#   VEYRA_CLERK_PUBLISHABLE_KEY (tanımlı değilse auth pasif, uygulama çalışır)
+#   VEYRA_API_BASE_URL          (bundle modda /api için mutlak adres)
 #
-# Yerel e?de?eri: sh scripts/android/build-apk.sh
+# Yerel eşdeğeri: sh scripts/android/build-apk.sh
 # ============================================================================
 name: android-release
 
@@ -70,7 +70,7 @@ jobs:
           "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-36" "build-tools;36.0.0" > /dev/null
 
-      - name: Ba??ml?l?klar
+      - name: Bağımlılıklar
         run: pnpm install --frozen-lockfile
 
       - name: Web production derlemesi
@@ -99,13 +99,13 @@ jobs:
             } > android/keystore.properties
             chmod 600 android/veyra-release.keystore android/keystore.properties
             echo "VEYRA_SIGNED=true" >> "$GITHUB_ENV"
-            echo "::notice::Release keystore kuruldu ? APK imzalanacak."
+            echo "::notice::Release keystore kuruldu → APK imzalanacak."
           else
             echo "VEYRA_SIGNED=false" >> "$GITHUB_ENV"
-            echo "::warning::Keystore secret tan?ml? de?il ? release ?MZASIZ derlenir (test ama?l?)."
+            echo "::warning::Keystore secret tanımlı değil → release İMZASIZ derlenir (test amaçlı)."
           fi
 
-      - name: Gradle ? assembleRelease + bundleRelease
+      - name: Gradle — assembleDebug + assembleRelease + bundleRelease
         env:
           VEYRA_VERSION_CODE: ${{ github.run_number }}
         run: |
@@ -113,17 +113,19 @@ jobs:
           if [ "$GITHUB_REF_TYPE" != "tag" ]; then VERSION_NAME="1.0.0"; fi
           echo "VEYRA_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           cd android
-          ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
+          ./gradlew assembleDebug assembleRelease bundleRelease --no-daemon --stacktrace
 
-      - name: ??kt?lar? topla
+      - name: Çıktıları topla
         run: |
-          mkdir -p dist-android
+          mkdir -p dist-android dist-android-debug
           cp android/app/build/outputs/apk/release/*.apk dist-android/ || true
           cp android/app/build/outputs/bundle/release/*.aab dist-android/ || true
-          ls -la dist-android
-          test -n "$(ls -A dist-android)" || { echo "::error::Hi? ??kt? bulunamad?"; exit 1; }
+          cp android/app/build/outputs/apk/debug/*.apk dist-android-debug/ || true
+          ls -la dist-android dist-android-debug
+          test -n "$(ls -A dist-android)" || { echo "::error::Hiç release çıktısı bulunamadı"; exit 1; }
+          test -n "$(ls -A dist-android-debug)" || { echo "::error::Hiç debug çıktısı bulunamadı"; exit 1; }
 
-      - name: Artifact olarak y?kle
+      - name: Artifact olarak yükle (release APK + AAB)
         uses: actions/upload-artifact@v4
         with:
           name: veyra-android-${{ github.run_number }}
@@ -131,7 +133,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: ?mza do?rula (imzal?ysa)
+      - name: Artifact olarak yükle (debug APK)
+        uses: actions/upload-artifact@v4
+        with:
+          name: veyra-android-debug-${{ github.run_number }}
+          path: dist-android-debug/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: İmza doğrula (imzalıysa)
         if: env.VEYRA_SIGNED == 'true'
         run: |
           APKBUILDER="$(find "$ANDROID_HOME" -name apksigner -type f | head -1)"
@@ -139,14 +149,14 @@ jobs:
             "$APKBUILDER" verify --print-certs "$apk" || true
           done
 
-      - name: GitHub Release (yaln?zca v* tag'lerinde)
+      - name: GitHub Release (yalnızca v* tag'lerinde)
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "$VEYRA_SIGNED" = "true" ]; then SIGN_NOTE="Release keystore ile imzaland?."; else SIGN_NOTE="UYARI: imzas?z derleme (Play Store'a y?klenemez)."; fi
+          if [ "$VEYRA_SIGNED" = "true" ]; then SIGN_NOTE="Release keystore ile imzalandı."; else SIGN_NOTE="UYARI: imzasız derleme (Play Store'a yüklenemez)."; fi
           gh release create "$GITHUB_REF_NAME" dist-android/* \
             --title "VEYRA Android ${GITHUB_REF_NAME#v}" \
-            --notes "Otomatik ?retim: APK + AAB.
-          S?r?m: ${GITHUB_REF_NAME#v} (versionCode ${{ github.run_number }})
+            --notes "Otomatik üretim: APK + AAB.
+          Sürüm: ${GITHUB_REF_NAME#v} (versionCode ${{ github.run_number }})
           $SIGN_NOTE"

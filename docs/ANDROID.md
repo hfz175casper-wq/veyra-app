@@ -1,218 +1,218 @@
-# VEYRA Android ? Kurulum, Derleme ve ?mzalama Rehberi
+# VEYRA Android — Kurulum, Derleme ve İmzalama Rehberi
 
-Bu belge, VEYRA web uygulamas?n?n **mevcut koduna dokunmadan** bir Android
-APK/AAB'ye nas?l d?n??t?r?ld???n? ve release imzal? APK'n?n nas?l ?retilece?ini
-anlat?r.
+Bu belge, VEYRA web uygulamasının **mevcut koduna dokunmadan** bir Android
+APK/AAB'ye nasıl dönüştürüldüğünü ve release imzalı APK'nın nasıl üretileceğini
+anlatır.
 
-> Y?ntem: **Capacitor 8** ? Vite production ??kt?s? (`artifacts/reeldrama/dist/public`)
-> bir Android WebView i?ine sar?l?r. Web uygulamas?, sayfalar?, tasar?m? ve
-> ?zellikleri birebir korunur; `android/` klas?r? tamamen **ek** niteli?indedir.
+> Yöntem: **Capacitor 8** — Vite production çıktısı (`artifacts/reeldrama/dist/public`)
+> bir Android WebView içine sarılır. Web uygulaması, sayfaları, tasarımı ve
+> özellikleri birebir korunur; `android/` klasörü tamamen **ek** niteliğindedir.
 
 ---
 
-## 1. Mimari ?zeti
+## 1. Mimari özeti
 
 ```
-artifacts/reeldrama/dist/public   ? Vite production ??kt?s? (web de?i?medi)
-            ?  cap sync android
-            ?
-android/app/src/main/assets/public  ? APK i?ine g?m?len web varl?klar? (Git'te yok)
-            ?  gradlew assembleRelease
-            ?
-dist-android/veyra-<s?r?m>-release.apk
+artifacts/reeldrama/dist/public   ← Vite production çıktısı (web değişmedi)
+            │  cap sync android
+            ▼
+android/app/src/main/assets/public  ← APK içine gömülen web varlıkları (Git'te yok)
+            │  gradlew assembleRelease
+            ▼
+dist-android/veyra-<sürüm>-release.apk
 ```
 
-- **Native kabuk:** `android/` (Capacitor 8.5.1 resm? ?ablonu)
-- **appId / uygulama ad?:** `app.veyra.mobile` / **VEYRA**
-- **S?r?m:** `versionName 1.0.0`, `versionCode 1` (CI'da `github.run_number` ile artar)
+- **Native kabuk:** `android/` (Capacitor 8.5.1 resmî şablonu)
+- **appId / uygulama adı:** `app.veyra.mobile` / **VEYRA**
+- **Sürüm:** `versionName 1.0.0`, `versionCode 1` (CI'da `github.run_number` ile artar)
 - **SDK:** `minSdk 24` (Android 7.0+), `compileSdk/targetSdk 36`
-- **Ara? zinciri:** Gradle 8.14.3 ? AGP 8.13.0 ? **JDK 21**
-- **?konlar/splash:** `public/favicon.svg` geometrisinden ?retilir
-  (`scripts/android/generate-icons.mjs`, s?f?r ba??ml?l?k)
+- **Araç zinciri:** Gradle 8.14.3 · AGP 8.13.0 · **JDK 21**
+- **İkonlar/splash:** `public/favicon.svg` geometrisinden üretilir
+  (`scripts/android/generate-icons.mjs`, sıfır bağımlılık)
 
-### ?al??ma modlar? (hibrit)
+### Çalışma modları (hibrit)
 
-| Mod | Nas?l | Ne olur |
+| Mod | Nasıl | Ne olur |
 |---|---|---|
-| **Bundle** (varsay?lan) | hi?bir ?ey yapma | Web varl?klar? APK i?inde. Katalog + dikey player ?al???r. G?reli `/api/...` ?a?r?lar? i?in `VITE_API_BASE_URL` gerekir. |
-| **Remote** | `VEYRA_ANDROID_SERVER_URL=https://...` env **veya** `capacitor.config.ts` i?inde `server.url` sat?r? | APK canl? siteyi y?kler; Clerk auth ve `/api` birebir ?al???r. Uygulama online olur. |
+| **Bundle** (varsayılan) | hiçbir şey yapma | Web varlıkları APK içinde. Katalog + dikey player çalışır. Göreli `/api/...` çağrıları için `VITE_API_BASE_URL` gerekir. |
+| **Remote** | `VEYRA_ANDROID_SERVER_URL=https://...` env **veya** `capacitor.config.ts` içinde `server.url` satırı | APK canlı siteyi yükler; Clerk auth ve `/api` birebir çalışır. Uygulama online olur. |
 
-Clerk oturum ak???n?n WebView i?inde kalabilmesi i?in
-`capacitor.config.ts ? server.allowNavigation` alan?na Clerk/Google hostlar?
-eklenmi?tir.
+Clerk oturum akışının WebView içinde kalabilmesi için
+`capacitor.config.ts → server.allowNavigation` alanına Clerk/Google hostları
+eklenmiştir.
 
 ---
 
-## 2. ?nko?ullar (yerel derleme i?in)
+## 2. Önkoşullar (yerel derleme için)
 
-| Ara? | S?r?m | Not |
+| Araç | Sürüm | Not |
 |---|---|---|
-| Node.js | ? 20 | `pnpm` corepack ile gelir: `corepack enable pnpm` |
-| JDK | **21** | AGP 8.13 zorunlu k?lar (Temurin ?nerilir) |
+| Node.js | ≥ 20 | `pnpm` corepack ile gelir: `corepack enable pnpm` |
+| JDK | **21** | AGP 8.13 zorunlu kılar (Temurin önerilir) |
 | Android SDK | platform **36** + build-tools 36.0.0 | Android Studio kurulumu yeterlidir; yoksa `sdkmanager` |
-| Gradle | 8.14.3 | `android/gradlew` kendi indirir (ilk ?al??t?rmada) |
+| Gradle | 8.14.3 | `android/gradlew` kendi indirir (ilk çalıştırmada) |
 
-`ANDROID_HOME` (veya `ANDROID_SDK_ROOT`) tan?ml? olmal?; Android Studio
-kullan?yorsan?z Gradle SDK'y? otomatik bulur.
+`ANDROID_HOME` (veya `ANDROID_SDK_ROOT`) tanımlı olmalı; Android Studio
+kullanıyorsanız Gradle SDK'yı otomatik bulur.
 
-> Bu depo sandbox'?nda Google/Gradle sunucular? a? d?zeyinde bloke oldu?undan
-> APK **burada** derlenemez; a?a??daki yerel ad?mlar veya GitHub Actions kullan?l?r.
+> Bu depo sandbox'ında Google/Gradle sunucuları ağ düzeyinde bloke olduğundan
+> APK **burada** derlenemez; aşağıdaki yerel adımlar veya GitHub Actions kullanılır.
 
 ---
 
-## 3. H?zl? ba?lang?? (yerel)
+## 3. Hızlı başlangıç (yerel)
 
 ```bash
-# 0) ba??ml?l?klar
+# 0) bağımlılıklar
 corepack pnpm install
 
-# 1) VEYRA ikon/splash ?retimi (bir kez; zaten commit edilmi? durumda)
+# 1) VEYRA ikon/splash üretimi (bir kez; zaten commit edilmiş durumda)
 node scripts/android/generate-icons.mjs
 
-# 2) release keystore (bir kez) ? Git'e girmez
+# 2) release keystore (bir kez) — Git'e girmez
 sh scripts/android/make-keystore.sh
 
-# 3) u?tan uca imzal? APK
+# 3) uçtan uca imzalı APK
 sh scripts/android/build-apk.sh          # veya: pnpm run mobile:apk
 
 # 4) cihaza kur
 adb install -r dist-android/veyra-1.0.0-release.apk
 ```
 
-Tek tek ad?mlar:
+Tek tek adımlar:
 
 ```bash
-sh scripts/android/build-web.sh     # web production derlemesi ? dist/public
-sh scripts/android/sync-android.sh  # cap sync android ? assets/public
+sh scripts/android/build-web.sh     # web production derlemesi → dist/public
+sh scripts/android/sync-android.sh  # cap sync android → assets/public
 cd android && ./gradlew assembleRelease
 ```
 
 Play Store paketi:
 
 ```bash
-sh scripts/android/build-aab.sh     # ? dist-android/*.aab
+sh scripts/android/build-aab.sh     # → dist-android/*.aab
 ```
 
-Android Studio ile a?mak: `pnpm run mobile:open` (veya `android/` klas?r?n? a?).
+Android Studio ile açmak: `pnpm run mobile:open` (veya `android/` klasörünü aç).
 
 ---
 
-## 4. Release imzas?
+## 4. Release imzası
 
-### 4.1 Keystore ?retimi
+### 4.1 Keystore üretimi
 
 `scripts/android/make-keystore.sh`:
 
-- `android/veyra-release.keystore` ? PKCS12, RSA 2048, **10.000 g?n** ge?erlilik
-- `android/keystore.properties` ? Gradle'?n okudu?u dosya (mod 600)
-- ?kisi de `.gitignore` i?indedir; **asla commit etmeyin.**
+- `android/veyra-release.keystore` → PKCS12, RSA 2048, **10.000 gün** geçerlilik
+- `android/keystore.properties` → Gradle'ın okuduğu dosya (mod 600)
+- İkisi de `.gitignore` içindedir; **asla commit etmeyin.**
 
-Gradle imzay? ?u ?ncelikle ??zer:
+Gradle imzayı şu öncelikle çözer:
 
-1. Ortam de?i?kenleri: `VEYRA_KEYSTORE_PATH`, `VEYRA_KEYSTORE_PASSWORD`,
+1. Ortam değişkenleri: `VEYRA_KEYSTORE_PATH`, `VEYRA_KEYSTORE_PASSWORD`,
    `VEYRA_KEY_ALIAS`, `VEYRA_KEY_PASSWORD`
 2. `android/keystore.properties`
-3. Hi?biri yoksa ? **uyar? basar ve imzas?z derler** (build k?r?lmaz).
+3. Hiçbiri yoksa → **uyarı basar ve imzasız derler** (build kırılmaz).
 
-### 4.2 GitHub Actions (?nerilen)
+### 4.2 GitHub Actions (önerilen)
 
 Workflow: `.github/workflows/android-release.yml`
 
-- `main` / `arena/**` push ve PR'larda ? APK+AAB **artifact** olarak y?klenir
-  (Actions ? run ? *Artifacts* ? `veyra-android-<numara>`).
-- `v*` tag'inde ? ayr?ca **GitHub Release** olu?turulur.
+- `main` / `arena/**` push ve PR'larda → APK+AAB **artifact** olarak yüklenir
+  (Actions → run → *Artifacts* → `veyra-android-<numara>`).
+- `v*` tag'inde → ayrıca **GitHub Release** oluşturulur.
 
-Gerekli secret'lar (*Settings ? Secrets and variables ? Actions*):
+Gerekli secret'lar (*Settings → Secrets and variables → Actions*):
 
-| Secret | ??erik |
+| Secret | İçerik |
 |---|---|
-| `VEYRA_KEYSTORE_B64` | `base64 -w0 android/veyra-release.keystore` ??kt?s? |
-| `VEYRA_KEYSTORE_PASSWORD` | keystore ?ifresi |
-| `VEYRA_KEY_ALIAS` | alias (varsay?lan `veyra-release`) |
-| `VEYRA_KEY_PASSWORD` | alias ?ifresi |
-| `VEYRA_CLERK_PUBLISHABLE_KEY` | opsiyonel ? yoksa auth pasif, uygulama ?al???r |
-| `VEYRA_API_BASE_URL` | opsiyonel ? bundle modda `/api` mutlak adresi |
+| `VEYRA_KEYSTORE_B64` | `base64 -w0 android/veyra-release.keystore` çıktısı |
+| `VEYRA_KEYSTORE_PASSWORD` | keystore şifresi |
+| `VEYRA_KEY_ALIAS` | alias (varsayılan `veyra-release`) |
+| `VEYRA_KEY_PASSWORD` | alias şifresi |
+| `VEYRA_CLERK_PUBLISHABLE_KEY` | opsiyonel — yoksa auth pasif, uygulama çalışır |
+| `VEYRA_API_BASE_URL` | opsiyonel — bundle modda `/api` mutlak adresi |
 
-Secret'lar yoksa pipeline **imzas?z** APK ?retir (derlemenin ?al??t???n?
-kan?tlar); imza i?in yukar?dakileri tan?mlay?n.
+Secret'lar yoksa pipeline **imzasız** APK üretir (derlemenin çalıştığını
+kanıtlar); imza için yukarıdakileri tanımlayın.
 
 ### 4.3 Keystore'u kaybederseniz
 
-Play Store'a ayn? imzayla g?ncelleme **y?klenemez**. Keystore'u ve ?ifreleri
-g?venli bir yerde yedekleyin. Play Console'da **Play App Signing** kullan?rsan?z
+Play Store'a aynı imzayla güncelleme **yüklenemez**. Keystore'u ve şifreleri
+güvenli bir yerde yedekleyin. Play Console'da **Play App Signing** kullanırsanız
 upload key'inizi yenileyebilirsiniz (Google destek talebiyle).
 
 ---
 
-## 5. Web uygulamas?yla ili?kisi (neler korundu, neler eklendi)
+## 5. Web uygulamasıyla ilişkisi (neler korundu, neler eklendi)
 
-**Korunan:** t?m sayfalar (`/`, `/drama/:id`, `/watch/...`, `/search`,
+**Korunan:** tüm sayfalar (`/`, `/drama/:id`, `/watch/...`, `/search`,
 `/discover`, `/saved`, `/following`, `/rewards`, `/profile`, `/admin`), koyu
 sinematik tema, alt cam navigasyon, dikey player (play/pause, seek, ses,
-tam ekran, altyaz?, sonraki b?l?m), localStorage ilerleme kayd?.
+tam ekran, altyazı, sonraki bölüm), localStorage ilerleme kaydı.
 
-**Eklenen native davran??lar:**
+**Eklenen native davranışlar:**
 
-- `MainActivity` + `VeyraWebChromeClient`: HTML5 video tam ekran? ger?ekten
-  ?al???r (Capacitor varsay?lan? iste?i iptal eder; biz siyah kapsay?c? +
-  gizli sistem ?ubuklar? + yatay y?nelim uygular?z, ??k??ta geri al?r?z).
-- `SystemBars` (Capacitor 8 g?m?l?): koyu zeminde **beyaz** sistem ?ubu?u ikonlar?.
+- `MainActivity` + `VeyraWebChromeClient`: HTML5 video tam ekranı gerçekten
+  çalışır (Capacitor varsayılanı isteği iptal eder; biz siyah kapsayıcı +
+  gizli sistem çubukları + yatay yönelim uygularız, çıkışta geri alırız).
+- `SystemBars` (Capacitor 8 gömülü): koyu zeminde **beyaz** sistem çubuğu ikonları.
 - Splash: `#111118` zemin + VEYRA rozeti (Android 12+ sistem splash'i dahil).
-- `network_security_config`: yaln?zca HTTPS (cleartext kapal?).
+- `network_security_config`: yalnızca HTTPS (cleartext kapalı).
 
-**Web taraf?nda yap?lan tek de?i?iklik** (build'i k?ran mevcut hatan?n onar?m?):
+**Web tarafında yapılan tek değişiklik** (build'i kıran mevcut hatanın onarımı):
 
-- `@clerk/react` v6 (Clerk Core 3) `SignedIn`/`SignedOut` bile?enlerini
-  kald?rd??? i?in `App.tsx`'te `<Show when="signed-in">` /
-  `<Show when="signed-out">` kullan?ld? (davran?? ayn?).
-- `/admin` sayfas?nda kullan?lan ama import edilmemi? `ShieldCheck` ve `Upload`
-  ikonlar? import listesine eklendi (gizli `ReferenceError` giderildi).
+- `@clerk/react` v6 (Clerk Core 3) `SignedIn`/`SignedOut` bileşenlerini
+  kaldırdığı için `App.tsx`'te `<Show when="signed-in">` /
+  `<Show when="signed-out">` kullanıldı (davranış aynı).
+- `/admin` sayfasında kullanılan ama import edilmemiş `ShieldCheck` ve `Upload`
+  ikonları import listesine eklendi (gizli `ReferenceError` giderildi).
 
-Bunlar?n d???nda **hi?bir mevcut dosya silinmedi veya yeniden yaz?lmad?**;
-`package.json`'a yaln?zca Capacitor ba??ml?l?klar? ve `mobile:*` scriptleri
-eklendi, `.gitignore`'a sat?r eklendi.
-
----
-
-## 6. S?r?m y?kseltme
-
-1. `android/app/build.gradle` ? `versionName` (?r. `1.1.0`) ve `versionCode` (+1)
-   ? veya CI'da tag at?n: `git tag v1.1.0 && git push origin v1.1.0`
-   (CI, tag'den `versionName`, `github.run_number`'dan `versionCode` ?retir).
-2. Web de?i?tiyse `build-web.sh` + `sync-android.sh` zaten `build-apk.sh` i?inde ?al???r.
+Bunların dışında **hiçbir mevcut dosya silinmedi veya yeniden yazılmadı**;
+`package.json`'a yalnızca Capacitor bağımlılıkları ve `mobile:*` scriptleri
+eklendi, `.gitignore`'a satır eklendi.
 
 ---
 
-## 7. S?k kar??la??lan sorunlar
+## 6. Sürüm yükseltme
 
-| Belirti | ??z?m |
+1. `android/app/build.gradle` → `versionName` (ör. `1.1.0`) ve `versionCode` (+1)
+   — veya CI'da tag atın: `git tag v1.1.0 && git push origin v1.1.0`
+   (CI, tag'den `versionName`, `github.run_number`'dan `versionCode` üretir).
+2. Web değiştiyse `build-web.sh` + `sync-android.sh` zaten `build-apk.sh` içinde çalışır.
+
+---
+
+## 7. Sık karşılaşılan sorunlar
+
+| Belirti | Çözüm |
 |---|---|
-| `Unsupported class file major version` / `compileSdk` hatas? | JDK 21 kurulu mu? `java -version` |
-| `SDK location not found` | `ANDROID_HOME` tan?mla veya `android/local.properties` i?ine `sdk.dir=...` |
-| APK kuruluyor ama beyaz ekran | `assets/public/index.html` var m?? `sh scripts/android/sync-android.sh` |
-| Oturum a?ma ?al??m?yor | `VITE_CLERK_PUBLISHABLE_KEY` tan?ml? m?? Remote mod i?in `VEYRA_ANDROID_SERVER_URL` dene |
-| `/api` ?a?r?lar? 404 (bundle mod) | `VITE_API_BASE_URL` ile mutlak backend adresi ver |
-| Google Fonts/posterler y?klenmiyor | Cihazda internet yok; i?erik CDN'lerden gelir (INTERNET izni tan?ml?) |
-| ?mzas?z APK uyar?s? | `make-keystore.sh` veya CI secret'lar? |
+| `Unsupported class file major version` / `compileSdk` hatası | JDK 21 kurulu mu? `java -version` |
+| `SDK location not found` | `ANDROID_HOME` tanımla veya `android/local.properties` içine `sdk.dir=...` |
+| APK kuruluyor ama beyaz ekran | `assets/public/index.html` var mı? `sh scripts/android/sync-android.sh` |
+| Oturum açma çalışmıyor | `VITE_CLERK_PUBLISHABLE_KEY` tanımlı mı? Remote mod için `VEYRA_ANDROID_SERVER_URL` dene |
+| `/api` çağrıları 404 (bundle mod) | `VITE_API_BASE_URL` ile mutlak backend adresi ver |
+| Google Fonts/posterler yüklenmiyor | Cihazda internet yok; içerik CDN'lerden gelir (INTERNET izni tanımlı) |
+| İmzasız APK uyarısı | `make-keystore.sh` veya CI secret'ları |
 
 ---
 
-## 8. Dosya haritas?
+## 8. Dosya haritası
 
 ```
-capacitor.config.ts                  Capacitor + hibrit mod + splash/SystemBars ayarlar?
-android/                             Native Gradle projesi (Capacitor ?ablonu + VEYRA ?zelle?tirmeleri)
-  app/build.gradle                   ?mza ??z?m? + s?r?mleme + ??kt? ad? (veyra-*.apk)
-  keystore.properties.example        ?mza ?ablonu
+capacitor.config.ts                  Capacitor + hibrit mod + splash/SystemBars ayarları
+android/                             Native Gradle projesi (Capacitor şablonu + VEYRA özelleştirmeleri)
+  app/build.gradle                   İmza çözümü + sürümleme + çıktı adı (veyra-*.apk)
+  keystore.properties.example        İmza şablonu
   app/src/main/java/app/veyra/mobile/
-      MainActivity.java              K?pr? + tam ekran chrome client kurulumu
-      VeyraWebChromeClient.java      Ger?ek HTML5 tam ekran uygulamas?
-  app/src/main/res/                  VEYRA ikonlar?, splash, tema, a? g?venli?i
+      MainActivity.java              Köprü + tam ekran chrome client kurulumu
+      VeyraWebChromeClient.java      Gerçek HTML5 tam ekran uygulaması
+  app/src/main/res/                  VEYRA ikonları, splash, tema, ağ güvenliği
 scripts/android/
-  build-web.sh ? sync-android.sh     Derleme + senkron
-  make-keystore.sh                   Release keystore ?retimi
-  build-apk.sh ? build-aab.sh        U?tan uca imzal? ??kt? ? dist-android/
-  generate-icons.mjs                 favicon ? ikon/splash PNG (ba??ml?l?ks?z)
-.github/workflows/android-release.yml  CI: imzal? APK/AAB + GitHub Release
-artifacts/reeldrama/.env.example     Build env de?i?kenleri ?rne?i
+  build-web.sh · sync-android.sh     Derleme + senkron
+  make-keystore.sh                   Release keystore üretimi
+  build-apk.sh · build-aab.sh        Uçtan uca imzalı çıktı → dist-android/
+  generate-icons.mjs                 favicon → ikon/splash PNG (bağımlılıksız)
+.github/workflows/android-release.yml  CI: imzalı APK/AAB + GitHub Release
+artifacts/reeldrama/.env.example     Build env değişkenleri örneği
 ```

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Adaptive icon arka plan?: VEYRA koreli (public/favicon.svg ile ayn?). -->
+    <!-- Adaptive icon arka planı: VEYRA koreli (public/favicon.svg ile aynı). -->
     <color name="ic_launcher_background">#F47E68</color>
 </resources>

@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowManager;
 import android.webkit.WebChromeClient;
 import android.widget.FrameLayout;
 
@@ -17,16 +18,16 @@ import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeWebChromeClient;
 
 /**
- * VEYRA ? tam ekran videoyu ger?ekten ?al??t?ran WebChromeClient.
+ * VEYRA — tam ekran videoyu gerçekten çalıştıran WebChromeClient.
  *
- * Capacitor'?n varsay?lan istemcisi {@code onShowCustomView} i?inde
- * {@code callback.onCustomViewHidden()} ?a??rarak tam ekran iste?ini iptal
- * eder. Bu s?n?f ayn? istemciden t?reyip yaln?zca tam ekran davran???n?
- * de?i?tirir: videoyu siyah bir kapsay?c?ya ta??r, sistem ?ubuklar?n? gizler
- * ve yatay y?nelime ge?er; ??k??ta her ?eyi geri al?r.
+ * Capacitor'ın varsayılan istemcisi {@code onShowCustomView} içinde
+ * {@code callback.onCustomViewHidden()} çağırarak tam ekran isteğini iptal
+ * eder. Bu sınıf aynı istemciden türeyip yalnızca tam ekran davranışını
+ * değiştirir: videoyu siyah bir kapsayıcıya taşır, sistem çubuklarını gizler
+ * ve yatay yönelime geçer; çıkışta her şeyi geri alır.
  *
- * T?m native ?a?r?lar savunmac?d?r (try/catch): beklenmedik bir durumda
- * uygulama ??kmez, tam ekrandan vazge?ilir ve oynatma sat?r i?i devam eder.
+ * Tüm native çağrılar savunmacıdır (try/catch): beklenmedik bir durumda
+ * uygulama çökmez, tam ekrandan vazgeçilir ve oynatma satır içi devam eder.
  */
 public class VeyraWebChromeClient extends BridgeWebChromeClient {
 
@@ -44,7 +45,7 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
     @Override
     public void onShowCustomView(View view, CustomViewCallback callback) {
         if (customView != null) {
-            // Zaten tam ekranday?z; ikinci iste?i reddet.
+            // Zaten tam ekrandayız; ikinci isteği reddet.
             callback.onCustomViewHidden();
             return;
         }
@@ -66,6 +67,9 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
             decorView.addView(container);
             customViewContainer = container;
 
+            // Video izlerken ekran kararmasın (native tam ekran süresince).
+            activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
             hideSystemBars();
             activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         } catch (RuntimeException error) {
@@ -81,6 +85,11 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
         exitCustomView();
     }
 
+    /** MainActivity'nin geri tuşu kararını verebilmesi için durum sorgusu. */
+    public boolean isCustomViewShowing() {
+        return customView != null;
+    }
+
     private void hideSystemBars() {
         try {
             Window window = activity.getWindow();
@@ -91,7 +100,7 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
                     WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
             controller.hide(WindowInsetsCompat.Type.systemBars());
         } catch (RuntimeException ignored) {
-            // Sistem ?ubuklar? gizlenemezse tam ekran yine de ?al???r.
+            // Sistem çubukları gizlenemezse tam ekran yine de çalışır.
         }
     }
 
@@ -105,7 +114,7 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
                 decorView.removeView(customViewContainer);
             }
         } catch (RuntimeException ignored) {
-            // G?r?n?m a?ac? zaten temizlenmi? olabilir.
+            // Görünüm ağacı zaten temizlenmiş olabilir.
         }
         customViewContainer = null;
         customView = null;
@@ -116,9 +125,10 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
             WindowInsetsControllerCompat controller =
                     WindowCompat.getInsetsController(window, window.getDecorView());
             controller.show(WindowInsetsCompat.Type.systemBars());
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         } catch (RuntimeException ignored) {
-            // ?ubuklar geri getirilemezse bile oynatma devam eder.
+            // Çubuklar geri getirilemezse bile oynatma devam eder.
         }
 
         CustomViewCallback callback = customViewCallback;

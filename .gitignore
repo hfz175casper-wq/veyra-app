@@ -49,8 +49,8 @@ Thumbs.db
 .local/
 
 # --- VEYRA Android (Capacitor) ---
-# Not: android/.gitignore senkronlanan web varl?klar?n? ve Gradle ??kt?lar?ndan
-# ?o?unu zaten yok sayar. Buradaki sat?rlar k?k seviyesinde ek g?vencedir.
+# Not: android/.gitignore senkronlanan web varlıklarını ve Gradle çıktılarından
+# çoğunu zaten yok sayar. Buradaki satırlar kök seviyesinde ek güvencedir.
 android/.gradle/
 android/build/
 android/app/build/
@@ -60,6 +60,5 @@ android/keystore.properties
 *.keystore
 *.jks
 dist-android/
-.tools/
 artifacts/reeldrama/.env.local
 artifacts/reeldrama/.env.production.local

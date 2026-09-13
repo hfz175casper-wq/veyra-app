@@ -1,16 +1,16 @@
 #!/usr/bin/env sh
 # ---------------------------------------------------------------------------
-# VEYRA release keystore ?retir (PKCS12, RSA 2048, 10.000 g?n ? 27 y?l).
+# VEYRA release keystore üretir (PKCS12, RSA 2048, 10.000 gün ≈ 27 yıl).
 #
-# ?retilenler (Git'e G?RMEZ):
+# Üretilenler (Git'e GİRMEZ):
 #   android/veyra-release.keystore
 #   android/keystore.properties
 #
-# Kullan?m:
+# Kullanım:
 #   sh scripts/android/make-keystore.sh
 #   VEYRA_KEY_ALIAS=farkli-alias sh scripts/android/make-keystore.sh
 #
-# Mevcut keystore VARSA ?zerine YAZMAZ (g?venlik).
+# Mevcut keystore VARSA üzerine YAZMAZ (güvenlik).
 # ---------------------------------------------------------------------------
 set -eu
 . "$(dirname "$0")/_common.sh"
@@ -21,11 +21,11 @@ PROPERTIES="$VEYRA_ROOT/android/keystore.properties"
 ALIAS="${VEYRA_KEY_ALIAS:-veyra-release}"
 
 if ! command -v keytool >/dev/null 2>&1; then
-  fail "keytool bulunamad? ? JDK kurulu de?il. JDK 21: https://adoptium.net"
+  fail "keytool bulunamadı → JDK kurulu değil. JDK 21: https://adoptium.net"
 fi
 
 if [ -f "$KEYSTORE" ]; then
-  fail "Keystore zaten var: $KEYSTORE ? g?venlik i?in ?zerine yaz?lmaz. Yeniden ?retmek i?in ?nce kendiniz ta??y?n."
+  fail "Keystore zaten var: $KEYSTORE — güvenlik için üzerine yazılmaz. Yeniden üretmek için önce kendiniz taşıyın."
 fi
 
 gen_pw() {
@@ -39,7 +39,7 @@ gen_pw() {
 STORE_PW="${VEYRA_KEYSTORE_PASSWORD:-$(gen_pw)}"
 KEY_PW="${VEYRA_KEY_PASSWORD:-$STORE_PW}"
 
-info "Keystore ?retiliyor: $(basename "$KEYSTORE") (alias=$ALIAS)?"
+info "Keystore üretiliyor: $(basename "$KEYSTORE") (alias=$ALIAS)…"
 keytool -genkeypair -v \
   -keystore "$KEYSTORE" \
   -storetype PKCS12 \
@@ -49,7 +49,7 @@ keytool -genkeypair -v \
   -dname "CN=VEYRA, OU=Mobile, O=VEYRA, L=Istanbul, ST=Istanbul, C=TR"
 
 cat >"$PROPERTIES" <<EOF
-# scripts/android/make-keystore.sh taraf?ndan ?retildi ? Git'e G?RMEZ.
+# scripts/android/make-keystore.sh tarafından üretildi — Git'e GİRMEZ.
 storeFile=veyra-release.keystore
 storePassword=$STORE_PW
 keyAlias=$ALIAS
@@ -58,12 +58,12 @@ EOF
 
 chmod 600 "$KEYSTORE" "$PROPERTIES"
 
-info "Tamam. ?imdi imzal? APK: sh scripts/android/build-apk.sh"
+info "Tamam. Şimdi imzalı APK: sh scripts/android/build-apk.sh"
 info ""
-info "CI (GitHub Actions) i?in secret'lar? tan?mlay?n:"
-info "  VEYRA_KEYSTORE_B64     = $(printf 'base64 -w0 %s' "$KEYSTORE" | sed 's/$/  ??kt?s?/')"
-info "  VEYRA_KEYSTORE_PASSWORD= (yukar?daki storePassword)"
+info "CI (GitHub Actions) için secret'ları tanımlayın:"
+info "  VEYRA_KEYSTORE_B64     = $(printf 'base64 -w0 %s' "$KEYSTORE" | sed 's/$/  çıktısı/')"
+info "  VEYRA_KEYSTORE_PASSWORD= (yukarıdaki storePassword)"
 info "  VEYRA_KEY_ALIAS        = $ALIAS"
-info "  VEYRA_KEY_PASSWORD     = (yukar?daki keyPassword)"
+info "  VEYRA_KEY_PASSWORD     = (yukarıdaki keyPassword)"
 info ""
-warn "?NEML?: keystore'u kaybederseniz Play Store g?ncellemesi Y?KLENEMEZ. Yedekleyin."
+warn "ÖNEMLİ: keystore'u kaybederseniz Play Store güncellemesi YÜKLENEMEZ. Yedekleyin."

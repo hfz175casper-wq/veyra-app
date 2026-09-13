@@ -1,24 +1,24 @@
 #!/usr/bin/env node
 /**
- * VEYRA ? Android ikon & splash ?reticisi
+ * VEYRA — Android ikon & splash üreticisi
  * ===========================================================================
- * SIFIR BA?IMLILIK: yaln?zca Node ?ekirdek mod?lleri (zlib/fs/path) kullan?r.
- * sharp/imagemagick/inkscape kurman?za gerek yok.
+ * SIFIR BAĞIMLILIK: yalnızca Node çekirdek modülleri (zlib/fs/path) kullanır.
+ * sharp/imagemagick/inkscape kurmanıza gerek yok.
  *
  * Ne yapar?
- *   `artifacts/reeldrama/public/favicon.svg` i?indeki VEYRA markas?n?
- *   (yuvarlat?lm?? kare zemin + koyu "V" + alt ?izgi) matematiksel olarak
- *   yeniden ?izer ve Capacitor'?n ?retti?i Android ?ablonundaki varsay?lan
- *   Capacitor ikonlar?n? VEYRA markas?yla DE???T?R?R (ayn? dosya adlar?,
- *   ayn? piksel boyutlar? ? hi?bir dosya silinmez, ?zerine yaz?l?r).
+ *   `artifacts/reeldrama/public/favicon.svg` içindeki VEYRA markasını
+ *   (yuvarlatılmış kare zemin + koyu "V" + alt çizgi) matematiksel olarak
+ *   yeniden çizer ve Capacitor'ın ürettiği Android şablonundaki varsayılan
+ *   Capacitor ikonlarını VEYRA markasıyla DEĞİŞTİRİR (aynı dosya adları,
+ *   aynı piksel boyutları — hiçbir dosya silinmez, üzerine yazılır).
  *
- * ?retilenler (android/app/src/main/res):
- *   mipmap-<density>/ic_launcher.png            ? yuvarlat?lm?? korel rozet (legacy, API < 26)
- *   mipmap-<density>/ic_launcher_round.png      ? dairesel korel rozet
- *   mipmap-<density>/ic_launcher_foreground.png ? adaptive icon ?n plan? (?effaf, g?venli alan i?inde)
- *   drawable[-port|-land]-<density>/splash.png  ? #111118 zemin + ortalanm?? korel VEYRA markas?
+ * Üretilenler (android/app/src/main/res):
+ *   mipmap-<density>/ic_launcher.png            → yuvarlatılmış korel rozet (legacy, API < 26)
+ *   mipmap-<density>/ic_launcher_round.png      → dairesel korel rozet
+ *   mipmap-<density>/ic_launcher_foreground.png → adaptive icon ön planı (şeffaf, güvenli alan içinde)
+ *   drawable[-port|-land]-<density>/splash.png  → #111118 zemin + ortalanmış korel VEYRA markası
  *
- * Kullan?m:
+ * Kullanım:
  *   node scripts/android/generate-icons.mjs
  *   VEYRA_RES_DIR=/ozel/yol node scripts/android/generate-icons.mjs
  */
@@ -39,12 +39,12 @@ const resDir = process.env.VEYRA_RES_DIR
 // ---------------------------------------------------------------------------
 // VEYRA marka paleti (src/index.css + public/favicon.svg ile birebir)
 // ---------------------------------------------------------------------------
-const CORAL = [0xf4, 0x7e, 0x68]; // #F47E68 ? ana vurgu
-const INK = [0x17, 0x17, 0x20]; //   #171720 ? koyu m?rekkep
-const NIGHT = [0x11, 0x11, 0x18]; // #111118 ? uygulama zemini
+const CORAL = [0xf4, 0x7e, 0x68]; // #F47E68 — ana vurgu
+const INK = [0x17, 0x17, 0x20]; //   #171720 — koyu mürekkep
+const NIGHT = [0x11, 0x11, 0x18]; // #111118 — uygulama zemini
 
 // ---------------------------------------------------------------------------
-// Marka geometrisi ? favicon.svg'in 180x180 viewbox'?ndan birebir al?nm??t?r:
+// Marka geometrisi — favicon.svg'in 180x180 viewbox'ından birebir alınmıştır:
 //   <rect width="180" height="180" rx="42" fill="#F47E68"/>
 //   <path d="M49 49L89 124L131 49" stroke="#171720" stroke-width="18" round/>
 //   <path d="M74 103H106"          stroke="#171720" stroke-width="12" round/>
@@ -70,7 +70,7 @@ const STROKES = [
   },
 ];
 
-// Stroke d?? s?n?rlar? (yar?m kal?nl?k dahil) ? markan?n ger?ek kaplad??? alan.
+// Stroke dış sınırları (yarım kalınlık dahil) → markanın gerçek kapladığı alan.
 const MARK_BOUNDS = (() => {
   let minX = Infinity;
   let minY = Infinity;
@@ -94,7 +94,7 @@ const MARK_CENTER = {
 };
 
 // ---------------------------------------------------------------------------
-// K???k yard?mc?: piksel kapsama (coverage) hesaplar? ? 4x4 s?per ?rnekleme
+// Küçük yardımcı: piksel kapsama (coverage) hesapları — 4x4 süper örnekleme
 // ---------------------------------------------------------------------------
 const SAMPLES = 4;
 const SAMPLE_STEP = 1 / SAMPLES;
@@ -108,7 +108,7 @@ function distanceToSegment(px, py, ax, ay, bx, by) {
   return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
 }
 
-/** Viewbox koordinat?nda (0..180) bir nokta VEYRA markas?n?n i?inde mi? */
+/** Viewbox koordinatında (0..180) bir nokta VEYRA markasının içinde mi? */
 function isInsideMark(u, v) {
   for (const stroke of STROKES) {
     const half = stroke.width / 2;
@@ -139,7 +139,7 @@ class Canvas {
   constructor(width, height) {
     this.width = width;
     this.height = height;
-    this.data = Buffer.alloc(width * height * 4); // hepsi ?effaf (0,0,0,0)
+    this.data = Buffer.alloc(width * height * 4); // hepsi şeffaf (0,0,0,0)
   }
 
   fill(color) {
@@ -152,9 +152,9 @@ class Canvas {
   }
 
   /**
-   * Bir kapsama (coverage) fonksiyonunu yaln?zca verilen kutu i?inde
-   * de?erlendirir ve rengi "source-over" ile kar??t?r?r.
-   * B?y?k splash tuvallerinde t?m pikselleri taramamak i?in bbox ?art.
+   * Bir kapsama (coverage) fonksiyonunu yalnızca verilen kutu içinde
+   * değerlendirir ve rengi "source-over" ile karıştırır.
+   * Büyük splash tuvallerinde tüm pikselleri taramamak için bbox şart.
    */
   paint(box, coverageAt, color) {
     const x0 = Math.max(0, Math.floor(box.x0));
@@ -191,11 +191,11 @@ class Canvas {
 }
 
 /**
- * VEYRA markas?n? ?izer.
+ * VEYRA markasını çizer.
  * @param {Canvas} canvas
  * @param {{cx:number, cy:number, width:number, color:number[]}} options
- *   cx/cy  ? markan?n merkezlenece?i nokta (piksel)
- *   width  ? markan?n toplam geni?li?i (piksel)
+ *   cx/cy  → markanın merkezleneceği nokta (piksel)
+ *   width  → markanın toplam genişliği (piksel)
  */
 function drawMark(canvas, { cx, cy, width, color }) {
   const scale = width / MARK_BOUNDS.width;
@@ -228,7 +228,7 @@ function drawCircle(canvas, { cx, cy, radius, color }) {
 }
 
 // ---------------------------------------------------------------------------
-// PNG kodlay?c? (RGBA / 8-bit / interlacesiz) ? zlib ile
+// PNG kodlayıcı (RGBA / 8-bit / interlacesiz) — zlib ile
 // ---------------------------------------------------------------------------
 const CRC_TABLE = (() => {
   const table = new Int32Array(256);
@@ -261,9 +261,9 @@ function encodePng(canvas) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
-  ihdr[8] = 8; // bit derinli?i
+  ihdr[8] = 8; // bit derinliği
   ihdr[9] = 6; // renk tipi: RGBA
-  ihdr[10] = 0; // s?k??t?rma
+  ihdr[10] = 0; // sıkıştırma
   ihdr[11] = 0; // filtre
   ihdr[12] = 0; // interlace
 
@@ -290,10 +290,10 @@ function write(relativePath, canvas) {
 }
 
 // ---------------------------------------------------------------------------
-// Rozet ?reticileri
+// Rozet üreticileri
 // ---------------------------------------------------------------------------
 
-/** Legacy launcher ikonu: korel yuvarlat?lm?? kare + koyu marka (favicon'in birebir h?li). */
+/** Legacy launcher ikonu: korel yuvarlatılmış kare + koyu marka (favicon'in birebir hâli). */
 function legacyIcon(size) {
   const canvas = new Canvas(size, size);
   drawRoundedRect(canvas, {
@@ -304,7 +304,7 @@ function legacyIcon(size) {
     radius: size * CORNER_RADIUS_RATIO,
     color: CORAL,
   });
-  // Marka, favicon'da viewbox'un %55.6's?n? kaplar ? ayn? oran korunur.
+  // Marka, favicon'da viewbox'un %55.6'sını kaplar → aynı oran korunur.
   drawMark(canvas, {
     cx: size / 2,
     cy: size / 2 + size * ((MARK_CENTER.v - VIEWPORT / 2) / VIEWPORT),
@@ -314,7 +314,7 @@ function legacyIcon(size) {
   return canvas;
 }
 
-/** Yuvarlak launcher ikonu: korel daire + koyu marka (hafif k???lt?lm??). */
+/** Yuvarlak launcher ikonu: korel daire + koyu marka (hafif küçültülmüş). */
 function roundIcon(size) {
   const canvas = new Canvas(size, size);
   drawCircle(canvas, { cx: size / 2, cy: size / 2, radius: size / 2, color: CORAL });
@@ -323,9 +323,9 @@ function roundIcon(size) {
 }
 
 /**
- * Adaptive icon ?n plan?: ?effaf zemin + koyu marka.
- * Android 8+ maskesi tuvalin yaln?zca i? ~%61'ini g?sterdi?i i?in marka
- * g?venli alan?n i?inde kalacak ?ekilde %60 geni?li?e ?l?eklenir.
+ * Adaptive icon ön planı: şeffaf zemin + koyu marka.
+ * Android 8+ maskesi tuvalin yalnızca iç ~%61'ini gösterdiği için marka
+ * güvenli alanın içinde kalacak şekilde %60 genişliğe ölçeklenir.
  */
 function adaptiveForeground(size) {
   const canvas = new Canvas(size, size);
@@ -333,7 +333,7 @@ function adaptiveForeground(size) {
   return canvas;
 }
 
-/** Splash: VEYRA'n?n koyu sinematik zemini + ortalanm?? korel marka. */
+/** Splash: VEYRA'nın koyu sinematik zemini + ortalanmış korel marka. */
 function splash(width, height) {
   const canvas = new Canvas(width, height);
   canvas.fill(NIGHT);
@@ -342,7 +342,7 @@ function splash(width, height) {
 }
 
 // ---------------------------------------------------------------------------
-// ??kt? tablolar? ? Capacitor ?ablonunun mevcut boyutlar?yla birebir ayn?
+// Çıktı tabloları — Capacitor şablonunun mevcut boyutlarıyla birebir aynı
 // ---------------------------------------------------------------------------
 const DENSITIES = [
   { folder: 'mipmap-mdpi', icon: 48, foreground: 108 },
@@ -367,8 +367,8 @@ const SPLASHES = [
 ];
 
 if (!existsSync(resDir)) {
-  console.error(`[veyra-icons] res dizini bulunamad?: ${resDir}`);
-  console.error('[veyra-icons] ?nce `pnpm exec cap add android` ?al??t?r?lm?? olmal?.');
+  console.error(`[veyra-icons] res dizini bulunamadı: ${resDir}`);
+  console.error('[veyra-icons] Önce `pnpm exec cap add android` çalıştırılmış olmalı.');
   process.exit(1);
 }
 
@@ -385,6 +385,6 @@ for (const [file, width, height] of SPLASHES) {
   written.push(write(file, splash(width, height)));
 }
 
-console.log(`[veyra-icons] ${written.length} dosya ?retildi ? ${path.relative(repoRoot, resDir)}`);
-console.log(`[veyra-icons] s?re: ${Date.now() - startedAt} ms`);
-for (const file of written) console.log(`  ? ${file}`);
+console.log(`[veyra-icons] ${written.length} dosya üretildi → ${path.relative(repoRoot, resDir)}`);
+console.log(`[veyra-icons] süre: ${Date.now() - startedAt} ms`);
+for (const file of written) console.log(`  ✓ ${file}`);

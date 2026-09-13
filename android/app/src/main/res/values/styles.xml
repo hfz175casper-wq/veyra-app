@@ -2,11 +2,11 @@
 <resources>
 
     <!--
-      VEYRA ? koyu sinematik tema.
-      Capacitor ?ablonunun a??k (Light) tabanlar?, a??l??ta beyaz fla? ve
-      a??k renkli sistem ?ubuklar? ?retti?i i?in tabanlar koyu s?r?mlerle
-      de?i?tirildi. Pencere arka plan? VEYRA'n?n zeminiyle (#111118) ayn?d?r;
-      b?ylece WebView ilk karesini ?izene kadar ekran koyu kal?r.
+      VEYRA — koyu sinematik tema.
+      Capacitor şablonunun açık (Light) tabanları, açılışta beyaz flaş ve
+      açık renkli sistem çubukları ürettiği için tabanlar koyu sürümlerle
+      değiştirildi. Pencere arka planı VEYRA'nın zeminiyle (#111118) aynıdır;
+      böylece WebView ilk karesini çizene kadar ekran koyu kalır.
     -->
 
     <!-- Base application theme. -->
@@ -17,7 +17,7 @@
         <item name="android:windowBackground">@color/veyraNight</item>
         <item name="android:statusBarColor">@color/veyraNight</item>
         <item name="android:navigationBarColor">@color/veyraNight</item>
-        <!-- Koyu zemin ?zerinde A?IK (beyaz) sistem ?ubu?u ikonlar?. -->
+        <!-- Koyu zemin üzerinde AÇIK (beyaz) sistem çubuğu ikonları. -->
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
     </style>
@@ -34,10 +34,10 @@
     </style>
 
     <!--
-      A??l?? temas?.
-      - android:background        ? Android 12 ?ncesi sistem splash'i (splash.png)
-      - windowSplashScreen*       ? Android 12+ sistem splash'i (koyu zemin + VEYRA rozeti)
-      - postSplashScreenTheme     ? splash sonras? temaya yumu?ak ge?i?
+      Açılış teması.
+      - android:background        → Android 12 öncesi sistem splash'i (splash.png)
+      - windowSplashScreen*       → Android 12+ sistem splash'i (koyu zemin + VEYRA rozeti)
+      - postSplashScreenTheme     → splash sonrası temaya yumuşak geçiş
     -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>

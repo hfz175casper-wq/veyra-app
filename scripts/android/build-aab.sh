@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # ---------------------------------------------------------------------------
-# Play Store i?in RELEASE AAB (Android App Bundle) ?retir.
-# Ad?mlar build-apk.sh ile ayn?d?r; tek fark bundleRelease g?revi.
+# Play Store için RELEASE AAB (Android App Bundle) üretir.
+# Adımlar build-apk.sh ile aynıdır; tek fark bundleRelease görevi.
 # ---------------------------------------------------------------------------
 set -eu
 . "$(dirname "$0")/_common.sh"
@@ -11,7 +11,7 @@ sh "$VEYRA_ROOT/scripts/android/build-web.sh"
 sh "$VEYRA_ROOT/scripts/android/sync-android.sh"
 check_android_toolchain
 
-info "Gradle: bundleRelease ?"
+info "Gradle: bundleRelease …"
 cd "$VEYRA_ROOT/android"
 ./gradlew bundleRelease --no-daemon --stacktrace
 
@@ -25,10 +25,10 @@ for aab in "$OUT_DIR"/*.aab; do
   cp "$aab" "$DEST/"
   found=1
 done
-[ "$found" -eq 1 ] || fail "AAB bulunamad?: $OUT_DIR (gradle ??kt?s?n? kontrol edin)"
+[ "$found" -eq 1 ] || fail "AAB bulunamadı: $OUT_DIR (gradle çıktısını kontrol edin)"
 
-info "?retilen AAB'ler ? dist-android/"
+info "Üretilen AAB'ler → dist-android/"
 if command -v sha256sum >/dev/null 2>&1; then
   (cd "$DEST" && sha256sum *.aab)
 fi
-info "Play Console'a dist-android/*.aab y?kleyin. ?mza: Play App Signing ?nerilir (docs/ANDROID.md)."
+info "Play Console'a dist-android/*.aab yükleyin. İmza: Play App Signing önerilir (docs/ANDROID.md)."
