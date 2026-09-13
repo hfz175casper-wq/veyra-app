@@ -47,3 +47,19 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# --- VEYRA Android (Capacitor) ---
+# Not: android/.gitignore senkronlanan web varl?klar?n? ve Gradle ??kt?lar?ndan
+# ?o?unu zaten yok sayar. Buradaki sat?rlar k?k seviyesinde ek g?vencedir.
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/keystore.properties
+*.keystore
+*.jks
+dist-android/
+.tools/
+artifacts/reeldrama/.env.local
+artifacts/reeldrama/.env.production.local

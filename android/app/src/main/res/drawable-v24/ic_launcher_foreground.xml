@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  VEYRA marka markas? (vekt?r).
+  public/favicon.svg geometrisinin birebir Android VectorDrawable ?evirisi:
+    M49 49 L89 124 L131 49  ? stroke #171720, width 18, round cap/join
+    M74 103 H106            ? stroke #171720, width 12, round cap
+  Adaptive icon arka plan? (@color/ic_launcher_background = #F47E68) ?zerinde
+  koyu m?rekkep renginde kullan?l?r.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="180"
+    android:viewportHeight="180">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M49,49 L89,124 L131,49"
+        android:strokeColor="#171720"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="18" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M74,103 L106,103"
+        android:strokeColor="#171720"
+        android:strokeLineCap="round"
+        android:strokeWidth="12" />
+</vector>

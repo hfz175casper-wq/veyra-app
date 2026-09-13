@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  VEYRA a? g?venlik yap?land?rmas?.
+  Uygulama yaln?zca HTTPS konu?ur (capacitor server.androidScheme = https).
+  D?z HTTP (cleartext) trafi?i tamamen kapat?l?r; sertifikalar sistem ma?azas?ndan
+  do?rulan?r. Poster/video gibi uzak CDN kaynaklar? da HTTPS oldu?u i?in bu
+  yap?land?rma i?erik y?klenmesini etkilemez.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

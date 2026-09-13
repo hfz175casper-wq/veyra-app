@@ -6,13 +6,24 @@
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "mobile:build-web": "sh scripts/android/build-web.sh",
+    "mobile:sync": "sh scripts/android/sync-android.sh",
+    "mobile:keystore": "sh scripts/android/make-keystore.sh",
+    "mobile:apk": "sh scripts/android/build-apk.sh",
+    "mobile:aab": "sh scripts/android/build-aab.sh",
+    "mobile:open": "cap open android"
   },
   "private": true,
   "dependencies": {
+    "@capacitor/android": "8.5.1",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/core": "8.5.1",
+    "@capacitor/splash-screen": "8.0.2",
     "@replit/connectors-sdk": "^0.4.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.1",
     "prettier": "^3.9.6",
     "typescript": "~5.9.3"
   }
