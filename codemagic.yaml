@@ -7,15 +7,18 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
+          cd clone
           yarn install
       - name: Build web app
         script: |
+          cd clone
           yarn build
       - name: Sync Capacitor and Build APK
         script: |
+          cd clone
           npx cap sync android
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
     artifacts:
-      - android/app/build/outputs/apk/release/*.apk
+      - clone/android/app/build/outputs/apk/release/*.apk
