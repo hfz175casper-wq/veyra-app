@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+﻿import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   ArrowLeft,
   Bookmark,
@@ -338,7 +338,7 @@ function DramaCard({ drama, compact = false }: { drama: Drama; compact?: boolean
         <Poster drama={drama} className={`${compact ? 'aspect-[.69]' : 'aspect-[.72]'} transition-transform duration-500 group-hover:-translate-y-1 group-hover:shadow-2xl`} />
         <div className="mt-2.5 pr-7">
           <h3 className="truncate font-display text-[15px] leading-tight text-white/90">{drama.title}</h3>
-          <p className="mt-1 truncate text-[11px] text-white/40">{drama.genre.join(' · ')} <span className="text-white/20">·</span> {drama.episodeCount} eps</p>
+          <p className="mt-1 truncate text-[11px] text-white/40">{drama.genre.join(' Â· ')} <span className="text-white/20">Â·</span> {drama.episodeCount} eps</p>
         </div>
       </Link>
       <button
@@ -366,7 +366,7 @@ function HomePage() {
         <div className="relative flex min-h-[455px] max-w-[570px] flex-col justify-end p-6 pb-7 md:min-h-[510px] md:p-10 md:pb-12">
           <div className="mb-4 flex items-center gap-2">
             <span className="rounded-full bg-[#f47e68] px-2.5 py-1 font-mono-ui text-[9px] font-bold uppercase tracking-[.14em] text-[#15151f]">Featured tonight</span>
-            <span className="font-mono-ui text-[10px] uppercase tracking-[.15em] text-white/50">8 episodes · 1h 12m</span>
+            <span className="font-mono-ui text-[10px] uppercase tracking-[.15em] text-white/50">8 episodes Â· 1h 12m</span>
           </div>
           <h1 className="max-w-[500px] font-display text-[3.25rem] leading-[.88] tracking-[-.065em] text-[#fcf4e8] sm:text-[4.4rem]">The Last<br />Voicemail</h1>
           <p className="mt-5 max-w-[430px] text-sm leading-relaxed text-white/62 md:text-[15px]">{featured.description}</p>
@@ -423,7 +423,7 @@ function EpisodeRow({ drama, episode }: { drama: Drama; episode: Episode }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="font-display text-[15px] text-white/90">{drama.title}</p>
-        <p className="mt-0.5 truncate text-[11px] text-white/40">{episode.title} <span className="text-white/20">·</span> {episode.runtime}</p>
+        <p className="mt-0.5 truncate text-[11px] text-white/40">{episode.title} <span className="text-white/20">Â·</span> {episode.runtime}</p>
       </div>
       <Play size={15} className="mr-2 text-white/30 transition-colors group-hover:text-[#f47e68]" fill="currentColor" />
     </Link>
@@ -453,7 +453,7 @@ function DramaDetailPage() {
             <h1 className="mt-3 max-w-[560px] font-display text-[3rem] leading-[.88] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.7rem]">{drama.title}</h1>
             <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px] text-white/55">
               <span className="rounded bg-white/10 px-2 py-1 text-white/75">{drama.rating}</span>
-              <span>{drama.year}</span><span className="text-white/20">•</span><span>{drama.episodeCount} episodes</span>
+              <span>{drama.year}</span><span className="text-white/20">â€¢</span><span>{drama.episodeCount} episodes</span>
               {drama.genre.map((item) => <span key={item} className="rounded-full border border-white/10 px-2 py-1">{item}</span>)}
             </div>
             <p className="mt-5 max-w-[590px] text-sm leading-relaxed text-white/65">{drama.description}</p>
@@ -565,7 +565,7 @@ function FollowingPage() {
   }, []);
   return (
     <div className="animate-rise">
-      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Your watch circle</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.2rem]">Following<span className="text-[#f47e68]">.</span></h1><p className="mt-4 text-sm text-white/45">{loading ? 'Loading your followed stories…' : `${following.length} stories in your circle`}</p></div>
+      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Your watch circle</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.2rem]">Following<span className="text-[#f47e68]">.</span></h1><p className="mt-4 text-sm text-white/45">{loading ? 'Loading your followed storiesâ€¦' : `${following.length} stories in your circle`}</p></div>
       {following.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{following.map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}
     </div>
   );
@@ -595,7 +595,7 @@ function RewardsPage() {
         <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-3"><Coins className="text-[#e7b769]" /><div><p className="text-xs text-white/45">Available balance</p><p className="mt-1 font-display text-3xl text-white">Sign in to view</p></div></div><p className="mt-5 text-xs leading-relaxed text-white/40">Coins are granted by verified server-side ledger entries. Payments and ads remain unavailable until a provider is configured.</p></section>
         <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#f47e68]">Missions</p>{data.missions.length ? data.missions.map((mission) => <div key={mission.id} className="mt-4 flex items-center justify-between gap-3"><div><p className="text-sm text-white/85">{mission.name}</p><p className="mt-1 text-xs text-white/40">{mission.description}</p></div><span className="font-mono-ui text-[10px] text-[#e7b769]">{mission.progress?.progress ?? 0}/{mission.target}</span></div>) : <p className="mt-5 text-sm text-white/40">Missions will appear here when the catalog team activates them.</p>}</section>
       </div>
-      <section className="mt-8"><SectionHeader eyebrow="Collect" title="Available rewards" href="/rewards" /><div className="grid gap-3 sm:grid-cols-2">{data.rewards.length ? data.rewards.map((reward) => <div key={reward.id} className="flex items-center justify-between rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div><p className="font-display text-lg text-white/90">{reward.name}</p><p className="mt-1 text-xs text-[#e7b769]">+{reward.coinAmount} coins{reward.bonusAmount ? ` · +${reward.bonusAmount} bonus` : ''}</p></div><button type="button" onClick={() => claim(reward.key)} className="rounded-full bg-[#e7b769] px-3 py-2 text-xs font-semibold text-[#171720]">Claim</button></div>) : <p className="text-sm text-white/40">No rewards are active yet.</p>}</div></section>
+      <section className="mt-8"><SectionHeader eyebrow="Collect" title="Available rewards" href="/rewards" /><div className="grid gap-3 sm:grid-cols-2">{data.rewards.length ? data.rewards.map((reward) => <div key={reward.id} className="flex items-center justify-between rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div><p className="font-display text-lg text-white/90">{reward.name}</p><p className="mt-1 text-xs text-[#e7b769]">+{reward.coinAmount} coins{reward.bonusAmount ? ` Â· +${reward.bonusAmount} bonus` : ''}</p></div><button type="button" onClick={() => claim(reward.key)} className="rounded-full bg-[#e7b769] px-3 py-2 text-xs font-semibold text-[#171720]">Claim</button></div>) : <p className="text-sm text-white/40">No rewards are active yet.</p>}</div></section>
     </div>
   );
 }
@@ -627,7 +627,7 @@ function AdminPage() {
     fetch('/api/admin/overview', { credentials: 'include' }).then(async (response) => { const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.error ?? 'Admin access denied'); setData(body); }).catch((reason: Error) => setError(reason.message));
   }, [isSignedIn]);
   if (!isSignedIn) return <AuthPrompt title="VEYRA Console" copy="This is a protected administration area. Sign in with an authorized admin account." />;
-  return <div className="animate-rise"><div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Protected workspace</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8]">Admin Console<span className="text-[#f47e68]">.</span></h1></div><span className="inline-flex items-center gap-2 rounded-full border border-[#76b7bd]/30 bg-[#76b7bd]/10 px-3 py-2 text-xs text-[#a9d6d8]"><ShieldCheck size={14} /> Server protected</span></div>{error ? <div className="rounded-xl border border-[#f47e68]/30 bg-[#f47e68]/10 px-4 py-3 text-sm text-[#ffb2a3]">{error}</div> : <><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{[['Users', data?.users ?? '—'], ['Series', data?.series ?? '—'], ['Episodes', data?.episodes ?? '—'], ['Events', data?.events ?? '—'], ['Revenue', data ? `$${(data.revenueMinor / 100).toFixed(2)}` : '—']].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/[.08] bg-white/[.03] p-4"><p className="text-xs text-white/40">{label}</p><p className="mt-2 font-display text-2xl text-white">{value}</p></div>)}</div><div className="mt-8 grid gap-5 lg:grid-cols-[1fr_.8fr]"><section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-2"><Library size={16} className="text-[#f47e68]" /><h2 className="font-display text-xl text-white">Catalog operations</h2></div><p className="mt-3 text-sm leading-relaxed text-white/45">Series, episode, media, user, transaction, monetization, reward, and analytics endpoints are now available under the protected admin API.</p><div className="mt-5 grid grid-cols-2 gap-2 text-xs text-white/55"><span className="rounded-lg bg-white/[.04] px-3 py-2">Catalog CRUD surface</span><span className="rounded-lg bg-white/[.04] px-3 py-2">User moderation</span><span className="rounded-lg bg-white/[.04] px-3 py-2">Coin ledger review</span><span className="rounded-lg bg-white/[.04] px-3 py-2">Analytics summary</span></div></section><section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-2"><Upload size={16} className="text-[#e7b769]" /><h2 className="font-display text-xl text-white">Media intake</h2></div><p className="mt-3 text-sm leading-relaxed text-white/45">Uploads use a server-issued presigned URL. No storage credentials are exposed to the browser.</p><label className="mt-5 flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-white/15 bg-white/[.025] px-3 py-3 text-xs text-white/65 hover:border-[#e7b769]/50"><span>{isUploading ? `Uploading ${progress}%` : 'Choose MP4, HLS manifest, image, or subtitle'}</span><input type="file" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadFile(file); }} /></label>{uploadNote && <p className="mt-3 text-xs text-[#a9d6d8]">{uploadNote}</p>}</section></div></>}</div>;
+  return <div className="animate-rise"><div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Protected workspace</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8]">Admin Console<span className="text-[#f47e68]">.</span></h1></div><span className="inline-flex items-center gap-2 rounded-full border border-[#76b7bd]/30 bg-[#76b7bd]/10 px-3 py-2 text-xs text-[#a9d6d8]"><ShieldCheck size={14} /> Server protected</span></div>{error ? <div className="rounded-xl border border-[#f47e68]/30 bg-[#f47e68]/10 px-4 py-3 text-sm text-[#ffb2a3]">{error}</div> : <><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{[['Users', data?.users ?? 'â€”'], ['Series', data?.series ?? 'â€”'], ['Episodes', data?.episodes ?? 'â€”'], ['Events', data?.events ?? 'â€”'], ['Revenue', data ? `$${(data.revenueMinor / 100).toFixed(2)}` : 'â€”']].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/[.08] bg-white/[.03] p-4"><p className="text-xs text-white/40">{label}</p><p className="mt-2 font-display text-2xl text-white">{value}</p></div>)}</div><div className="mt-8 grid gap-5 lg:grid-cols-[1fr_.8fr]"><section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-2"><Library size={16} className="text-[#f47e68]" /><h2 className="font-display text-xl text-white">Catalog operations</h2></div><p className="mt-3 text-sm leading-relaxed text-white/45">Series, episode, media, user, transaction, monetization, reward, and analytics endpoints are now available under the protected admin API.</p><div className="mt-5 grid grid-cols-2 gap-2 text-xs text-white/55"><span className="rounded-lg bg-white/[.04] px-3 py-2">Catalog CRUD surface</span><span className="rounded-lg bg-white/[.04] px-3 py-2">User moderation</span><span className="rounded-lg bg-white/[.04] px-3 py-2">Coin ledger review</span><span className="rounded-lg bg-white/[.04] px-3 py-2">Analytics summary</span></div></section><section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-2"><Upload size={16} className="text-[#e7b769]" /><h2 className="font-display text-xl text-white">Media intake</h2></div><p className="mt-3 text-sm leading-relaxed text-white/45">Uploads use a server-issued presigned URL. No storage credentials are exposed to the browser.</p><label className="mt-5 flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-white/15 bg-white/[.025] px-3 py-3 text-xs text-white/65 hover:border-[#e7b769]/50"><span>{isUploading ? `Uploading ${progress}%` : 'Choose MP4, HLS manifest, image, or subtitle'}</span><input type="file" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadFile(file); }} /></label>{uploadNote && <p className="mt-3 text-xs text-[#a9d6d8]">{uploadNote}</p>}</section></div></>}</div>;
 }
 
 function EmptySaved() {
@@ -784,7 +784,7 @@ function WatchPage() {
           )}
           <div className="relative flex items-center justify-between px-5 py-5 sm:px-8">
             <Link href={`/drama/${drama.id}`} className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/20 transition-colors hover:border-white/50" aria-label="Back to drama" data-testid="link-player-back"><ArrowLeft size={16} /></Link>
-            <div className="text-center"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/50">{drama.title}</p><p className="mt-1 text-xs text-white/80">Episode {episode.number} <span className="text-white/30">·</span> {episode.title}</p></div>
+            <div className="text-center"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/50">{drama.title}</p><p className="mt-1 text-xs text-white/80">Episode {episode.number} <span className="text-white/30">Â·</span> {episode.title}</p></div>
             <button type="button" className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/20 text-white/75 transition-colors hover:border-white/50" aria-label="More options" data-testid="button-player-more"><MoreHorizontal size={17} /></button>
           </div>
           <div className="relative flex flex-1 items-center justify-center">
@@ -819,7 +819,7 @@ function WatchPage() {
                 <div className="relative h-12 w-[76px] shrink-0 overflow-hidden rounded-lg bg-cover bg-center" style={{ backgroundImage: `linear-gradient(90deg, rgba(10,10,16,.1), rgba(10,10,16,.7)), url("${drama.image}")` }}>
                   <span className={`absolute inset-0 grid place-items-center ${entry.number === episode.number ? 'text-[#f47e68]' : 'text-white/0 group-hover:text-white'}`}><CirclePlay size={20} /></span>
                 </div>
-                <div className="min-w-0"><p className={`truncate text-xs font-medium ${entry.number === episode.number ? 'text-[#f47e68]' : 'text-white/75'}`}>{String(entry.number).padStart(2, '0')} <span className="ml-1 text-white/25">·</span> {entry.title}</p><p className="mt-1 text-[10px] text-white/35">{entry.runtime}</p></div>
+                <div className="min-w-0"><p className={`truncate text-xs font-medium ${entry.number === episode.number ? 'text-[#f47e68]' : 'text-white/75'}`}>{String(entry.number).padStart(2, '0')} <span className="ml-1 text-white/25">Â·</span> {entry.title}</p><p className="mt-1 text-[10px] text-white/35">{entry.runtime}</p></div>
               </Link>
             ))}
           </div>
@@ -905,3 +905,4 @@ function App() {
 }
 
 export default App;
+
