@@ -7,10 +7,11 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          YARN_IGNORE_WORKSPACE_ROOT_CHECK=1 yarn install
+          corepack enable
+          pnpm install
       - name: Build web app
         script: |
-          YARN_IGNORE_WORKSPACE_ROOT_CHECK=1 yarn build
+          pnpm run build
       - name: Sync Capacitor and Build APK
         script: |
           npx cap sync android
