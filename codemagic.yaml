@@ -7,18 +7,15 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          cd clone
-          yarn install
+          YARN_IGNORE_WORKSPACE_ROOT_CHECK=1 yarn install
       - name: Build web app
         script: |
-          cd clone
-          yarn build
+          YARN_IGNORE_WORKSPACE_ROOT_CHECK=1 yarn build
       - name: Sync Capacitor and Build APK
         script: |
-          cd clone
           npx cap sync android
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease
     artifacts:
-      - clone/android/app/build/outputs/apk/release/*.apk
+      - android/app/build/outputs/apk/release/*.apk
