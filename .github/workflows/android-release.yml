@@ -105,7 +105,7 @@ jobs:
             echo "::warning::Keystore secret tanımlı değil → release İMZASIZ derlenir (test amaçlı)."
           fi
 
-      - name: Gradle — assembleRelease + bundleRelease
+      - name: Gradle — assembleDebug + assembleRelease + bundleRelease
         env:
           VEYRA_VERSION_CODE: ${{ github.run_number }}
         run: |
@@ -113,23 +113,33 @@ jobs:
           if [ "$GITHUB_REF_TYPE" != "tag" ]; then VERSION_NAME="1.0.0"; fi
           echo "VEYRA_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
           cd android
-          ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
+          ./gradlew assembleDebug assembleRelease bundleRelease --no-daemon --stacktrace
 
       - name: Çıktıları topla
         run: |
-          mkdir -p dist-android
+          mkdir -p dist-android dist-android-debug
           cp android/app/build/outputs/apk/release/*.apk dist-android/ || true
           cp android/app/build/outputs/bundle/release/*.aab dist-android/ || true
-          ls -la dist-android
-          test -n "$(ls -A dist-android)" || { echo "::error::Hiç çıktı bulunamadı"; exit 1; }
+          cp android/app/build/outputs/apk/debug/*.apk dist-android-debug/ || true
+          ls -la dist-android dist-android-debug
+          test -n "$(ls -A dist-android)" || { echo "::error::Hiç release çıktısı bulunamadı"; exit 1; }
+          test -n "$(ls -A dist-android-debug)" || { echo "::error::Hiç debug çıktısı bulunamadı"; exit 1; }
 
-      - name: Artifact olarak yükle
+      - name: Artifact olarak yükle (release APK + AAB)
         uses: actions/upload-artifact@v4
         with:
           name: veyra-android-${{ github.run_number }}
           path: dist-android/
           if-no-files-found: error
           retention-days: 30
+
+      - name: Artifact olarak yükle (debug APK)
+        uses: actions/upload-artifact@v4
+        with:
+          name: veyra-android-debug-${{ github.run_number }}
+          path: dist-android-debug/
+          if-no-files-found: error
+          retention-days: 14
 
       - name: İmza doğrula (imzalıysa)
         if: env.VEYRA_SIGNED == 'true'
