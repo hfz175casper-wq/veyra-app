@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import {
+  AlertTriangle,
   ArrowLeft,
   Bookmark,
   BookmarkCheck,
@@ -12,9 +13,11 @@ import {
   Home as HomeIcon,
   Library,
   Maximize2,
+  Minimize2,
   MoreHorizontal,
   Pause,
   Play,
+  RotateCw,
   Search,
   ShieldCheck,
   Sparkles,
@@ -644,15 +647,49 @@ function EmptySaved() {
   );
 }
 
+type WakeLockSentinel = { release: () => Promise<void> };
+type WakeLockNavigator = Navigator & {
+  wakeLock?: { request: (type: 'screen') => Promise<WakeLockSentinel> };
+};
+
+const CONTROLS_AUTO_HIDE_MS = 3200;
+const NEXT_EPISODE_COUNTDOWN = 5;
+const PROGRESS_SAVE_INTERVAL_SECONDS = 3;
+
+const formatTimestamp = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const total = Math.floor(seconds);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
+
+const describeVideoError = (code?: number) => {
+  switch (code) {
+    case MediaError.MEDIA_ERR_ABORTED:
+      return 'Playback was interrupted. Tap try again to resume.';
+    case MediaError.MEDIA_ERR_NETWORK:
+      return 'A network problem interrupted the stream. Check your connection and retry.';
+    case MediaError.MEDIA_ERR_DECODE:
+      return 'This episode could not be decoded on this device.';
+    case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+      return 'This video format is not supported on this device.';
+    default:
+      return 'The episode could not be loaded right now.';
+  }
+};
+
 function WatchPage() {
   const { dramaId, episode: episodeParam } = useParams<{ dramaId: string; episode: string }>();
+  const [, navigate] = useLocation();
   const drama = dramas.find((entry) => entry.id === dramaId) ?? dramas[0];
   const selectedNumber = Math.max(1, Number(episodeParam) || 1);
   const episodeIndex = Math.min(selectedNumber - 1, drama.episodes.length - 1);
   const episode = drama.episodes[episodeIndex];
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<HTMLElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
   const resumePositionRef = useRef(0);
+  const lastSavedRef = useRef(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const progressKey = `veyra:progress:${drama.id}:${episode.number}`;
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
@@ -660,25 +697,125 @@ function WatchPage() {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [episodeFinished, setEpisodeFinished] = useState(false);
+  const [buffering, setBuffering] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const [controlsNonce, setControlsNonce] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const nextEpisode = drama.episodes[episodeIndex + 1];
   const previousEpisode = drama.episodes[episodeIndex - 1];
 
+  // --- bölüm değişince durumu sıfırla + kaldığı yeriyi hatırla ---
   useEffect(() => {
     const storedProgress = Number(localStorage.getItem(progressKey) ?? 0);
     resumePositionRef.current = Number.isFinite(storedProgress) ? storedProgress : 0;
+    lastSavedRef.current = 0;
     localStorage.setItem(`veyra:last-episode:${drama.id}`, String(episode.number));
     setProgress(0);
     setDuration(0);
     setCurrentTime(0);
     setEpisodeFinished(false);
     setPlaying(false);
-  }, [progressKey]);
+    setBuffering(true);
+    setLoadError(null);
+    setControlsVisible(true);
+    setCountdown(null);
+  }, [progressKey, drama.id, episode.number]);
 
-  const saveProgress = (currentTime: number) => {
-    if (Number.isFinite(currentTime) && currentTime > 0) {
-      localStorage.setItem(progressKey, String(currentTime));
+  const saveProgress = (seconds: number) => {
+    if (Number.isFinite(seconds) && seconds > 0) {
+      lastSavedRef.current = seconds;
+      localStorage.setItem(progressKey, String(seconds));
     }
   };
+
+  /** Kontrolleri gösterir ve otomatik gizleme sayacını sıfırlar. */
+  const pokeControls = () => {
+    setControlsVisible(true);
+    setControlsNonce((current) => current + 1);
+  };
+
+  // --- ekran uyanık kalsın (Screen Wake Lock; desteklenmeyen tarayıcıda sessizce atlanır) ---
+  useEffect(() => {
+    if (!playing) {
+      wakeLockRef.current?.release().catch(() => undefined);
+      wakeLockRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    const request = () => {
+      const navigatorWithWakeLock = navigator as WakeLockNavigator;
+      if (!navigatorWithWakeLock.wakeLock) return;
+      navigatorWithWakeLock.wakeLock
+        .request('screen')
+        .then((sentinel) => {
+          if (cancelled) sentinel.release().catch(() => undefined);
+          else wakeLockRef.current = sentinel;
+        })
+        .catch(() => undefined);
+    };
+    request();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') request();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', handleVisibility);
+      wakeLockRef.current?.release().catch(() => undefined);
+      wakeLockRef.current = null;
+    };
+  }, [playing]);
+
+  // --- kontroller: oynatırken bir süre sonra kendiliğinden gizlenir ---
+  useEffect(() => {
+    if (!playing || !controlsVisible) return;
+    const timer = window.setTimeout(() => setControlsVisible(false), CONTROLS_AUTO_HIDE_MS);
+    return () => window.clearTimeout(timer);
+  }, [playing, controlsVisible, controlsNonce]);
+
+  // --- bölüm bittiğinde geri sayım ile sonraki bölüme geç ---
+  useEffect(() => {
+    if (!episodeFinished || !nextEpisode) {
+      setCountdown(null);
+      return;
+    }
+    setCountdown(NEXT_EPISODE_COUNTDOWN);
+    const timer = window.setInterval(() => {
+      setCountdown((current) => {
+        if (current === null) return null;
+        if (current <= 1) {
+          window.clearInterval(timer);
+          navigate(`/watch/${drama.id}/${nextEpisode.number}`);
+          return null;
+        }
+        return current - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [episodeFinished, nextEpisode, drama.id, navigate]);
+
+  // --- fullscreen durumunu takip et (tarayıcı + Escape) ---
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  // --- sekme kapanırken ilerlemeyi kaybetme ---
+  useEffect(() => {
+    const flush = () => {
+      const video = videoRef.current;
+      if (video && Number.isFinite(video.currentTime) && video.currentTime > 0) saveProgress(video.currentTime);
+    };
+    window.addEventListener('pagehide', flush);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      flush();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progressKey]);
 
   const handleLoadedMetadata = () => {
     const video = videoRef.current;
@@ -695,16 +832,31 @@ function WatchPage() {
 
   const togglePlay = async () => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || loadError) return;
     if (video.paused) {
+      setBuffering(true);
       try {
         await video.play();
       } catch {
         setPlaying(false);
+        setBuffering(false);
       }
     } else {
       video.pause();
     }
+  };
+
+  // Yüzeye dokunma: duraklatılmışsa oynatır, oynuyorsa kontrolleri aç/kapa.
+  const handleSurfaceClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest('button, a, input, [data-player-ui]')) return;
+    if (loadError || episodeFinished) return;
+    if (!playing) {
+      pokeControls();
+      void togglePlay();
+      return;
+    }
+    setControlsVisible((current) => !current);
   };
 
   const handleSeek = (value: number) => {
@@ -712,7 +864,9 @@ function WatchPage() {
     if (!video || !duration) return;
     video.currentTime = (value / 100) * duration;
     setProgress(value);
+    setCurrentTime(video.currentTime);
     saveProgress(video.currentTime);
+    pokeControls();
   };
 
   const handleTimeUpdate = () => {
@@ -720,11 +874,30 @@ function WatchPage() {
     if (!video || !video.duration) return;
     setCurrentTime(video.currentTime);
     setProgress((video.currentTime / video.duration) * 100);
-    saveProgress(video.currentTime);
+    if (Math.abs(video.currentTime - lastSavedRef.current) >= PROGRESS_SAVE_INTERVAL_SECONDS) {
+      saveProgress(video.currentTime);
+    }
   };
 
-  const handleFullscreen = () => {
-    playerRef.current?.requestFullscreen?.();
+  const handleFullscreen = async () => {
+    pokeControls();
+    const frame = frameRef.current;
+    const video = videoRef.current;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+        return;
+      }
+      if (frame?.requestFullscreen) {
+        await frame.requestFullscreen();
+        return;
+      }
+      // iOS Safari: öğe fullscreen yok, videoyu native tam ekrana aç.
+      const legacyVideo = video as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+      legacyVideo?.webkitEnterFullscreen?.();
+    } catch {
+      // WebView zaten native tam ekran yolunu (onShowCustomView) kullanır.
+    }
   };
 
   const handleEnded = () => {
@@ -732,80 +905,229 @@ function WatchPage() {
     setProgress(100);
     setCurrentTime(duration);
     setEpisodeFinished(true);
-    localStorage.setItem(progressKey, String(duration || 0));
+    setControlsVisible(true);
+    saveProgress(duration || 0);
   };
 
-  const secondsRemaining = duration > 0 ? duration - currentTime : Number.POSITIVE_INFINITY;
-  const showNextEpisode = Boolean(nextEpisode && (episodeFinished || secondsRemaining <= Math.min(10, Math.max(4, duration * 0.12))));
+  const handleRetry = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setLoadError(null);
+    setBuffering(true);
+    setEpisodeFinished(false);
+    video.load();
+    void video.play().catch(() => setPlaying(false));
+  };
+
+  const handleReplay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    setEpisodeFinished(false);
+    setCountdown(null);
+    video.currentTime = 0;
+    setProgress(0);
+    saveProgress(0);
+    void togglePlay();
+  };
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuted(video.muted);
+    pokeControls();
+  };
+
+  const showControls = controlsVisible || !playing;
   const activeCaption = episode.captions.find((caption) => caption.language === 'en' && currentTime >= caption.start && currentTime <= caption.end);
+  const timeLabel = duration > 0 ? `${formatTimestamp(currentTime)} / ${formatTimestamp(duration)}` : episode.runtime;
 
   return (
     <div className="grain min-h-[100dvh] bg-[#0d0d13] text-white">
       <div className="mx-auto flex min-h-[100dvh] max-w-[1440px] flex-col lg:flex-row">
-        <section ref={playerRef} className="relative flex min-h-[100dvh] flex-1 flex-col overflow-hidden bg-[#181622] lg:min-h-[100dvh]" data-testid="player-surface">
-          <video
-            key={`${drama.id}-${episode.number}`}
-            ref={videoRef}
-            className="absolute inset-0 h-full w-full bg-[#09090d] object-contain"
-            src={episode.videoUrl}
-            poster={drama.image}
-            playsInline
-            preload="metadata"
-            onLoadedMetadata={handleLoadedMetadata}
-            onTimeUpdate={handleTimeUpdate}
-            onPlay={() => setPlaying(true)}
-            onPause={() => {
-              setPlaying(false);
-              if (videoRef.current) saveProgress(videoRef.current.currentTime);
-            }}
-            onEnded={handleEnded}
-            onError={() => setPlaying(false)}
-            aria-label={`${drama.title}, episode ${episode.number}: ${episode.title}`}
-          />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(13,13,19,.62),rgba(13,13,19,.04)_38%,rgba(13,13,19,.95)_100%)]" />
-          {activeCaption && (
-            <div className="pointer-events-none absolute inset-x-5 bottom-40 z-10 flex justify-center sm:bottom-44" aria-live="polite" data-testid="player-caption">
-              <div className="max-w-[88%] rounded-md bg-black/45 px-3 py-1.5 text-center text-sm leading-snug text-white shadow-lg backdrop-blur-sm">
-                {activeCaption.text}
-                <span className="ml-2 font-mono-ui text-[9px] uppercase tracking-[.16em] text-white/45">{activeCaption.language}</span>
-              </div>
-            </div>
-          )}
-          {episodeFinished && nextEpisode && (
-            <div className="absolute inset-x-5 bottom-36 z-20 flex justify-center sm:bottom-40" data-testid="player-complete-card">
-              <div className="flex items-center gap-3 rounded-2xl border border-white/15 bg-[#111118]/85 px-4 py-3 shadow-2xl backdrop-blur-xl">
-                <div>
-                  <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#f47e68]">Episode complete</p>
-                  <p className="mt-1 text-xs text-white/65">Ready for the next chapter?</p>
+        <section ref={playerRef} className="relative flex min-h-[100dvh] flex-1 flex-col overflow-hidden bg-black lg:min-h-[100dvh]" data-testid="player-surface">
+          {/* 9:16 dikey sahne: mobilde tam ekran, desktop'ta ortalanmış dikey çerçeve */}
+          <div className="relative flex w-full flex-1 items-center justify-center overflow-hidden bg-black">
+            <div
+              ref={frameRef}
+              className="veyra-stage relative overflow-hidden bg-black"
+              onClick={handleSurfaceClick}
+              onPointerMove={(event) => {
+                if (event.pointerType === 'mouse' && playing) pokeControls();
+              }}
+            >
+              <video
+                key={`${drama.id}-${episode.number}`}
+                ref={videoRef}
+                className="absolute inset-0 h-full w-full bg-[#09090d] object-cover"
+                src={episode.videoUrl}
+                poster={drama.image}
+                playsInline
+                preload="metadata"
+                onLoadedMetadata={handleLoadedMetadata}
+                onTimeUpdate={handleTimeUpdate}
+                onPlay={() => {
+                  setPlaying(true);
+                  setEpisodeFinished(false);
+                }}
+                onPause={() => {
+                  setPlaying(false);
+                  if (videoRef.current) saveProgress(videoRef.current.currentTime);
+                }}
+                onWaiting={() => setBuffering(true)}
+                onPlaying={() => {
+                  setBuffering(false);
+                  setLoadError(null);
+                }}
+                onCanPlay={() => setBuffering(false)}
+                onEnded={handleEnded}
+                onError={(event) => {
+                  const video = event.currentTarget;
+                  setBuffering(false);
+                  setPlaying(false);
+                  setLoadError(describeVideoError(video.error?.code));
+                }}
+                aria-label={`${drama.title}, episode ${episode.number}: ${episode.title}`}
+              />
+
+              {/* okunabilirlik gradyanı — kontroller gizliyken de alt bölge hafif karartılır */}
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(9,9,13,.72),transparent)]" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-56 bg-[linear-gradient(0deg,rgba(9,9,13,.94),rgba(9,9,13,.45)_55%,transparent)]" />
+
+              {/* yükleme göstergesi */}
+              {buffering && !loadError && !episodeFinished && (
+                <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <span className="h-11 w-11 animate-spin rounded-full border-2 border-white/15 border-t-[#f47e68]" aria-hidden="true" />
+                    <span className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-white/50">Loading episode</span>
+                  </div>
                 </div>
-                <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#f47e68] px-3 py-2 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="link-player-next-complete">Next Episode <ChevronRight size={13} /></Link>
+              )}
+
+              {/* hata durumu */}
+              {loadError && (
+                <div className="absolute inset-0 z-40 grid place-items-center bg-[#0d0d13]/88 px-6 backdrop-blur-sm">
+                  <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#111118]/92 p-6 text-center shadow-2xl" data-testid="player-error-card">
+                    <AlertTriangle size={26} className="mx-auto text-[#f47e68]" />
+                    <h3 className="mt-3 font-display text-xl">Playback failed</h3>
+                    <p className="mt-2 text-xs leading-relaxed text-white/55">{loadError}</p>
+                    <div className="mt-5 flex items-center justify-center gap-2">
+                      <button type="button" onClick={handleRetry} className="inline-flex items-center gap-1.5 rounded-full bg-[#f47e68] px-4 py-2 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="button-player-retry">
+                        <RotateCw size={13} /> Try again
+                      </button>
+                      <Link href={`/drama/${drama.id}`} className="rounded-full border border-white/15 px-4 py-2 text-xs text-white/70 transition-colors hover:border-white/40 hover:text-white">Back to story</Link>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TEK play/pause kontrolü */}
+              <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    pokeControls();
+                    void togglePlay();
+                  }}
+                  className={`grid h-16 w-16 place-items-center rounded-full border border-white/30 bg-[#111118]/45 text-white backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-[#f47e68] hover:text-[#f47e68] ${playing && !controlsVisible ? 'pointer-events-none scale-90 opacity-0' : 'pointer-events-auto opacity-100'}`}
+                  aria-label={playing ? 'Pause episode' : 'Play episode'}
+                  data-testid="button-player-toggle"
+                >
+                  {playing ? <Pause size={23} fill="currentColor" /> : <Play size={23} fill="currentColor" className="translate-x-0.5" />}
+                </button>
+              </div>
+
+              {/* üst çubuk — kontrollerle birlikte açılıp kapanır, notch güvenli */}
+              <div className={`veyra-safe-top absolute inset-x-0 top-0 z-30 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'pointer-events-none opacity-0'}`}>
+                <div className="flex items-center justify-between px-4 py-3 sm:px-6">
+                  <Link href={`/drama/${drama.id}`} className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/25 transition-colors hover:border-white/50" aria-label="Back to drama" data-testid="link-player-back"><ArrowLeft size={16} /></Link>
+                  <div className="min-w-0 px-3 text-center">
+                    <p className="truncate font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/50">{drama.title}</p>
+                    <p className="mt-1 truncate text-xs text-white/85">Episode {episode.number} <span className="text-white/30">·</span> {episode.title}</p>
+                  </div>
+                  <button type="button" className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/25 text-white/75 transition-colors hover:border-white/50" aria-label="More options" data-testid="button-player-more"><MoreHorizontal size={17} /></button>
+                </div>
+              </div>
+
+              {/* bölüm bitti kartı — videonun üzerinde modern overlay */}
+              {episodeFinished && (
+                <div className="absolute inset-0 z-40 grid place-items-center bg-black/62 px-5 backdrop-blur-[3px]" data-testid="player-complete-card">
+                  <div className="w-full max-w-[21rem] overflow-hidden rounded-3xl border border-white/12 bg-[#111118]/94 shadow-2xl">
+                    <div className="relative h-32 bg-cover bg-center" style={{ backgroundImage: `linear-gradient(180deg, rgba(13,13,19,.15), rgba(17,17,24,.92)), url("${drama.image}")` }}>
+                      <div className="absolute inset-x-0 bottom-0 p-4">
+                        <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#f47e68]">{nextEpisode ? 'Up next' : 'Season complete'}</p>
+                        <p className="mt-1 font-display text-lg leading-tight">{nextEpisode ? nextEpisode.title : drama.title}</p>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      {nextEpisode ? (
+                        <>
+                          <p className="text-center text-[11px] text-white/55">
+                            Next episode starts in <span className="font-mono-ui text-[#f47e68]">{countdown ?? NEXT_EPISODE_COUNTDOWN}s</span>
+                          </p>
+                          <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
+                            <div className="h-full rounded-full bg-[#f47e68] transition-all duration-1000 ease-linear" style={{ width: `${((countdown ?? 0) / NEXT_EPISODE_COUNTDOWN) * 100}%` }} />
+                          </div>
+                          <div className="mt-4 flex items-center gap-2">
+                            <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex flex-1 items-center justify-center gap-1 rounded-full bg-[#f47e68] px-4 py-2.5 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="link-player-next-complete">
+                              Play next <ChevronRight size={13} />
+                            </Link>
+                            <button type="button" onClick={handleReplay} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-white/40 hover:text-white" aria-label="Replay episode"><RotateCw size={14} /></button>
+                            <button type="button" onClick={() => setEpisodeFinished(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-white/40 hover:text-white" aria-label="Stay on this episode"><Pause size={14} /></button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button type="button" onClick={handleReplay} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#f47e68] px-4 py-2.5 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]"><RotateCw size={13} /> Replay</button>
+                          <Link href={`/drama/${drama.id}`} className="inline-flex flex-1 items-center justify-center rounded-full border border-white/15 px-4 py-2.5 text-xs text-white/75 transition-colors hover:border-white/40 hover:text-white">Back to story</Link>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* alt bölge: altyazı (güvenli alan) + açılır kontroller + bölüm bilgisi */}
+              <div className="veyra-safe-bottom absolute inset-x-0 bottom-0 z-30">
+                <div className="px-4 pb-3 pt-14 sm:px-6">
+                  {activeCaption && (
+                    <div className="pointer-events-none mb-3 flex justify-center" aria-live="polite" data-testid="player-caption">
+                      <div className="max-w-[88%] rounded-md bg-black/55 px-3 py-1.5 text-center text-sm leading-snug text-white shadow-lg backdrop-blur-sm">
+                        {activeCaption.text}
+                        <span className="ml-2 font-mono-ui text-[9px] uppercase tracking-[.16em] text-white/45">{activeCaption.language}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className={`overflow-hidden transition-all duration-300 ${showControls ? 'max-h-16 opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="flex items-center gap-3" data-player-ui="controls">
+                      <input type="range" min="0" max="100" step="0.1" value={progress} onChange={(event) => handleSeek(Number(event.target.value))} className="h-1 min-w-0 flex-1 accent-[#f47e68]" aria-label="Episode progress" data-testid="input-player-progress" />
+                      <span className="shrink-0 font-mono-ui text-[10px] tabular-nums text-white/55">{timeLabel}</span>
+                      <button type="button" onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} className="shrink-0 text-white/70 transition-colors hover:text-white" data-testid="button-player-mute">{muted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
+                      <button type="button" onClick={() => void handleFullscreen()} aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} className="shrink-0 text-white/70 transition-colors hover:text-white" data-testid="button-player-fullscreen">{isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}</button>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-end justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-display text-lg leading-tight sm:text-xl">{episode.title}</p>
+                      <p className="mt-1 line-clamp-2 max-w-[430px] text-[11px] leading-relaxed text-white/55">{episode.synopsis}</p>
+                    </div>
+                    <span className="shrink-0 font-mono-ui text-[10px] text-white/35">{episode.number} / {drama.episodeCount}</span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                    {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 transition-colors hover:text-white" data-testid="link-player-previous-mobile">Previous episode</Link> : <span className="text-white/15">First episode</span>}
+                    {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#f47e68] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/35">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
+                  </div>
+                </div>
               </div>
             </div>
-          )}
-          <div className="relative flex items-center justify-between px-5 py-5 sm:px-8">
-            <Link href={`/drama/${drama.id}`} className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/20 transition-colors hover:border-white/50" aria-label="Back to drama" data-testid="link-player-back"><ArrowLeft size={16} /></Link>
-            <div className="text-center"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/50">{drama.title}</p><p className="mt-1 text-xs text-white/80">Episode {episode.number} <span className="text-white/30">·</span> {episode.title}</p></div>
-            <button type="button" className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/20 text-white/75 transition-colors hover:border-white/50" aria-label="More options" data-testid="button-player-more"><MoreHorizontal size={17} /></button>
           </div>
-          <div className="relative flex flex-1 items-center justify-center">
-            <button type="button" onClick={togglePlay} className={`grid h-16 w-16 place-items-center rounded-full border border-white/30 bg-[#111118]/35 text-white backdrop-blur-md transition-all hover:scale-105 hover:border-[#f47e68] hover:text-[#f47e68] ${playing ? 'opacity-0 hover:opacity-100' : 'opacity-100'}`} aria-label={playing ? 'Pause episode' : 'Play episode'} data-testid="button-player-toggle">
-              {playing ? <Pause size={23} fill="currentColor" /> : <Play size={23} fill="currentColor" className="translate-x-0.5" />}
-            </button>
-          </div>
-          <div className="relative px-5 pb-5 sm:px-8">
-            <p className="max-w-[470px] font-display text-2xl leading-[.95] sm:text-3xl">{episode.title}</p>
-            <p className="mt-2 max-w-[450px] text-xs leading-relaxed text-white/55">{episode.synopsis}</p>
-            <div className="mt-6 flex items-center gap-3">
-              <button type="button" onClick={togglePlay} aria-label={playing ? 'Pause episode' : 'Play episode'} className="text-white" data-testid="button-player-play-bottom">{playing ? <Pause size={17} fill="currentColor" /> : <Play size={17} fill="currentColor" />}</button>
-              <input type="range" min="0" max="100" step="0.1" value={progress} onChange={(event) => handleSeek(Number(event.target.value))} className="h-1 min-w-0 flex-1 accent-[#f47e68]" aria-label="Episode progress" data-testid="input-player-progress" />
-              <span className="font-mono-ui text-[10px] text-white/45">{episode.runtime}</span>
-              <button type="button" onClick={() => { const video = videoRef.current; if (video) { video.muted = !video.muted; setMuted(video.muted); } }} aria-label={muted ? 'Unmute' : 'Mute'} className="text-white/65 hover:text-white" data-testid="button-player-mute">{muted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
-              <button type="button" onClick={handleFullscreen} aria-label="Fullscreen" className="text-white/65 hover:text-white" data-testid="button-player-fullscreen"><Maximize2 size={15} /></button>
-            </div>
-            <div className="mt-5 flex items-center justify-between gap-3 text-xs">
-              {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 hover:text-white" data-testid="link-player-previous-mobile">Previous episode</Link> : <span className="text-white/15">First episode</span>}
-              {showNextEpisode && nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#f47e68] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/35">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
-            </div>
+
+          {/* desktop meta — dikey çerçevenin altında (mobilde overlay zaten gösteriyor) */}
+          <div className="hidden shrink-0 border-t border-white/[.06] bg-[#0d0d13] px-8 py-5 lg:block">
+            <p className="max-w-[560px] font-display text-2xl leading-[.95]">{episode.title}</p>
+            <p className="mt-2 max-w-[540px] text-xs leading-relaxed text-white/55">{episode.synopsis}</p>
           </div>
         </section>
         <aside className="w-full border-t border-white/[.08] bg-[#111118] lg:w-[350px] lg:border-l lg:border-t-0">
@@ -826,7 +1148,7 @@ function WatchPage() {
           <div className="hidden border-t border-white/[.08] px-5 py-4 lg:block">
             <div className="flex items-center justify-between text-xs">
               {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 hover:text-white" data-testid="link-player-previous">Previous</Link> : <span className="text-white/15">Previous</span>}
-              {showNextEpisode && nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 text-[#f47e68] hover:text-white" data-testid="link-player-next">Next episode <ChevronRight size={13} /></Link> : <span className="text-white/15">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
+              {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 text-[#f47e68] hover:text-white" data-testid="link-player-next">Next episode <ChevronRight size={13} /></Link> : <span className="text-white/15">End of story</span>}
             </div>
           </div>
         </aside>

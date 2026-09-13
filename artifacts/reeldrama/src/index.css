@@ -158,3 +158,43 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+/* ===========================================================================
+   VEYRA dikey player (9:16)
+   ---------------------------------------------------------------------------
+   .veyra-stage  → video sahnesi.
+     · Mobil:  mevcut alanı tamamen doldurur (Tam ekran, kenar boşluksuz
+               dikey deneyim; video object-cover ile kırparak doldurur).
+     · Desktop: ortalanmış gerçek 9:16 çerçeve (yatay letterbox yerine
+               dikey short-drama sahnesi).
+     · Fullscreen: çerçeve tüm ekrana yayılır.
+   .veyra-safe-* → notch / status bar / navigation bar güvenli alanları.
+   =========================================================================== */
+.veyra-safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.veyra-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.veyra-stage {
+  width: 100%;
+  align-self: stretch;
+}
+
+@media (min-width: 1024px) {
+  .veyra-stage {
+    align-self: center;
+    aspect-ratio: 9 / 16;
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+  }
+}
+
+.veyra-stage:fullscreen {
+  aspect-ratio: auto !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  align-self: auto !important;
+}

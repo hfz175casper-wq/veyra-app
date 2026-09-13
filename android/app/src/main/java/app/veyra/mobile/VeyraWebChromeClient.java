@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowManager;
 import android.webkit.WebChromeClient;
 import android.widget.FrameLayout;
 
@@ -66,6 +67,9 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
             decorView.addView(container);
             customViewContainer = container;
 
+            // Video izlerken ekran kararmasın (native tam ekran süresince).
+            activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
             hideSystemBars();
             activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         } catch (RuntimeException error) {
@@ -79,6 +83,11 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
             return;
         }
         exitCustomView();
+    }
+
+    /** MainActivity'nin geri tuşu kararını verebilmesi için durum sorgusu. */
+    public boolean isCustomViewShowing() {
+        return customView != null;
     }
 
     private void hideSystemBars() {
@@ -116,6 +125,7 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
             WindowInsetsControllerCompat controller =
                     WindowCompat.getInsetsController(window, window.getDecorView());
             controller.show(WindowInsetsCompat.Type.systemBars());
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         } catch (RuntimeException ignored) {
             // Çubuklar geri getirilemezse bile oynatma devam eder.
