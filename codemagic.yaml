@@ -1,22 +1,23 @@
 workflows:
-  android-release:
-    name: Veyra Android Release
+  android-debug:
+    name: Veyra Android Debug
     max_build_duration: 30
     environment:
       node: 22
+      java: 17
     scripts:
       - name: Install dependencies
         script: |
           corepack enable
           pnpm install
       - name: Build web app
+        script: pnpm run build
+      - name: Add Android platform if missing
+        script: npx cap add android || npx cap sync android
+      - name: Build debug APK
         script: |
-          pnpm run build
-      - name: Sync Capacitor and Build APK
-        script: |
-          npx cap sync android
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleDebug
     artifacts:
-      - android/app/build/outputs/apk/release/*.apk
+      - android/**/*.apk
