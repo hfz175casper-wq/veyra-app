@@ -13,8 +13,8 @@ workflows:
           pnpm install --no-frozen-lockfile
       - name: Build web app
         script: |
-          export PORT=3000
-          pnpm run build
+          pnpm run typecheck
+          pnpm --filter '!./artifacts/mockup-sandbox' -r --if-present run build
       - name: Add Android platform if missing
         script: npx cap add android || npx cap sync android
       - name: Build debug APK
