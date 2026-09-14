@@ -11,8 +11,11 @@ workflows:
           corepack enable
           corepack prepare pnpm@9.15.0 --activate
           pnpm install
-      - name: Build web app
-        script: pnpm run build
+      - name: Install dependencies
+  script: |
+    corepack disable
+    npm install -g pnpm@9.15.0
+    pnpm install
       - name: Add Android platform if missing
         script: npx cap add android || npx cap sync android
       - name: Build debug APK
