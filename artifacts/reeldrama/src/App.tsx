@@ -1182,7 +1182,7 @@ function AppRouter() {
   );
 }
 
-function App() {
+function AppContent() {
   const [savedIds, setSavedIds] = useState<string[]>(['after-midnight']);
   const { isSignedIn } = useAuth();
   useEffect(() => {
@@ -1205,8 +1205,7 @@ function App() {
     isSaved: (id) => savedIds.includes(id),
   }), [isSignedIn, savedIds]);
   return (
-    <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <AppContext.Provider value={value}>
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
@@ -1216,6 +1215,13 @@ function App() {
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>
+  );
+}
+
+function App() {
+  return (
+    <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
+      <AppContent />
     </ClerkProvider>
   );
 }
