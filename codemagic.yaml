@@ -14,10 +14,10 @@ workflows:
         script: pnpm run build
       - name: Add Android platform if missing
         script: npx cap add android || npx cap sync android
-      - name: Build debug APK
-        script: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
+      - name: Install dependencies
+  script: |
+    corepack enable
+    corepack prepare pnpm@9.15.0 --activate
+    pnpm install
     artifacts:
       - android/**/*.apk
