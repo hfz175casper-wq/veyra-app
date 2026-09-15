@@ -32,6 +32,7 @@ import com.getcapacitor.BridgeWebChromeClient;
 public class VeyraWebChromeClient extends BridgeWebChromeClient {
 
     private final Activity activity;
+    private final Bridge bridge;
 
     private View customView;
     private ViewGroup customViewContainer;
@@ -39,6 +40,7 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
 
     public VeyraWebChromeClient(Bridge bridge, Activity activity) {
         super(bridge);
+        this.bridge = bridge;
         this.activity = activity;
     }
 
@@ -71,7 +73,8 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
             activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
             hideSystemBars();
-            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            dispatchFullscreenEvent(true);
         } catch (RuntimeException error) {
             exitCustomView();
         }
@@ -104,6 +107,17 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
         }
     }
 
+    private void dispatchFullscreenEvent(boolean entering) {
+        try {
+            if (bridge == null || bridge.getWebView() == null) return;
+            String eventName = entering ? "veyra-native-fullscreen-enter" : "veyra-native-fullscreen-exit";
+            bridge.getWebView().evaluateJavascript(
+                    "window.dispatchEvent(new Event('" + eventName + "'));", null);
+        } catch (RuntimeException ignored) {
+            // WebView may already be detached during activity shutdown.
+        }
+    }
+
     private void exitCustomView() {
         try {
             if (customViewContainer != null) {
@@ -127,6 +141,7 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
             controller.show(WindowInsetsCompat.Type.systemBars());
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+            dispatchFullscreenEvent(false);
         } catch (RuntimeException ignored) {
             // Çubuklar geri getirilemezse bile oynatma devam eder.
         }

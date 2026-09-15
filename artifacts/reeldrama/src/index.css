@@ -198,3 +198,18 @@
   max-width: none !important;
   align-self: auto !important;
 }
+
+
+.veyra-stage:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  align-self: auto !important;
+}
+
+@media (max-width: 767px) {
+  .veyra-stage {
+    width: min(100vw, 56.25vh);
+    height: 100%;
+  }
+}
