@@ -82,6 +82,18 @@ type Drama = {
   episodes: Episode[];
 };
 
+type VeyraNativeBridge = {
+  setFullscreen?: (fullscreen: boolean) => void;
+  share?: (title: string, url: string) => void;
+  download?: (url: string, fileName: string) => void;
+};
+
+declare global {
+  interface Window {
+    VeyraNative?: VeyraNativeBridge;
+  }
+}
+
 const posterImages = {
   voicemail: 'https://images.pexels.com/photos/3760854/pexels-photo-3760854.jpeg?auto=compress&cs=tinysrgb&w=900',
   glass: 'https://images.pexels.com/photos/157811/pexels-photo-157811.jpeg?auto=compress&cs=tinysrgb&w=900',
@@ -1668,6 +1680,7 @@ function WatchPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [speedOpen, setSpeedOpen] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const nextEpisode = drama.episodes[episodeIndex + 1];
   const previousEpisode = drama.episodes[episodeIndex - 1];
@@ -1765,19 +1778,24 @@ function WatchPage() {
   // --- fullscreen durumunu takip et (tarayıcı + Escape) ---
   useEffect(() => {
     const handleFullscreenChange = () => {
-      if (document.fullscreenElement) setIsFullscreen(true);
+      setIsFullscreen(Boolean(document.fullscreenElement));
     };
     const handleNativeEnter = () => setIsFullscreen(true);
     const handleNativeExit = () => setIsFullscreen(false);
+    const handleNativeBack = () => {
+      if (isFullscreen) void handleFullscreen();
+    };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     window.addEventListener('veyra-fullscreen-enter', handleNativeEnter);
     window.addEventListener('veyra-fullscreen-exit', handleNativeExit);
+    window.addEventListener('veyra-native-back', handleNativeBack);
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       window.removeEventListener('veyra-fullscreen-enter', handleNativeEnter);
       window.removeEventListener('veyra-fullscreen-exit', handleNativeExit);
+      window.removeEventListener('veyra-native-back', handleNativeBack);
     };
-  }, []);
+  }, [isFullscreen]);
 
   useEffect(() => {
     document.body.classList.toggle('veyra-fullscreen-active', isFullscreen);
@@ -1875,6 +1893,7 @@ function WatchPage() {
 
     if (isFullscreen) {
       setIsFullscreen(false);
+      window.VeyraNative?.setFullscreen?.(false);
       try {
         if (document.fullscreenElement) await document.exitFullscreen();
       } catch {
@@ -1886,6 +1905,10 @@ function WatchPage() {
     }
 
     setIsFullscreen(true);
+    if (window.VeyraNative?.setFullscreen) {
+      window.VeyraNative.setFullscreen(true);
+      return;
+    }
     try {
       if (frame?.requestFullscreen) {
         await frame.requestFullscreen();
@@ -1895,16 +1918,18 @@ function WatchPage() {
     }
   };
 
-  const cycleSpeed = () => {
-    const next = playbackRate >= 2 ? 0.75 : playbackRate === 0.75 ? 1 : playbackRate + 0.5;
+  const setSpeed = (next: number) => {
     setPlaybackRate(next);
     if (videoRef.current) videoRef.current.playbackRate = next;
+    setSpeedOpen(false);
     pokeControls();
   };
   const shareEpisode = async () => {
     try {
       const url = window.location.href;
-      if (navigator.share) {
+      if (window.VeyraNative?.share) {
+        window.VeyraNative.share(`${drama.title} — Episode ${episode.number}`, url);
+      } else if (navigator.share) {
         await navigator.share({ title: `${drama.title} — Episode ${episode.number}`, url });
       } else if (navigator.clipboard) {
         await navigator.clipboard.writeText(url);
@@ -1915,16 +1940,21 @@ function WatchPage() {
     setMoreOpen(false);
   };
 
-  const downloadEpisode = () => {
+  const downloadEpisode = async () => {
     try {
-      const a = document.createElement('a');
-      a.href = episode.videoUrl;
-      a.target = '_blank';
-      a.rel = 'noopener';
-      a.download = `${drama.id}-episode-${episode.number}.mp4`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const fileName = `${drama.id}-episode-${episode.number}.mp4`;
+      if (window.VeyraNative?.download) {
+        window.VeyraNative.download(episode.videoUrl, fileName);
+      } else {
+        const response = await fetch(episode.videoUrl);
+        if (!response.ok) throw new Error('Download request failed');
+        const blobUrl = URL.createObjectURL(await response.blob());
+        const anchor = document.createElement('a');
+        anchor.href = blobUrl;
+        anchor.download = fileName;
+        anchor.click();
+        URL.revokeObjectURL(blobUrl);
+      }
     } catch (error) {
       // Download failed - silently ignore
     }
@@ -2085,7 +2115,8 @@ function WatchPage() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setMoreOpen((v) => !v);
+                            setMoreOpen((v) => !v);
+                            setSpeedOpen(false);
                         pokeControls();
                       }}
                       className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/25 text-white/75 transition-colors hover:border-white/50"
@@ -2094,7 +2125,7 @@ function WatchPage() {
                     >
                       <MoreHorizontal size={17} />
                     </button>
-                    {moreOpen && (
+                    {moreOpen && !speedOpen && (
                       <div
                         data-player-ui
                         className="absolute right-0 top-11 z-50 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111118]/95 p-1 shadow-2xl backdrop-blur-xl"
@@ -2125,7 +2156,7 @@ function WatchPage() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            cycleSpeed();
+                            setSpeedOpen(true);
                           }}
                           className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"
                         >
@@ -2135,6 +2166,20 @@ function WatchPage() {
                           </span>
                           <span className="text-white/45">{playbackRate}x</span>
                         </button>
+                      </div>
+                    )}
+                    {moreOpen && speedOpen && (
+                      <div data-player-ui className="absolute right-0 top-11 z-50 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111118]/95 p-1 shadow-2xl backdrop-blur-xl">
+                        <button type="button" onClick={() => setSpeedOpen(false)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs text-white/60 hover:bg-white/[.06]">
+                          <ArrowLeft size={14} />
+                          Playback speed
+                        </button>
+                        {[0.5, 0.75, 1, 1.25, 1.5, 2].map((speed) => (
+                          <button key={speed} type="button" onClick={() => setSpeed(speed)} className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06] ${speed === playbackRate ? 'text-[#ff4fc3]' : 'text-white/85'}`}>
+                            <span>{speed.toFixed(2).replace(/0$/, '')}x</span>
+                            {speed === playbackRate && <Check size={14} />}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>

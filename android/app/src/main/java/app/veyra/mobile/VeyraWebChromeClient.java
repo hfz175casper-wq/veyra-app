@@ -1,7 +1,6 @@
 package app.veyra.mobile;
 
 import android.app.Activity;
-import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,9 +50,6 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
                     ViewGroup.LayoutParams.MATCH_PARENT));
             customViewContainer = container;
 
-            // Force portrait orientation for true 9:16 fullscreen
-            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            
             // Keep screen on
             activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             
@@ -105,8 +101,7 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
             // Clear keep screen on flag
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             
-            // Keep portrait orientation (never rotate to landscape)
-            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         } catch (RuntimeException ignored) {}
 
         CustomViewCallback callback = customViewCallback;
