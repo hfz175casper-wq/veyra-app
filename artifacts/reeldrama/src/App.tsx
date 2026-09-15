@@ -515,46 +515,58 @@ function DiscoverPage() {
 function SearchPage() {
   const [query, setQuery] = useState('');
   const [activeGenre, setActiveGenre] = useState('All');
-  const genres = ['All', 'Romance', 'Revenge', 'Mystery', 'Thriller', 'Fantasy', 'CEO', 'Mafia'];
-  const suggestions = ['Hidden Identity', 'Fake Marriage', 'Billionaire', 'Revenge', 'Secret Baby', 'Werewolf'];
+  const genres = ['All', 'Romance', 'Revenge', 'Mystery', 'Thriller', 'Fantasy', 'CEO', 'Mafia', 'Rebirth', 'Time Travel'];
+  const suggestions = ['Hidden Identity', 'Fake Marriage', 'Billionaire', 'Revenge', 'Secret Baby', 'Werewolf', 'Contract Marriage', 'Secret Heir'];
   const results = useMemo(() => dramas.filter((drama) => {
     const haystack = `${drama.title} ${drama.eyebrow} ${drama.genre.join(' ')} ${drama.description}`.toLowerCase();
-    const matchesQuery = !query.trim() || haystack.includes(query.toLowerCase().trim());
+    const q = query.trim().toLowerCase();
+    const matchesQuery = !q || haystack.includes(q) || q.split(/\\s+/).every((word) => haystack.includes(word));
     const matchesGenre = activeGenre === 'All' || drama.genre.some((genre) => genre.toLowerCase().includes(activeGenre.toLowerCase()));
     return matchesQuery && matchesGenre;
   }), [activeGenre, query]);
+
   return (
     <div className="animate-rise">
-      <div className="sticky top-[4.25rem] z-30 -mx-4 border-b border-white/[.06] bg-[#07080c]/95 px-4 pb-4 pt-3 backdrop-blur-xl md:-mx-7 md:px-7">
+      <div className="sticky top-[4.25rem] z-30 -mx-4 border-b border-white/[.06] bg-[#07080c]/96 px-4 pb-4 pt-3 backdrop-blur-xl md:-mx-7 md:px-7">
         <div className="flex items-center gap-3">
           <Link href="/" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[.03] text-white/60" aria-label="Back home"><ArrowLeft size={16}/></Link>
-          <label className="relative min-w-0 flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={17}/>
-            <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search stories, characters, tropes..." className="h-11 w-full rounded-full border border-white/10 bg-white/[.06] pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#ff4fc3]/60" data-testid="input-search" />
-          </label>
-          {query && <button type="button" onClick={() => setQuery('')} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 text-white/50">×</button>}
+          <div className="min-w-0 flex-1">
+            <p className="font-mono-ui text-[8px] uppercase tracking-[.2em] text-[#ff4fc3]">Find your next obsession</p>
+            <label className="relative mt-1 block">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={17}/>
+              <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search titles, actors, genres, tropes..." className="h-12 w-full rounded-2xl border border-white/10 bg-white/[.07] pl-11 pr-11 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#ff4fc3]/60" data-testid="input-search" />
+              {query && <button type="button" onClick={() => setQuery('')} className="absolute right-2 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-white/50 hover:bg-white/[.06] hover:text-white" aria-label="Clear search">×</button>}
+            </label>
+          </div>
         </div>
         <div className="scrollbar-none mt-3 flex gap-2 overflow-x-auto pb-1">
-          {genres.map((genre) => <button key={genre} type="button" onClick={() => setActiveGenre(genre)} className={`shrink-0 rounded-full border px-4 py-2 text-[11px] font-medium transition-all ${activeGenre === genre ? 'border-[#ff4fc3] bg-[#ff4fc3] text-[#171720]' : 'border-white/10 bg-white/[.03] text-white/55'}`}>{genre}</button>)}
+          {genres.map((genre) => <button key={genre} type="button" onClick={() => setActiveGenre(genre)} className={`shrink-0 rounded-full border px-4 py-2 text-[10px] font-semibold transition-all ${activeGenre === genre ? 'border-[#ff4fc3] bg-[#ff4fc3] text-[#171720]' : 'border-white/10 bg-white/[.03] text-white/55 hover:text-white'}`}>{genre}</button>)}
         </div>
       </div>
 
       {!query && activeGenre === 'All' && (
-        <section className="mt-6 rounded-2xl border border-white/[.07] bg-white/[.025] p-5">
-          <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Popular searches</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {suggestions.map((item) => <button key={item} type="button" onClick={() => setQuery(item)} className="rounded-full border border-white/10 bg-white/[.03] px-3.5 py-2 text-xs text-white/65 hover:border-[#ff4fc3]/50 hover:text-white">{item}</button>)}
-          </div>
-        </section>
+        <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
+          <section className="rounded-[1.4rem] border border-[#ff4fc3]/20 bg-[radial-gradient(circle_at_80%_20%,rgba(255,79,195,.15),transparent_35%),rgba(255,255,255,.025)] p-5">
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Popular searches</p>
+            <p className="mt-2 text-sm text-white/45">Start from a trope instead of a title.</p>
+            <div className="mt-4 flex flex-wrap gap-2">{suggestions.map((item) => <button key={item} type="button" onClick={() => setQuery(item)} className="rounded-full border border-white/10 bg-black/20 px-3.5 py-2 text-xs text-white/70 hover:border-[#ff4fc3]/50 hover:text-white">{item}</button>)}</div>
+          </section>
+          <section className="rounded-[1.4rem] border border-white/[.08] bg-white/[.025] p-5">
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-white/35">Browse by mood</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">{['Feel-good','Dark revenge','Forbidden love','High stakes','Fantasy worlds','Secret identities'].map((item) => <button key={item} type="button" onClick={() => setQuery(item)} className="rounded-xl border border-white/[.07] bg-white/[.025] p-3 text-left text-xs text-white/65 hover:border-[#b78cff]/40 hover:text-white">{item}</button>)}</div>
+          </section>
+        </div>
       )}
 
       <div className="mt-7">
-        <div className="mb-5 flex items-end justify-between"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{query ? 'Search results' : 'Browse all stories'}</p><h1 className="mt-1 font-display text-2xl text-white">{query ? `${results.length} stories` : 'Discover your next obsession'}</h1></div><SlidersHorizontal size={17} className="text-white/35" /></div>
+        <div className="mb-5 flex items-end justify-between"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{query ? 'Search results' : activeGenre !== 'All' ? `${activeGenre} stories` : 'All stories'}</p><h1 className="mt-1 font-display text-2xl text-white">{query ? `${results.length} matches` : 'Choose your next story'}</h1></div><SlidersHorizontal size={17} className="text-white/35" /></div>
         {results.length > 0 ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{results.map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySearch onReset={() => { setQuery(''); setActiveGenre('All'); }} />}
       </div>
     </div>
   );
 }
+
+
 function EmptySearch({ onReset }: { onReset: () => void }) {
   return (
     <div className="rounded-2xl border border-dashed border-white/15 bg-white/[.02] px-5 py-16 text-center">
@@ -582,25 +594,29 @@ function SavedPage() {
 }
 
 function FollowingPage() {
-  const [following, setFollowing] = useState<Drama[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { savedIds } = useAppValue();
+  const [remoteFollowing, setRemoteFollowing] = useState<string[]>([]);
   useEffect(() => {
+    let active = true;
     fetch('/api/me/following', { credentials: 'include' })
       .then((response) => response.ok ? response.json() : [])
       .then((items: Array<{ slug?: string; id?: number }>) => {
-        const ids = new Set(items.map((item) => String(item.slug ?? item.id)));
-        setFollowing(dramas.filter((drama) => ids.has(drama.id)));
+        if (!active) return;
+        setRemoteFollowing(items.map((item) => String(item.slug ?? item.id)));
       })
-      .catch(() => setFollowing([]))
-      .finally(() => setLoading(false));
+      .catch(() => undefined);
+    return () => { active = false; };
   }, []);
+  const ids = new Set([...savedIds, ...remoteFollowing]);
+  const following = dramas.filter((drama) => ids.has(drama.id));
   return (
     <div className="animate-rise">
-      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your watch circle</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Following<span className="text-[#ff4fc3]">.</span></h1><p className="mt-4 text-sm text-white/45">{loading ? 'Loading your followed stories…' : `${following.length} stories in your circle`}</p></div>
+      <div className="mb-9 flex items-end justify-between gap-4"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your watch circle</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Following<span className="text-[#ff4fc3]">.</span></h1><p className="mt-4 text-sm text-white/45">Your saved and followed stories, together.</p></div><Link href="/search" className="rounded-full border border-white/10 px-3 py-2 text-[10px] text-white/60 hover:text-white">Find stories</Link></div>
       {following.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{following.map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}
     </div>
   );
 }
+
 
 function RewardsPage() {
   type Mission = { id: string; title: string; subtitle: string; reward: number; action: string; progress?: number; target?: number };
@@ -628,7 +644,7 @@ function RewardsPage() {
   const missions: Mission[] = [
     { id: 'ad', title: 'Watch ads', subtitle: 'Watch 12 short ads · +5 Coins each', reward: 60, action: 'Watch', progress: adProgress, target: 12 },
     { id: 'rate', title: 'Rate a story', subtitle: 'Give a story your rating', reward: 10, action: 'Rate' },
-    { id: 'instagram', title: 'Follow VEYRA', subtitle: 'Follow us on Instagram', reward: 10, action: 'Follow' },
+    { id: 'social', title: 'Join the VEYRA circle', subtitle: 'Follow VEYRA on social and unlock a small bonus', reward: 10, action: 'Open' },
     { id: 'email', title: 'Connect email', subtitle: 'Secure your account and get a bonus', reward: 20, action: 'Bind' },
     { id: 'notifications', title: 'Enable notifications', subtitle: 'Never miss a new episode', reward: 10, action: 'Enable' },
   ];
@@ -694,6 +710,7 @@ function RewardsPage() {
         </section>
       </div>
 
+      <section className="rounded-[1.4rem] border border-[#ffcf70]/15 bg-[#ffcf70]/[.035] p-5"><div className="flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-xl bg-[#ffcf70]/10 text-[#ffcf70]"><Sparkles size={18}/></div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.16em] text-[#ffcf70]">VIP daily drop</p><h2 className="font-display text-xl text-white">Bonus for VIP viewers</h2></div></div><p className="mt-3 text-xs leading-relaxed text-white/45">VIP members can claim a daily coin or story-pass reward here.</p><Link href="/vip" className="mt-4 inline-flex rounded-full border border-white/10 bg-white/[.05] px-4 py-2.5 text-xs text-white/80">View VIP benefits <ChevronRight size={13}/></Link></section>
       <section className="rounded-[1.4rem] border border-white/[.08] bg-white/[.02] p-5">
         <div className="flex items-center justify-between gap-3"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/30">More ways to earn</p><h2 className="mt-1 font-display text-xl text-white">New arrivals & special missions</h2></div><Link href="/discover" className="text-xs text-[#ff4fc3]">Explore</Link></div>
         <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4"><div className="rounded-xl border border-white/[.07] bg-white/[.025] p-3"><p className="text-xs text-white/80">New arrival</p><p className="mt-1 text-[10px] text-white/35">Watch a new series</p></div><div className="rounded-xl border border-white/[.07] bg-white/[.025] p-3"><p className="text-xs text-white/80">Finish an episode</p><p className="mt-1 text-[10px] text-white/35">Earn a watch bonus</p></div><div className="rounded-xl border border-white/[.07] bg-white/[.025] p-3"><p className="text-xs text-white/80">Keep your streak</p><p className="mt-1 text-[10px] text-white/35">Return tomorrow</p></div><div className="rounded-xl border border-white/[.07] bg-white/[.025] p-3"><p className="text-xs text-white/80">Invite a friend</p><p className="mt-1 text-[10px] text-white/35">Referral bonus</p></div></div>
@@ -706,8 +723,19 @@ function ProfilePage() {
   const { isSignedIn, user } = useUser();
   const { savedIds } = useAppValue();
   if (!isSignedIn) return <AuthPrompt title="Make VEYRA yours" copy="Sign in to sync your list, watch progress, notifications, and profile across devices." />;
-  return <div className="animate-rise"><div className="mb-9 flex items-center gap-4"><div className="grid h-16 w-16 place-items-center rounded-2xl bg-[#ff4fc3]/15 text-[#ff4fc3]"><UserCircle size={30} /></div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your profile</p><h1 className="mt-1 font-display text-3xl text-white">{user?.firstName ?? user?.username ?? 'VEYRA viewer'}</h1><p className="mt-1 text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? 'Signed in'}</p></div></div><div className="grid gap-4 sm:grid-cols-4"><ProfileStat label="My List" value={String(savedIds.length)} /><ProfileStat label="Rewards" value="Collect coins" href="/rewards" /><ProfileStat label="Wallet" value="View balance" href="/wallet" /><ProfileStat label="VIP" value="Unlock all" href="/vip" /></div><div className="mt-8 grid gap-3 sm:grid-cols-3"><Link href="/settings" className="rounded-xl border border-white/[.08] p-4 text-xs text-white/65">Settings</Link><Link href="/settings/language" className="rounded-xl border border-white/[.08] p-4 text-xs text-white/65">Language</Link><Link href="/settings/notifications" className="rounded-xl border border-white/[.08] p-4 text-xs text-white/65">Notifications</Link></div><section className="mt-10"><SectionHeader eyebrow="Saved for later" title="My List" href="/saved" />{savedIds.length ? <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">{dramas.filter((drama) => savedIds.includes(drama.id)).map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}</section></div>;
+  const items = [
+    ['My List', '/saved', Bookmark], ['Watch history', '/following', Clock3], ['Rewards', '/rewards', Gift], ['Wallet', '/wallet', Wallet],
+    ['VIP', '/vip', Sparkles], ['Notifications', '/settings/notifications', Bell], ['Language', '/settings/language', Languages], ['Settings', '/settings', Settings],
+    ['Help & FAQ', '/help', CirclePlay], ['Feedback', '/feedback', Share2],
+  ] as const;
+  return <div className="animate-rise">
+    <div className="mb-8 flex items-center gap-4"><div className="grid h-16 w-16 place-items-center rounded-2xl bg-[linear-gradient(135deg,rgba(255,79,195,.2),rgba(183,140,255,.18))] text-[#ff4fc3]"><UserCircle size={30}/></div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your VEYRA account</p><h1 className="mt-1 font-display text-3xl text-white">{user?.firstName ?? user?.username ?? 'VEYRA viewer'}</h1><p className="mt-1 text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? 'Signed in'} · UID synced</p></div></div>
+    <div className="grid gap-3 sm:grid-cols-4"><ProfileStat label="My List" value={String(savedIds.length)} /><ProfileStat label="Rewards" value="Collect" href="/rewards" /><ProfileStat label="Wallet" value="View balance" href="/wallet" /><ProfileStat label="VIP" value="Unlock all" href="/vip" /></div>
+    <section className="mt-8 overflow-hidden rounded-[1.5rem] border border-white/[.08] bg-white/[.025]"><div className="border-b border-white/[.06] px-5 py-4"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/35">Account center</p></div><div className="grid divide-y divide-white/[.06] sm:grid-cols-2 sm:divide-y-0 sm:divide-x">{items.map(([label,href,Icon],index)=><Link key={label} href={href} className={`group flex items-center gap-3 p-4 transition-colors hover:bg-white/[.03] ${index % 2 === 0 ? 'sm:border-b sm:border-white/[.06]' : 'sm:border-b sm:border-white/[.06]'}`}><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff4fc3]/10 text-[#ff4fc3]"><Icon size={17}/></div><span className="flex-1 text-sm text-white/75 group-hover:text-white">{label}</span><ChevronRight size={15} className="text-white/25 group-hover:text-white/60"/></Link>)}</div></section>
+    <section className="mt-8"><SectionHeader eyebrow="Saved for later" title="My List" href="/saved" />{savedIds.length ? <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">{dramas.filter((drama) => savedIds.includes(drama.id)).map((drama) => <DramaCard drama={drama} key={drama.id}/>)}</div> : <EmptySaved />}</section>
+  </div>;
 }
+
 
 function ProfileStat({ label, value, href }: { label: string; value: string; href?: string }) {
   const content = <div className="rounded-2xl border border-white/[.08] bg-white/[.03] p-4"><p className="text-xs text-white/40">{label}</p><p className="mt-2 font-display text-xl text-white/90">{value}</p></div>;
@@ -899,10 +927,15 @@ function WatchPage() {
 
   // --- fullscreen durumunu takip et (tarayıcı + Escape) ---
   useEffect(() => {
-    const handleFullscreenChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    const handleFullscreenChange = () => {
+      if (document.fullscreenElement) setIsFullscreen(true);
+    };
+    const handleKey = (event: KeyboardEvent) => { if (event.key === 'Escape' && isFullscreen) setIsFullscreen(false); };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
+    window.addEventListener('keydown', handleKey);
+    document.body.style.overflow = isFullscreen ? 'hidden' : '';
+    return () => { document.removeEventListener('fullscreenchange', handleFullscreenChange); window.removeEventListener('keydown', handleKey); document.body.style.overflow = ''; };
+  }, [isFullscreen]);
 
   // --- sekme kapanırken ilerlemeyi kaybetme ---
   useEffect(() => {
@@ -982,24 +1015,14 @@ function WatchPage() {
 
   const handleFullscreen = async () => {
     pokeControls();
-    setIsFullscreen((current) => !current);
-    const frame = frameRef.current;
-    const video = videoRef.current;
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-        return;
-      }
-      if (frame?.requestFullscreen) {
-        await frame.requestFullscreen();
-        return;
-      }
-      // iOS Safari: öğe fullscreen yok, videoyu native tam ekrana aç.
-      const legacyVideo = video as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
-      legacyVideo?.webkitEnterFullscreen?.();
-    } catch {
-      // WebView zaten native tam ekran yolunu (onShowCustomView) kullanır.
+    if (isFullscreen) {
+      setIsFullscreen(false);
+      try { if (document.fullscreenElement) await document.exitFullscreen(); } catch {}
+      return;
     }
+    setIsFullscreen(true);
+    const frame = frameRef.current;
+    try { await frame?.requestFullscreen?.(); } catch {}
   };
 
   const cycleSpeed = () => {
@@ -1073,6 +1096,7 @@ function WatchPage() {
             <div
               ref={frameRef}
               className={`veyra-stage relative overflow-hidden bg-black ${isFullscreen ? 'veyra-stage-immersive' : ''}`}
+              style={isFullscreen ? ({ position: 'fixed', inset: 0, width: '100vw', height: '100dvh', maxWidth: 'none', zIndex: 9999, borderRadius: 0 } as CSSProperties) : undefined}
               onClick={handleSurfaceClick}
               onPointerMove={(event) => {
                 if (event.pointerType === 'mouse' && playing) pokeControls();
