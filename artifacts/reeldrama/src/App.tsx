@@ -7,6 +7,7 @@ import {
   BookmarkCheck,
   ChevronRight,
   CirclePlay,
+  Download,
   Clock3,
   BarChart3,
   Check,
@@ -33,6 +34,7 @@ import {
   UserCircle,
   Share2,
   UsersRound,
+  Zap,
 } from 'lucide-react';
 import { ClerkProvider, Show, SignInButton, UserButton, useAuth, useUser } from '@clerk/react';
 import { useUpload } from '@workspace/object-storage-web';
@@ -500,36 +502,59 @@ function EpisodeDetailRow({ drama, episode }: { drama: Drama; episode: Episode }
   );
 }
 
+function DiscoverPage() {
+  const groups = [
+    ['Trending now', dramas.slice(0, 6)],
+    ['Romance & forbidden love', dramas.filter((d) => d.genre.includes('Romance'))],
+    ['Mystery & revenge', dramas.filter((d) => d.genre.some((g) => ['Mystery','Thriller','Noir'].includes(g)))],
+    ['Fantasy & impossible worlds', dramas.filter((d) => d.genre.some((g) => ['Sci-fi'].includes(g)))],
+  ];
+  return <div className="animate-rise space-y-10"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Explore VEYRA</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-white sm:text-[4.4rem]">Discover<span className="text-[#ff4fc3]">.</span></h1><p className="mt-4 max-w-xl text-sm leading-relaxed text-white/45">Find short dramas by mood, genre and story trope.</p></div><div className="grid grid-cols-2 gap-2 sm:grid-cols-4"><Link href="/search" className="rounded-xl border border-white/10 bg-white/[.03] p-4 text-sm text-white/75 hover:border-[#ff4fc3]/40">Search stories</Link><button type="button" className="rounded-xl border border-white/10 bg-white/[.03] p-4 text-left text-sm text-white/75">Top rated</button><button type="button" className="rounded-xl border border-white/10 bg-white/[.03] p-4 text-left text-sm text-white/75">Most watched</button><button type="button" className="rounded-xl border border-white/10 bg-white/[.03] p-4 text-left text-sm text-white/75">New releases</button></div>{groups.map(([title,items]) => <section key={title as string}><SectionHeader title={title as string} href="/search"/><div className="scrollbar-none -mx-4 flex gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">{(items as Drama[]).map((d)=><DramaCard drama={d} key={d.id}/>)}</div></section>)}</div>;
+}
+
 function SearchPage() {
   const [query, setQuery] = useState('');
   const [activeGenre, setActiveGenre] = useState('All');
-  const genres = ['All', 'Thriller', 'Romance', 'Mystery', 'Drama', 'Sci-fi', 'Noir'];
+  const genres = ['All', 'Romance', 'Revenge', 'Mystery', 'Thriller', 'Fantasy', 'CEO', 'Mafia'];
+  const suggestions = ['Hidden Identity', 'Fake Marriage', 'Billionaire', 'Revenge', 'Secret Baby', 'Werewolf'];
   const results = useMemo(() => dramas.filter((drama) => {
-    const matchesQuery = `${drama.title} ${drama.eyebrow} ${drama.genre.join(' ')}`.toLowerCase().includes(query.toLowerCase());
-    const matchesGenre = activeGenre === 'All' || drama.genre.includes(activeGenre);
+    const haystack = `${drama.title} ${drama.eyebrow} ${drama.genre.join(' ')} ${drama.description}`.toLowerCase();
+    const matchesQuery = !query.trim() || haystack.includes(query.toLowerCase().trim());
+    const matchesGenre = activeGenre === 'All' || drama.genre.some((genre) => genre.toLowerCase().includes(activeGenre.toLowerCase()));
     return matchesQuery && matchesGenre;
   }), [activeGenre, query]);
   return (
     <div className="animate-rise">
-      <div className="mb-9">
-        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Find your next obsession</p>
-        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">What are you<br />in the mood for?</h1>
+      <div className="sticky top-[4.25rem] z-30 -mx-4 border-b border-white/[.06] bg-[#07080c]/95 px-4 pb-4 pt-3 backdrop-blur-xl md:-mx-7 md:px-7">
+        <div className="flex items-center gap-3">
+          <Link href="/" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/[.03] text-white/60" aria-label="Back home"><ArrowLeft size={16}/></Link>
+          <label className="relative min-w-0 flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={17}/>
+            <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search stories, characters, tropes..." className="h-11 w-full rounded-full border border-white/10 bg-white/[.06] pl-11 pr-4 text-sm text-white outline-none placeholder:text-white/30 focus:border-[#ff4fc3]/60" data-testid="input-search" />
+          </label>
+          {query && <button type="button" onClick={() => setQuery('')} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 text-white/50">×</button>}
+        </div>
+        <div className="scrollbar-none mt-3 flex gap-2 overflow-x-auto pb-1">
+          {genres.map((genre) => <button key={genre} type="button" onClick={() => setActiveGenre(genre)} className={`shrink-0 rounded-full border px-4 py-2 text-[11px] font-medium transition-all ${activeGenre === genre ? 'border-[#ff4fc3] bg-[#ff4fc3] text-[#171720]' : 'border-white/10 bg-white/[.03] text-white/55'}`}>{genre}</button>)}
+        </div>
       </div>
-      <label className="relative block max-w-[650px]">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={18} />
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search titles, moods, genres..." className="h-14 w-full rounded-2xl border border-white/10 bg-white/[.05] pl-12 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-[#ff4fc3]/60" data-testid="input-search" />
-      </label>
-      <div className="scrollbar-none -mx-5 mt-5 flex gap-2 overflow-x-auto px-5 pb-2">
-        {genres.map((genre) => <button key={genre} type="button" onClick={() => setActiveGenre(genre)} className={`shrink-0 rounded-full border px-4 py-2 text-xs transition-all ${activeGenre === genre ? 'border-[#ff4fc3] bg-[#ff4fc3] text-[#171720]' : 'border-white/10 bg-white/[.03] text-white/55 hover:border-white/25 hover:text-white'}`} data-testid={`button-genre-${genre.toLowerCase()}`}>{genre}</button>)}
-      </div>
-      <div className="mt-10">
-        <div className="mb-5 flex items-center justify-between"><h2 className="font-display text-2xl text-white">{query || activeGenre !== 'All' ? `${results.length} stories found` : 'The full collection'}</h2><SlidersHorizontal size={16} className="text-white/35" /></div>
+
+      {!query && activeGenre === 'All' && (
+        <section className="mt-6 rounded-2xl border border-white/[.07] bg-white/[.025] p-5">
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Popular searches</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {suggestions.map((item) => <button key={item} type="button" onClick={() => setQuery(item)} className="rounded-full border border-white/10 bg-white/[.03] px-3.5 py-2 text-xs text-white/65 hover:border-[#ff4fc3]/50 hover:text-white">{item}</button>)}
+          </div>
+        </section>
+      )}
+
+      <div className="mt-7">
+        <div className="mb-5 flex items-end justify-between"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{query ? 'Search results' : 'Browse all stories'}</p><h1 className="mt-1 font-display text-2xl text-white">{query ? `${results.length} stories` : 'Discover your next obsession'}</h1></div><SlidersHorizontal size={17} className="text-white/35" /></div>
         {results.length > 0 ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{results.map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySearch onReset={() => { setQuery(''); setActiveGenre('All'); }} />}
       </div>
     </div>
   );
 }
-
 function EmptySearch({ onReset }: { onReset: () => void }) {
   return (
     <div className="rounded-2xl border border-dashed border-white/15 bg-white/[.02] px-5 py-16 text-center">
@@ -578,30 +603,101 @@ function FollowingPage() {
 }
 
 function RewardsPage() {
-  const [status, setStatus] = useState<'loading' | 'signed-out' | 'ready'>('loading');
-  const [data, setData] = useState<{ rewards: Array<{ id: number; key: string; name: string; coinAmount: number; bonusAmount: number }>; missions: Array<{ id: number; name: string; description: string; target: number; progress?: { progress: number } | null }> }>({ rewards: [], missions: [] });
+  type Mission = { id: string; title: string; subtitle: string; reward: number; action: string; progress?: number; target?: number };
+  const days = [20, 25, 30, 30, 50, 50, 100];
+  const [balance, setBalance] = useState<number>(() => Number(localStorage.getItem('veyra:coins') ?? 0));
+  const [checkedIn, setCheckedIn] = useState(() => localStorage.getItem('veyra:daily-checkin') === new Date().toISOString().slice(0,10));
   const [message, setMessage] = useState('');
-  useEffect(() => {
-    fetch('/api/me/rewards', { credentials: 'include' }).then(async (response) => {
-      if (response.status === 401) { setStatus('signed-out'); return; }
-      if (response.ok) { setData(await response.json()); setStatus('ready'); }
-    }).catch(() => setStatus('signed-out'));
-  }, []);
-  const claim = async (key: string) => {
-    const response = await fetch(`/api/rewards/${key}/claim`, { method: 'POST', credentials: 'include' });
-    const body = await response.json().catch(() => ({}));
-    setMessage(response.ok ? 'Reward added to your wallet.' : body.error ?? 'This reward is not available.');
+  const [adProgress, setAdProgress] = useState(0);
+  const [claimed, setClaimed] = useState<Record<string, boolean>>(() => {
+    try { return JSON.parse(localStorage.getItem('veyra:reward-claims') ?? '{}'); } catch { return {}; }
+  });
+
+  const addCoins = (amount: number, key: string, text: string) => {
+    if (claimed[key]) return;
+    const next = balance + amount;
+    setBalance(next);
+    localStorage.setItem('veyra:coins', String(next));
+    window.dispatchEvent(new Event('veyra:coins'));
+    const nextClaims = { ...claimed, [key]: true };
+    setClaimed(nextClaims);
+    localStorage.setItem('veyra:reward-claims', JSON.stringify(nextClaims));
+    setMessage(text);
   };
-  if (status === 'signed-out') return <AuthPrompt title="Rewards are waiting" copy="Sign in to collect coins, complete missions, and keep your balance across devices." />;
+
+  const missions: Mission[] = [
+    { id: 'ad', title: 'Watch ads', subtitle: 'Watch 12 short ads · +5 Coins each', reward: 60, action: 'Watch', progress: adProgress, target: 12 },
+    { id: 'rate', title: 'Rate a story', subtitle: 'Give a story your rating', reward: 10, action: 'Rate' },
+    { id: 'instagram', title: 'Follow VEYRA', subtitle: 'Follow us on Instagram', reward: 10, action: 'Follow' },
+    { id: 'email', title: 'Connect email', subtitle: 'Secure your account and get a bonus', reward: 20, action: 'Bind' },
+    { id: 'notifications', title: 'Enable notifications', subtitle: 'Never miss a new episode', reward: 10, action: 'Enable' },
+  ];
+
   return (
-    <div className="animate-rise">
-      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#b78cff]">Your VEYRA wallet</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Rewards<span className="text-[#b78cff]">.</span></h1><p className="mt-4 text-sm text-white/45">Watch, return, and unlock more stories.</p></div>
-      {message && <div className="mb-5 rounded-xl border border-[#b78cff]/30 bg-[#b78cff]/10 px-4 py-3 text-sm text-[#f5d68c]">{message}</div>}
-      <div className="grid gap-5 md:grid-cols-2">
-        <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-3"><Coins className="text-[#b78cff]" /><div><p className="text-xs text-white/45">Available balance</p><p className="mt-1 font-display text-3xl text-white">Sign in to view</p></div></div><p className="mt-5 text-xs leading-relaxed text-white/40">Coins are granted by verified server-side ledger entries. Payments and ads remain unavailable until a provider is configured.</p></section>
-        <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Missions</p>{data.missions.length ? data.missions.map((mission) => <div key={mission.id} className="mt-4 flex items-center justify-between gap-3"><div><p className="text-sm text-white/85">{mission.name}</p><p className="mt-1 text-xs text-white/40">{mission.description}</p></div><span className="font-mono-ui text-[10px] text-[#b78cff]">{mission.progress?.progress ?? 0}/{mission.target}</span></div>) : <p className="mt-5 text-sm text-white/40">Missions will appear here when the catalog team activates them.</p>}</section>
+    <div className="animate-rise space-y-6">
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#b78cff]">Earn more while you watch</p>
+          <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-white sm:text-[4rem]">Rewards<span className="text-[#ff4fc3]">.</span></h1>
+          <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/45">Check in every day, complete missions, play bonus games and turn your time into Coins.</p>
+        </div>
+        <Link href="/wallet" className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[.04] px-4 py-2.5 text-xs text-white/75 sm:inline-flex"><Coins size={14} className="text-[#ffcf70]" /> {balance}</Link>
       </div>
-      <section className="mt-8"><SectionHeader eyebrow="Collect" title="Available rewards" href="/rewards" /><div className="grid gap-3 sm:grid-cols-2">{data.rewards.length ? data.rewards.map((reward) => <div key={reward.id} className="flex items-center justify-between rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div><p className="font-display text-lg text-white/90">{reward.name}</p><p className="mt-1 text-xs text-[#b78cff]">+{reward.coinAmount} coins{reward.bonusAmount ? ` · +${reward.bonusAmount} bonus` : ''}</p></div><button type="button" onClick={() => claim(reward.key)} className="rounded-full bg-[#b78cff] px-3 py-2 text-xs font-semibold text-[#171720]">Claim</button></div>) : <p className="text-sm text-white/40">No rewards are active yet.</p>}</div></section>
+
+      {message && <button type="button" onClick={() => setMessage('')} className="w-full rounded-xl border border-[#b78cff]/25 bg-[#b78cff]/10 px-4 py-3 text-left text-xs text-[#eadcff]">{message}</button>}
+
+      <section className="overflow-hidden rounded-[1.6rem] border border-[#b78cff]/20 bg-[radial-gradient(circle_at_80%_20%,rgba(255,79,195,.16),transparent_30%),linear-gradient(135deg,rgba(183,140,255,.13),rgba(255,255,255,.025))] p-5 sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ffcf70]">Daily check-in</p>
+            <h2 className="mt-2 font-display text-2xl text-white">Come back every day.</h2>
+            <p className="mt-1 text-xs text-white/45">Your streak gets more valuable as you return.</p>
+          </div>
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#ffcf70]/10 text-[#ffcf70]"><Gift size={23}/></div>
+        </div>
+        <div className="mt-5 grid grid-cols-7 gap-1.5 sm:gap-2">
+          {days.map((coins, index) => <div key={coins + index} className={`rounded-xl border p-2 text-center ${index === 0 && !checkedIn ? 'border-[#ff4fc3]/60 bg-[#ff4fc3]/12 shadow-[0_0_24px_rgba(255,79,195,.12)]' : 'border-white/[.07] bg-white/[.025]'}`}>
+            <p className="font-mono-ui text-[8px] text-white/35">DAY {index + 1}</p>
+            <Coins size={13} className="mx-auto my-1.5 text-[#ffcf70]" />
+            <p className="font-mono-ui text-[9px] text-white/80">+{coins}</p>
+          </div>)}
+        </div>
+        <button type="button" disabled={checkedIn} onClick={() => { if (checkedIn) return; const today=new Date().toISOString().slice(0,10); setCheckedIn(true); localStorage.setItem('veyra:daily-checkin',today); addCoins(days[0], 'daily-checkin-'+today, `Daily check-in claimed: +${days[0]} Coins`); }} className="mt-5 w-full rounded-full bg-[#ff4fc3] px-5 py-3 text-xs font-bold text-[#171720] disabled:bg-white/10 disabled:text-white/30">{checkedIn ? 'Checked in today' : `Claim today's ${days[0]} Coins`}</button>
+      </section>
+
+      <section className="rounded-[1.4rem] border border-white/[.08] bg-white/[.025] p-5 sm:p-6">
+        <div className="flex items-end justify-between"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Today's benefits</p><h2 className="mt-1 font-display text-2xl text-white">Complete & earn</h2></div><span className="text-[10px] text-white/30">Coins go straight to Wallet</span></div>
+        <div className="mt-4 divide-y divide-white/[.06]">
+          {missions.map((mission) => {
+            const done = Boolean(claimed[mission.id]);
+            const progress = mission.progress ?? (done ? mission.target ?? 1 : 0);
+            const target = mission.target ?? 1;
+            return <div key={mission.id} className="flex items-center gap-3 py-4 first:pt-1 last:pb-1">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#b78cff]/10 text-[#b78cff]">{mission.id === 'ad' ? <Play size={17} fill="currentColor"/> : mission.id === 'rate' ? <Check size={17}/> : mission.id === 'notifications' ? <Bell size={17}/> : mission.id === 'email' ? <UserCircle size={17}/> : <UsersRound size={17}/>}</div>
+              <div className="min-w-0 flex-1"><div className="flex items-center justify-between gap-3"><p className="text-sm font-medium text-white/90">{mission.title}</p><span className="font-mono-ui text-[10px] text-[#ffcf70]">+{mission.reward}</span></div><p className="mt-1 text-[11px] text-white/40">{mission.subtitle}</p>{mission.target && <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-[#b78cff] to-[#ff4fc3]" style={{width:`${Math.round((progress/target)*100)}%`}}/></div>}</div>
+              <button type="button" onClick={() => { if (mission.id === 'ad') { const next=Math.min(adProgress+1,12); setAdProgress(next); setMessage(next===12 ? 'Ad mission complete. Your final bonus is ready.' : `Demo ad ${next}/12 — ad provider will award Coins when connected.`); if(next===12) addCoins(60,'ad-bonus','12-ad mission bonus: +60 Coins'); return; } addCoins(mission.reward, mission.id, `${mission.title}: +${mission.reward} Coins`); }} disabled={done} className="shrink-0 rounded-full bg-[#b78cff] px-3.5 py-2 text-[10px] font-bold text-[#171720] disabled:bg-white/10 disabled:text-white/25">{done ? 'Done' : mission.action}</button>
+            </div>;
+          })}
+        </div>
+      </section>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <section className="rounded-[1.4rem] border border-white/[.08] bg-gradient-to-br from-[#ff4fc3]/10 to-transparent p-5">
+          <div className="flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-xl bg-[#ff4fc3]/12 text-[#ff4fc3]"><Zap size={19}/></div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.16em] text-[#ff4fc3]">Bonus zone</p><h2 className="font-display text-xl text-white">Games & surprises</h2></div></div>
+          <p className="mt-4 text-xs leading-relaxed text-white/45">Play short bonus games and collect extra Coins. New challenges can appear here every day.</p>
+          <button type="button" onClick={() => setMessage('Bonus games are ready for the game partner integration.')} className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[.05] px-4 py-2.5 text-xs text-white/80">Play & earn <ChevronRight size={13}/></button>
+        </section>
+        <section className="rounded-[1.4rem] border border-white/[.08] bg-gradient-to-br from-[#b78cff]/10 to-transparent p-5">
+          <div className="flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-xl bg-[#b78cff]/12 text-[#b78cff]"><Clock3 size={19}/></div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.16em] text-[#b78cff]">Limited reward</p><h2 className="font-display text-xl text-white">1 hour of free drama</h2></div></div>
+          <p className="mt-4 text-xs leading-relaxed text-white/45">Use a limited-time reward to watch selected locked episodes without spending Coins.</p>
+          <Link href="/discover" className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[.05] px-4 py-2.5 text-xs text-white/80">Find eligible stories <ChevronRight size={13}/></Link>
+        </section>
+      </div>
+
+      <section className="rounded-[1.4rem] border border-white/[.08] bg-white/[.02] p-5">
+        <div className="flex items-center justify-between gap-3"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/30">More ways to earn</p><h2 className="mt-1 font-display text-xl text-white">New arrivals & special missions</h2></div><Link href="/discover" className="text-xs text-[#ff4fc3]">Explore</Link></div>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4"><div className="rounded-xl border border-white/[.07] bg-white/[.025] p-3"><p className="text-xs text-white/80">New arrival</p><p className="mt-1 text-[10px] text-white/35">Watch a new series</p></div><div className="rounded-xl border border-white/[.07] bg-white/[.025] p-3"><p className="text-xs text-white/80">Finish an episode</p><p className="mt-1 text-[10px] text-white/35">Earn a watch bonus</p></div><div className="rounded-xl border border-white/[.07] bg-white/[.025] p-3"><p className="text-xs text-white/80">Keep your streak</p><p className="mt-1 text-[10px] text-white/35">Return tomorrow</p></div><div className="rounded-xl border border-white/[.07] bg-white/[.025] p-3"><p className="text-xs text-white/80">Invite a friend</p><p className="mt-1 text-[10px] text-white/35">Referral bonus</p></div></div>
+      </section>
     </div>
   );
 }
@@ -886,6 +982,7 @@ function WatchPage() {
 
   const handleFullscreen = async () => {
     pokeControls();
+    setIsFullscreen((current) => !current);
     const frame = frameRef.current;
     const video = videoRef.current;
     try {
@@ -975,7 +1072,7 @@ function WatchPage() {
           <div className="relative flex w-full flex-1 items-center justify-center overflow-hidden bg-black">
             <div
               ref={frameRef}
-              className="veyra-stage relative overflow-hidden bg-black"
+              className={`veyra-stage relative overflow-hidden bg-black ${isFullscreen ? 'veyra-stage-immersive' : ''}`}
               onClick={handleSurfaceClick}
               onPointerMove={(event) => {
                 if (event.pointerType === 'mouse' && playing) pokeControls();
@@ -1070,7 +1167,7 @@ function WatchPage() {
                     <p className="truncate font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/50">{drama.title}</p>
                     <p className="mt-1 truncate text-xs text-white/85">Episode {episode.number} <span className="text-white/30">·</span> {episode.title}</p>
                   </div>
-                  <div className="relative"><button type="button" onClick={(e)=>{e.stopPropagation(); setMoreOpen((v)=>!v); pokeControls();}} className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/25 text-white/75 transition-colors hover:border-white/50" aria-label="More options" data-testid="button-player-more"><MoreHorizontal size={17} /></button>{moreOpen && <div data-player-ui className="absolute right-0 top-11 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111118]/95 p-1 shadow-2xl backdrop-blur-xl"><button type="button" onClick={shareEpisode} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><Share2 size={14}/> Share</button><button type="button" onClick={downloadEpisode} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><Download size={14}/> Download</button><button type="button" onClick={cycleSpeed} className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><span className="flex items-center gap-3"><Zap size={14}/> Speed</span><span className="text-white/45">{playbackRate}x</span></button></div>}</div>
+                  <div className="relative"><button type="button" onClick={(e)=>{e.stopPropagation(); setMoreOpen((v)=>!v); pokeControls();}} className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/25 text-white/75 transition-colors hover:border-white/50" aria-label="More options" data-testid="button-player-more"><MoreHorizontal size={17} /></button>{moreOpen && <div data-player-ui className="absolute right-0 top-11 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111118]/95 p-1 shadow-2xl backdrop-blur-xl"><button type="button" onClick={shareEpisode} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><Share2 size={14}/> Share</button><button type="button" onClick={downloadEpisode} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><Download size={14}/> Download</button><button type="button" onClick={() => { setMoreOpen(false); pokeControls(); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]">Subtitles <span className="ml-auto text-white/35">EN</span></button><button type="button" onClick={() => { setMoreOpen(false); pokeControls(); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]">Quality <span className="ml-auto text-white/35">Auto</span></button><button type="button" onClick={cycleSpeed} className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><span className="flex items-center gap-3"><Zap size={14}/> Speed</span><span className="text-white/45">{playbackRate}x</span></button></div>}</div>
                 </div>
               </div>
 
@@ -1113,7 +1210,7 @@ function WatchPage() {
               )}
 
               {/* alt bölge: altyazı (güvenli alan) + açılır kontroller + bölüm bilgisi */}
-              <div className="veyra-safe-bottom absolute inset-x-0 bottom-0 z-30">
+              <div className={`veyra-safe-bottom absolute inset-x-0 bottom-0 z-30 transition-opacity duration-200 ${isFullscreen && !showControls ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                 <div className="px-4 pb-3 pt-14 sm:px-6">
                   {activeCaption && (
                     <div className="pointer-events-none mb-3 flex justify-center" aria-live="polite" data-testid="player-caption">
@@ -1224,7 +1321,7 @@ function AppRouter() {
         <Route path="/" component={() => <PageFrame><HomePage /></PageFrame>} />
         <Route path="/drama/:id" component={() => <PageFrame><DramaDetailPage /></PageFrame>} />
         <Route path="/search" component={() => <PageFrame><SearchPage /></PageFrame>} />
-         <Route path="/discover" component={() => <PageFrame><SearchPage /></PageFrame>} />
+         <Route path="/discover" component={() => <PageFrame><DiscoverPage /></PageFrame>} />
         <Route path="/saved" component={() => <PageFrame><SavedPage /></PageFrame>} />
          <Route path="/following" component={() => <PageFrame><FollowingPage /></PageFrame>} />
          <Route path="/rewards" component={() => <PageFrame><RewardsPage /></PageFrame>} />
