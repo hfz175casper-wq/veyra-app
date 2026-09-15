@@ -62,3 +62,4 @@ android/keystore.properties
 dist-android/
 artifacts/reeldrama/.env.local
 artifacts/reeldrama/.env.production.local
+.env
