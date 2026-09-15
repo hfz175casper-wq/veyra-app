@@ -199,17 +199,35 @@
   align-self: auto !important;
 }
 
-
-.veyra-stage:-webkit-full-screen {
+/* VEYRA native/WebView fullscreen fallback: keep the player portrait and
+   remove page chrome even when Android WebView does not expose document.fullscreenElement. */
+.veyra-player-fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
   width: 100vw !important;
-  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
   max-width: none !important;
-  align-self: auto !important;
+  margin: 0 !important;
+  background: #000 !important;
 }
-
-@media (max-width: 767px) {
-  .veyra-stage {
-    width: min(100vw, 56.25vh);
-    height: 100%;
-  }
+.veyra-player-fullscreen > div:first-child {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+.veyra-player-fullscreen .veyra-stage {
+  width: 100vw !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  aspect-ratio: auto !important;
+}
+.veyra-player-fullscreen .player-info,
+.veyra-player-fullscreen .player-nav {
+  display: none !important;
+}
+.veyra-player-fullscreen .veyra-safe-bottom > div {
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
 }

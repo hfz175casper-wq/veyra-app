@@ -7,8 +7,8 @@ import {
   BookmarkCheck,
   ChevronRight,
   CirclePlay,
-  Clock3,
   Download,
+  Clock3,
   BarChart3,
   Check,
   Coins,
@@ -32,9 +32,9 @@ import {
   Volume2,
   VolumeX,
   UserCircle,
+  Zap,
   Share2,
   UsersRound,
-  Zap,
 } from 'lucide-react';
 import { ClerkProvider, Show, SignInButton, UserButton, useAuth, useUser } from '@clerk/react';
 import { useUpload } from '@workspace/object-storage-web';
@@ -521,13 +521,6 @@ function SearchPage() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={18} />
         <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search titles, moods, genres..." className="h-14 w-full rounded-2xl border border-white/10 bg-white/[.05] pl-12 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-[#ff4fc3]/60" data-testid="input-search" />
       </label>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {['Hidden Identity', 'Fake Marriage', 'Billionaire', 'Revenge', 'Secret Baby', 'Werewolf'].map((term) => (
-          <button key={term} type="button" onClick={() => setQuery(term)} className="rounded-full border border-white/10 bg-white/[.03] px-3 py-2 text-[11px] text-white/55 transition-colors hover:border-[#ff4fc3]/50 hover:text-white" data-testid={`button-popular-search-${term.toLowerCase().replace(/\s+/g, '-')}`}>
-            {term}
-          </button>
-        ))}
-      </div>
       <div className="scrollbar-none -mx-5 mt-5 flex gap-2 overflow-x-auto px-5 pb-2">
         {genres.map((genre) => <button key={genre} type="button" onClick={() => setActiveGenre(genre)} className={`shrink-0 rounded-full border px-4 py-2 text-xs transition-all ${activeGenre === genre ? 'border-[#ff4fc3] bg-[#ff4fc3] text-[#171720]' : 'border-white/10 bg-white/[.03] text-white/55 hover:border-white/25 hover:text-white'}`} data-testid={`button-genre-${genre.toLowerCase()}`}>{genre}</button>)}
       </div>
@@ -587,38 +580,19 @@ function FollowingPage() {
 }
 
 function RewardsPage() {
-  const fallbackRewards = [
-    { id: 1, key: 'daily_check_in', name: 'Daily check-in', coinAmount: 10, bonusAmount: 0 },
-    { id: 2, key: 'watch_boost', name: 'Watch & Earn', coinAmount: 15, bonusAmount: 5 },
-    { id: 3, key: 'story_pass', name: 'Story Pass', coinAmount: 25, bonusAmount: 0 },
-  ];
-  const fallbackMissions = [
-    { id: 1, name: 'Come back tomorrow', description: 'Keep your streak alive.', target: 1, progress: { progress: 0 } },
-    { id: 2, name: 'Watch two episodes', description: 'Explore more of VEYRA today.', target: 2, progress: { progress: 0 } },
-  ];
-  const [status, setStatus] = useState<'signed-out' | 'ready'>('ready');
-  const [data, setData] = useState<{ rewards: Array<{ id: number; key: string; name: string; coinAmount: number; bonusAmount: number }>; missions: Array<{ id: number; name: string; description: string; target: number; progress?: { progress: number } | null }> }>({ rewards: fallbackRewards, missions: fallbackMissions });
+  const [status, setStatus] = useState<'loading' | 'signed-out' | 'ready'>('loading');
+  const [data, setData] = useState<{ rewards: Array<{ id: number; key: string; name: string; coinAmount: number; bonusAmount: number }>; missions: Array<{ id: number; name: string; description: string; target: number; progress?: { progress: number } | null }> }>({ rewards: [], missions: [] });
   const [message, setMessage] = useState('');
   useEffect(() => {
-    let cancelled = false;
     fetch('/api/me/rewards', { credentials: 'include' }).then(async (response) => {
-      if (cancelled) return;
       if (response.status === 401) { setStatus('signed-out'); return; }
-      if (response.ok) {
-        const nextData = await response.json();
-        setData({ rewards: nextData.rewards?.length ? nextData.rewards : fallbackRewards, missions: nextData.missions?.length ? nextData.missions : fallbackMissions });
-      }
-    }).catch(() => undefined);
-    return () => { cancelled = true; };
+      if (response.ok) { setData(await response.json()); setStatus('ready'); }
+    }).catch(() => setStatus('signed-out'));
   }, []);
   const claim = async (key: string) => {
-    try {
-      const response = await fetch(`/api/rewards/${key}/claim`, { method: 'POST', credentials: 'include' });
-      const body = await response.json().catch(() => ({}));
-      setMessage(response.ok ? 'Reward added to your wallet.' : body.error ?? 'Sign in to claim this reward.');
-    } catch {
-      setMessage('Reward service is temporarily unavailable.');
-    }
+    const response = await fetch(`/api/rewards/${key}/claim`, { method: 'POST', credentials: 'include' });
+    const body = await response.json().catch(() => ({}));
+    setMessage(response.ok ? 'Reward added to your wallet.' : body.error ?? 'This reward is not available.');
   };
   if (status === 'signed-out') return <AuthPrompt title="Rewards are waiting" copy="Sign in to collect coins, complete missions, and keep your balance across devices." />;
   return (
@@ -754,7 +728,6 @@ function WatchPage() {
     setLoadError(null);
     setControlsVisible(true);
     setCountdown(null);
-    setMoreOpen(false);
   }, [progressKey, drama.id, episode.number]);
 
   const saveProgress = (seconds: number) => {
@@ -830,18 +803,18 @@ function WatchPage() {
     return () => window.clearInterval(timer);
   }, [episodeFinished, nextEpisode, drama.id, navigate]);
 
-  // --- fullscreen durumunu takip et (browser + native Android WebView) ---
+  // --- fullscreen durumunu takip et (tarayıcı + Escape) ---
   useEffect(() => {
-    const syncBrowserFullscreen = () => setIsFullscreen(Boolean(document.fullscreenElement));
-    const enterNativeFullscreen = () => setIsFullscreen(true);
-    const exitNativeFullscreen = () => setIsFullscreen(false);
-    document.addEventListener('fullscreenchange', syncBrowserFullscreen);
-    window.addEventListener('veyra-native-fullscreen-enter', enterNativeFullscreen);
-    window.addEventListener('veyra-native-fullscreen-exit', exitNativeFullscreen);
+    const sync = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    const handleNativeEnter = () => setIsFullscreen(true);
+    const handleNativeExit = () => setIsFullscreen(false);
+    document.addEventListener('fullscreenchange', sync);
+    window.addEventListener('veyra-native-fullscreen-enter', handleNativeEnter);
+    window.addEventListener('veyra-native-fullscreen-exit', handleNativeExit);
     return () => {
-      document.removeEventListener('fullscreenchange', syncBrowserFullscreen);
-      window.removeEventListener('veyra-native-fullscreen-enter', enterNativeFullscreen);
-      window.removeEventListener('veyra-native-fullscreen-exit', exitNativeFullscreen);
+      document.removeEventListener('fullscreenchange', sync);
+      window.removeEventListener('veyra-native-fullscreen-enter', handleNativeEnter);
+      window.removeEventListener('veyra-native-fullscreen-exit', handleNativeExit);
     };
   }, []);
 
@@ -923,22 +896,26 @@ function WatchPage() {
 
   const handleFullscreen = async () => {
     pokeControls();
+    setMoreOpen(false);
     const frame = frameRef.current;
     const video = videoRef.current;
+    if (isFullscreen) {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+      } catch { /* native WebView fullscreen may already be closing */ }
+      setIsFullscreen(false);
+      return;
+    }
+    setIsFullscreen(true);
     try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-        return;
-      }
       if (frame?.requestFullscreen) {
-        await frame.requestFullscreen();
+        await frame.requestFullscreen({ navigationUI: 'hide' } as FullscreenOptions);
         return;
       }
-      // iOS Safari: öğe fullscreen yok, videoyu native tam ekrana aç.
       const legacyVideo = video as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
       legacyVideo?.webkitEnterFullscreen?.();
     } catch {
-      // WebView zaten native tam ekran yolunu (onShowCustomView) kullanır.
+      // CSS fullscreen fallback remains active; Android native fullscreen is optional.
     }
   };
 
@@ -1007,7 +984,7 @@ function WatchPage() {
   return (
     <div className="grain min-h-[100dvh] bg-[#0d0d13] text-white">
       <div className="mx-auto flex min-h-[100dvh] max-w-[1440px] flex-col lg:flex-row">
-        <section ref={playerRef} className="relative flex min-h-[100dvh] flex-1 flex-col overflow-hidden bg-black lg:min-h-[100dvh]" data-testid="player-surface">
+        <section ref={playerRef} className={`relative flex min-h-[100dvh] flex-1 flex-col overflow-hidden bg-black lg:min-h-[100dvh] ${isFullscreen ? 'veyra-player-fullscreen' : ''}`} data-testid="player-surface">
           {/* 9:16 dikey sahne: mobilde tam ekran, desktop'ta ortalanmış dikey çerçeve */}
           <div className="relative flex w-full flex-1 items-center justify-center overflow-hidden bg-black">
             <div
@@ -1170,33 +1147,29 @@ function WatchPage() {
                     </div>
                   </div>
 
-                  {!isFullscreen && (
-                    <>
-                      <div className="mt-3 flex items-end justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate font-display text-lg leading-tight sm:text-xl">{episode.title}</p>
-                          <p className="mt-1 line-clamp-2 max-w-[430px] text-[11px] leading-relaxed text-white/55">{episode.synopsis}</p>
-                        </div>
-                        <span className="shrink-0 font-mono-ui text-[10px] text-white/35">{episode.number} / {drama.episodeCount}</span>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between gap-3 text-xs">
-                        {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 transition-colors hover:text-white" data-testid="link-player-previous-mobile">Previous episode</Link> : <span className="text-white/15">First episode</span>}
-                        {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#ff4fc3] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/35">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
-                      </div>
-                    </>
-                  )}
+                  <div className="player-info mt-3 flex items-end justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-display text-lg leading-tight sm:text-xl">{episode.title}</p>
+                      <p className="mt-1 line-clamp-2 max-w-[430px] text-[11px] leading-relaxed text-white/55">{episode.synopsis}</p>
+                    </div>
+                    <span className="shrink-0 font-mono-ui text-[10px] text-white/35">{episode.number} / {drama.episodeCount}</span>
+                  </div>
+                  <div className="player-nav mt-3 flex items-center justify-between gap-3 text-xs">
+                    {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 transition-colors hover:text-white" data-testid="link-player-previous-mobile">Previous episode</Link> : <span className="text-white/15">First episode</span>}
+                    {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#ff4fc3] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/35">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* desktop meta — dikey çerçevenin altında (mobilde overlay zaten gösteriyor) */}
-          <div className="hidden shrink-0 border-t border-white/[.06] bg-[#0d0d13] px-8 py-5 lg:block">
+          <div className={`${isFullscreen ? 'hidden' : ''} hidden shrink-0 border-t border-white/[.06] bg-[#0d0d13] px-8 py-5 lg:block`}>
             <p className="max-w-[560px] font-display text-2xl leading-[.95]">{episode.title}</p>
             <p className="mt-2 max-w-[540px] text-xs leading-relaxed text-white/55">{episode.synopsis}</p>
           </div>
         </section>
-        <aside className="w-full border-t border-white/[.08] bg-[#111118] lg:w-[350px] lg:border-l lg:border-t-0">
+        {!isFullscreen && <aside className="w-full border-t border-white/[.08] bg-[#111118] lg:w-[350px] lg:border-l lg:border-t-0">
           <div className="flex items-center justify-between border-b border-white/[.08] px-5 py-5">
             <div><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Now watching</p><h2 className="mt-1 font-display text-xl">{drama.title}</h2></div>
             <span className="font-mono-ui text-[10px] text-white/35">{episode.number} / {drama.episodeCount}</span>
@@ -1217,7 +1190,7 @@ function WatchPage() {
               {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 text-[#ff4fc3] hover:text-white" data-testid="link-player-next">Next episode <ChevronRight size={13} /></Link> : <span className="text-white/15">End of story</span>}
             </div>
           </div>
-        </aside>
+        </aside>}
       </div>
     </div>
   );

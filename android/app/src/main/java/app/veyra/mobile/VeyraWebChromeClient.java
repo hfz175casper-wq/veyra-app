@@ -17,23 +17,9 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeWebChromeClient;
 
-/**
- * VEYRA — tam ekran videoyu gerçekten çalıştıran WebChromeClient.
- *
- * Capacitor'ın varsayılan istemcisi {@code onShowCustomView} içinde
- * {@code callback.onCustomViewHidden()} çağırarak tam ekran isteğini iptal
- * eder. Bu sınıf aynı istemciden türeyip yalnızca tam ekran davranışını
- * değiştirir: videoyu siyah bir kapsayıcıya taşır, sistem çubuklarını gizler
- * ve yatay yönelime geçer; çıkışta her şeyi geri alır.
- *
- * Tüm native çağrılar savunmacıdır (try/catch): beklenmedik bir durumda
- * uygulama çökmez, tam ekrandan vazgeçilir ve oynatma satır içi devam eder.
- */
 public class VeyraWebChromeClient extends BridgeWebChromeClient {
-
     private final Activity activity;
     private final Bridge bridge;
-
     private View customView;
     private ViewGroup customViewContainer;
     private CustomViewCallback customViewCallback;
@@ -47,109 +33,85 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
     @Override
     public void onShowCustomView(View view, CustomViewCallback callback) {
         if (customView != null) {
-            // Zaten tam ekrandayız; ikinci isteği reddet.
             callback.onCustomViewHidden();
             return;
         }
-
         customView = view;
         customViewCallback = callback;
-
         try {
             FrameLayout container = new FrameLayout(activity);
-            container.setLayoutParams(new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT));
             container.setBackgroundColor(Color.BLACK);
             container.addView(view, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT));
-
-            ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
-            decorView.addView(container);
+            ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
+            decor.addView(container, new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT));
             customViewContainer = container;
 
-            // Video izlerken ekran kararmasın (native tam ekran süresince).
             activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-            hideSystemBars();
             activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            dispatchFullscreenEvent(true);
-        } catch (RuntimeException error) {
+            hideSystemBars();
+            dispatch("veyra-native-fullscreen-enter");
+        } catch (RuntimeException ignored) {
             exitCustomView();
         }
     }
 
     @Override
     public void onHideCustomView() {
-        if (customView == null) {
-            return;
-        }
-        exitCustomView();
+        if (customView != null) exitCustomView();
     }
 
-    /** MainActivity'nin geri tuşu kararını verebilmesi için durum sorgusu. */
     public boolean isCustomViewShowing() {
         return customView != null;
     }
 
     private void hideSystemBars() {
-        try {
-            Window window = activity.getWindow();
-            ViewGroup decorView = (ViewGroup) window.getDecorView();
-            WindowCompat.setDecorFitsSystemWindows(window, false);
-            WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, decorView);
-            controller.setSystemBarsBehavior(
-                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        Window window = activity.getWindow();
+        View decor = window.getDecorView();
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+        WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, decor);
+        if (controller != null) {
+            controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
             controller.hide(WindowInsetsCompat.Type.systemBars());
-        } catch (RuntimeException ignored) {
-            // Sistem çubukları gizlenemezse tam ekran yine de çalışır.
-        }
-    }
-
-    private void dispatchFullscreenEvent(boolean entering) {
-        try {
-            if (bridge == null || bridge.getWebView() == null) return;
-            String eventName = entering ? "veyra-native-fullscreen-enter" : "veyra-native-fullscreen-exit";
-            bridge.getWebView().evaluateJavascript(
-                    "window.dispatchEvent(new Event('" + eventName + "'));", null);
-        } catch (RuntimeException ignored) {
-            // WebView may already be detached during activity shutdown.
         }
     }
 
     private void exitCustomView() {
         try {
             if (customViewContainer != null) {
-                if (customView != null) {
-                    customViewContainer.removeView(customView);
-                }
-                ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
-                decorView.removeView(customViewContainer);
+                if (customView != null) customViewContainer.removeView(customView);
+                ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
+                decor.removeView(customViewContainer);
             }
         } catch (RuntimeException ignored) {
-            // Görünüm ağacı zaten temizlenmiş olabilir.
         }
         customViewContainer = null;
         customView = null;
-
         try {
             Window window = activity.getWindow();
             WindowCompat.setDecorFitsSystemWindows(window, true);
-            WindowInsetsControllerCompat controller =
-                    WindowCompat.getInsetsController(window, window.getDecorView());
-            controller.show(WindowInsetsCompat.Type.systemBars());
+            WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, window.getDecorView());
+            if (controller != null) controller.show(WindowInsetsCompat.Type.systemBars());
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-            dispatchFullscreenEvent(false);
         } catch (RuntimeException ignored) {
-            // Çubuklar geri getirilemezse bile oynatma devam eder.
         }
-
+        dispatch("veyra-native-fullscreen-exit");
         CustomViewCallback callback = customViewCallback;
         customViewCallback = null;
-        if (callback != null) {
-            callback.onCustomViewHidden();
+        if (callback != null) callback.onCustomViewHidden();
+    }
+
+    private void dispatch(String eventName) {
+        try {
+            if (bridge != null && bridge.getWebView() != null) {
+                bridge.getWebView().post(() -> bridge.getWebView().evaluateJavascript(
+                        "window.dispatchEvent(new Event('" + eventName + "'))", null));
+            }
+        } catch (RuntimeException ignored) {
         }
     }
 }
