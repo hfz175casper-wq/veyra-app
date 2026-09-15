@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import {
   AlertTriangle,
+  Bell,
   ArrowLeft,
   Bookmark,
   BookmarkCheck,
@@ -8,10 +9,12 @@ import {
   CirclePlay,
   Clock3,
   BarChart3,
+  Check,
   Coins,
   Gift,
   Home as HomeIcon,
   Library,
+  Languages,
   Maximize2,
   Minimize2,
   MoreHorizontal,
@@ -19,13 +22,16 @@ import {
   Play,
   RotateCw,
   Search,
+  Settings,
   ShieldCheck,
   Sparkles,
   SlidersHorizontal,
   Upload,
+  Wallet,
   Volume2,
   VolumeX,
   UserCircle,
+  Share2,
   UsersRound,
 } from 'lucide-react';
 import { ClerkProvider, Show, SignInButton, UserButton, useAuth, useUser } from '@clerk/react';
@@ -119,7 +125,7 @@ const dramas: Drama[] = [
     episodeCount: 8,
     description: 'At 2:17 a.m., Mara receives a voicemail from the man she buried three years ago. It ends with her own voice saying: do not trust the morning.',
     image: posterImages.voicemail,
-    accent: '#f47e68',
+    accent: '#ff4fc3',
     featured: true,
     episodes: createEpisodes(
       ['2:17 A.M.', 'The Number That Died', 'A Familiar Stranger', 'Do Not Trust Morning', 'The Blue Door', 'Playback', 'No Signal', 'The Last Voicemail'],
@@ -266,44 +272,41 @@ function Poster({ drama, className = '', showTitle = true }: { drama: Drama; cla
 function Logo() {
   return (
     <Link href="/" className="group inline-flex items-center gap-2.5" data-testid="link-logo">
-      <span className="relative grid h-8 w-8 place-items-center rounded-[10px] bg-[#f47e68] text-[#171720] shadow-[0_0_24px_rgba(244,126,104,.22)]">
-        <span className="font-display text-[17px] font-bold tracking-[-.12em]">V</span>
-        <span className="absolute bottom-[6px] h-[2px] w-3 rounded-full bg-[#171720]/70" />
-      </span>
-      <span className="font-display text-[19px] font-bold tracking-[.16em] text-[#f7f1e8] transition-colors group-hover:text-[#f47e68]">VEYRA</span>
+      <img src="/veyra-mark.png" alt="VEYRA" className="h-9 w-9 rounded-[11px] object-cover shadow-[0_0_26px_rgba(255,79,195,.28)]" />
+      <span className="font-display text-[19px] font-bold tracking-[.16em] text-white transition-colors group-hover:text-[#ff4fc3]">VEYRA</span>
     </Link>
   );
 }
 
 function PageFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="grain min-h-[100dvh] bg-[#111118]">
-      <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[#111118]/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-[4.5rem] max-w-[1180px] items-center justify-between px-5 lg:px-8">
+    <div className="grain min-h-[100dvh] bg-[#07080c]">
+      <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[#07080c]/88 backdrop-blur-xl">
+        <div className="mx-auto flex h-[4.25rem] max-w-[1240px] items-center justify-between px-4 lg:px-7">
           <Logo />
-          <nav className="hidden items-center gap-7 md:flex">
-            <Link href="/" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-home-nav">Home</Link>
-            <Link href="/discover" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-discover-nav">Discover</Link>
-            <Link href="/rewards" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-rewards-nav">Rewards</Link>
-            <Link href="/following" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-following-nav">Following</Link>
-            <Link href="/profile" className="text-[13px] text-white/60 transition-colors hover:text-white" data-testid="link-profile-nav">Profile</Link>
+          <nav className="hidden items-center gap-6 lg:flex">
+            <Link href="/" className="text-[13px] text-white/65 transition-colors hover:text-white">Home</Link>
+            <Link href="/discover" className="text-[13px] text-white/65 transition-colors hover:text-white">Discover</Link>
+            <Link href="/rewards" className="text-[13px] text-white/65 transition-colors hover:text-white">Rewards</Link>
+            <Link href="/following" className="text-[13px] text-white/65 transition-colors hover:text-white">My List</Link>
+            <Link href="/wallet" className="text-[13px] text-white/65 transition-colors hover:text-white">Wallet</Link>
+            <Link href="/vip" className="text-[13px] font-semibold text-[#ff4fc3] transition-colors hover:text-white">VIP</Link>
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/discover" aria-label="Search dramas" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#f47e68]/50 hover:text-[#f47e68]" data-testid="link-search-button">
-              <Search size={16} strokeWidth={2} />
-            </Link>
+            <Link href="/search" aria-label="Search dramas" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#ff4fc3]/50 hover:text-[#ff4fc3]" data-testid="link-search-button"><Search size={16} strokeWidth={2}/></Link>
+            <Link href="/wallet" aria-label="Wallet" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#ff4fc3]/50 hover:text-[#ff4fc3]"><Wallet size={16}/></Link>
             <Show when="signed-in"><UserButton appearance={{ elements: { avatarBox: 'h-8 w-8' } }} /></Show>
-            <Show when="signed-out"><SignInButton mode="modal"><button type="button" className="hidden h-9 rounded-full border border-white/10 px-3 text-xs text-white/70 transition-colors hover:border-[#f47e68]/60 hover:text-white sm:block">Sign in</button></SignInButton></Show>
+            <Show when="signed-out"><SignInButton mode="modal"><button type="button" className="hidden h-9 rounded-full border border-white/10 px-3 text-xs text-white/70 transition-colors hover:border-[#ff4fc3]/60 hover:text-white sm:block">Sign in</button></SignInButton></Show>
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-[1180px] px-5 pb-28 pt-7 md:px-8 md:pb-12 md:pt-10">{children}</main>
-      <nav className="glass fixed inset-x-4 bottom-4 z-40 flex h-[3.9rem] items-center justify-around rounded-2xl md:hidden">
-        <MobileNavLink href="/" icon={<HomeIcon size={18} />} label="Home" />
-         <MobileNavLink href="/discover" icon={<Search size={18} />} label="Discover" />
-         <MobileNavLink href="/rewards" icon={<Gift size={18} />} label="Rewards" />
-         <MobileNavLink href="/following" icon={<UsersRound size={18} />} label="Following" />
-         <MobileNavLink href="/profile" icon={<UserCircle size={18} />} label="Profile" />
+      <main className="mx-auto max-w-[1240px] px-4 pb-28 pt-6 md:px-7 md:pb-12 md:pt-9">{children}</main>
+      <nav className="glass fixed inset-x-3 bottom-3 z-40 flex h-[3.9rem] items-center justify-around rounded-2xl md:hidden">
+        <MobileNavLink href="/" icon={<HomeIcon size={18}/>} label="Home" />
+        <MobileNavLink href="/discover" icon={<Search size={18}/>} label="Discover" />
+        <MobileNavLink href="/rewards" icon={<Gift size={18}/>} label="Rewards" />
+        <MobileNavLink href="/following" icon={<Bookmark size={18}/>} label="My List" />
+        <MobileNavLink href="/profile" icon={<UserCircle size={18}/>} label="Profile" />
       </nav>
     </div>
   );
@@ -311,7 +314,7 @@ function PageFrame({ children }: { children: ReactNode }) {
 
 function MobileNavLink({ href, icon, label }: { href: string; icon: ReactNode; label: string }) {
   return (
-    <Link href={href} className="flex min-w-[4rem] flex-col items-center gap-0.5 text-[10px] text-white/45 transition-colors hover:text-[#f47e68]" data-testid={`link-mobile-${label.toLowerCase().replace(' ', '-')}`}>
+    <Link href={href} className="flex min-w-[4rem] flex-col items-center gap-0.5 text-[10px] text-white/45 transition-colors hover:text-[#ff4fc3]" data-testid={`link-mobile-${label.toLowerCase().replace(' ', '-')}`}>
       {icon}
       <span>{label}</span>
     </Link>
@@ -322,8 +325,8 @@ function SectionHeader({ eyebrow, title, href = '/search' }: { eyebrow?: string;
   return (
     <div className="mb-4 flex items-end justify-between">
       <div>
-        {eyebrow && <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">{eyebrow}</p>}
-        <h2 className="mt-1 font-display text-[1.65rem] leading-none tracking-[-.035em] text-[#f7f1e8]">{title}</h2>
+        {eyebrow && <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{eyebrow}</p>}
+        <h2 className="mt-1 font-display text-[1.65rem] leading-none tracking-[-.035em] text-[#f7f2ff]">{title}</h2>
       </div>
       <Link href={href} className="group inline-flex items-center gap-1 pb-0.5 text-xs text-white/45 transition-colors hover:text-white" data-testid={`link-see-${title.toLowerCase().replaceAll(' ', '-')}`}>
         See all <ChevronRight size={13} className="transition-transform group-hover:translate-x-0.5" />
@@ -346,7 +349,7 @@ function DramaCard({ drama, compact = false }: { drama: Drama; compact?: boolean
       </Link>
       <button
         type="button"
-        className={`absolute right-1 top-2 grid h-8 w-8 place-items-center rounded-full border backdrop-blur-md transition-all ${saved ? 'border-[#f47e68]/50 bg-[#f47e68] text-[#171720]' : 'border-white/20 bg-[#111118]/45 text-white/75 hover:border-white/60 hover:text-white'}`}
+        className={`absolute right-1 top-2 grid h-8 w-8 place-items-center rounded-full border backdrop-blur-md transition-all ${saved ? 'border-[#ff4fc3]/50 bg-[#ff4fc3] text-[#171720]' : 'border-white/20 bg-[#111118]/45 text-white/75 hover:border-white/60 hover:text-white'}`}
         onClick={() => toggleSaved(drama.id)}
         aria-label={saved ? `Remove ${drama.title} from My List` : `Save ${drama.title}`}
         data-testid={`button-save-${drama.id}`}
@@ -365,26 +368,26 @@ function HomePage() {
     <div className="animate-rise space-y-12">
       <section className="relative min-h-[455px] overflow-hidden rounded-[1.6rem] border border-white/[.08] bg-[#1b1a27] md:min-h-[510px]">
         <div className="absolute inset-0 bg-cover bg-center md:bg-[position:58%_38%]" style={{ backgroundImage: `linear-gradient(90deg, #15151f 0%, rgba(21,21,31,.85) 28%, rgba(21,21,31,.22) 72%, rgba(21,21,31,.3) 100%), linear-gradient(0deg, #15151f 0%, transparent 40%), url("${featured.image}")` }} />
-        <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#f47e68]/10 blur-3xl" />
+        <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#ff4fc3]/10 blur-3xl" />
         <div className="relative flex min-h-[455px] max-w-[570px] flex-col justify-end p-6 pb-7 md:min-h-[510px] md:p-10 md:pb-12">
           <div className="mb-4 flex items-center gap-2">
-            <span className="rounded-full bg-[#f47e68] px-2.5 py-1 font-mono-ui text-[9px] font-bold uppercase tracking-[.14em] text-[#15151f]">Featured tonight</span>
+            <span className="rounded-full bg-[#ff4fc3] px-2.5 py-1 font-mono-ui text-[9px] font-bold uppercase tracking-[.14em] text-[#15151f]">Featured tonight</span>
             <span className="font-mono-ui text-[10px] uppercase tracking-[.15em] text-white/50">8 episodes · 1h 12m</span>
           </div>
-          <h1 className="max-w-[500px] font-display text-[3.25rem] leading-[.88] tracking-[-.065em] text-[#fcf4e8] sm:text-[4.4rem]">The Last<br />Voicemail</h1>
+          <h1 className="max-w-[500px] font-display text-[3.25rem] leading-[.88] tracking-[-.065em] text-[#f7f2ff] sm:text-[4.4rem]">The Last<br />Voicemail</h1>
           <p className="mt-5 max-w-[430px] text-sm leading-relaxed text-white/62 md:text-[15px]">{featured.description}</p>
           <div className="mt-7 flex items-center gap-3">
-            <Link href={`/drama/${featured.id}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#f47e68] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff987f] hover:shadow-[0_10px_30px_rgba(244,126,104,.2)]" data-testid="link-featured-play">
+            <Link href={`/drama/${featured.id}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#ff4fc3] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff8bdd] hover:shadow-[0_10px_30px_rgba(244,126,104,.2)]" data-testid="link-featured-play">
               <Play size={15} fill="currentColor" /> Start watching
             </Link>
-            <button type="button" onClick={() => toggleSaved(featured.id)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-all ${saved ? 'border-[#f47e68]/60 bg-[#f47e68]/15 text-[#f47e68]' : 'border-white/15 bg-white/[.06] text-white/80 hover:border-white/35'}`} data-testid="button-featured-save">
+            <button type="button" onClick={() => toggleSaved(featured.id)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-all ${saved ? 'border-[#ff4fc3]/60 bg-[#ff4fc3]/15 text-[#ff4fc3]' : 'border-white/15 bg-white/[.06] text-white/80 hover:border-white/35'}`} data-testid="button-featured-save">
               {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
               {saved ? 'In My List' : 'My List'}
             </button>
           </div>
         </div>
         <div className="absolute right-7 top-7 hidden items-center gap-2 md:flex">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#f47e68]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#ff4fc3]" />
           <span className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-white/45">New episode weekly</span>
         </div>
       </section>
@@ -407,10 +410,10 @@ function HomePage() {
           <div className="absolute -right-6 -top-10 h-48 w-48 rounded-full bg-[#6eabb2]/20 blur-3xl" />
           <div className="absolute bottom-[-45px] right-[-15px] h-48 w-48 rounded-full border border-[#6eabb2]/20" />
           <div className="relative">
-            <Sparkles size={18} className="text-[#e7b769]" />
-             <p className="mt-8 max-w-[230px] font-display text-2xl leading-[.98] text-[#edf3ef]">Short stories.<br />Deep impact.</p>
+            <Sparkles size={18} className="text-[#b78cff]" />
+             <p className="mt-8 max-w-[230px] font-display text-2xl leading-[.98] text-[#f2efff]">Short stories.<br />Deep impact.</p>
             <p className="mt-4 max-w-[240px] text-xs leading-relaxed text-white/45">A global slate of short stories, mini-series, and AI-generated films to carry with you.</p>
-            <Link href="/search" className="mt-6 inline-flex items-center gap-1 text-xs font-semibold text-[#e7b769] hover:text-white" data-testid="link-explore-all">Explore the collection <ChevronRight size={13} /></Link>
+            <Link href="/search" className="mt-6 inline-flex items-center gap-1 text-xs font-semibold text-[#b78cff] hover:text-white" data-testid="link-explore-all">Explore the collection <ChevronRight size={13} /></Link>
           </div>
         </div>
       </section>
@@ -428,7 +431,7 @@ function EpisodeRow({ drama, episode }: { drama: Drama; episode: Episode }) {
         <p className="font-display text-[15px] text-white/90">{drama.title}</p>
         <p className="mt-0.5 truncate text-[11px] text-white/40">{episode.title} <span className="text-white/20">·</span> {episode.runtime}</p>
       </div>
-      <Play size={15} className="mr-2 text-white/30 transition-colors group-hover:text-[#f47e68]" fill="currentColor" />
+      <Play size={15} className="mr-2 text-white/30 transition-colors group-hover:text-[#ff4fc3]" fill="currentColor" />
     </Link>
   );
 }
@@ -452,8 +455,8 @@ function DramaDetailPage() {
         <div className="relative grid gap-7 p-5 sm:p-8 md:grid-cols-[210px_1fr] md:gap-10 md:p-10">
           <Poster drama={drama} className="aspect-[.72] w-[180px] shadow-2xl sm:w-[210px]" />
           <div className="flex flex-col justify-end">
-            <p className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-[#f47e68]">{drama.eyebrow}</p>
-            <h1 className="mt-3 max-w-[560px] font-display text-[3rem] leading-[.88] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.7rem]">{drama.title}</h1>
+            <p className="font-mono-ui text-[10px] uppercase tracking-[.2em] text-[#ff4fc3]">{drama.eyebrow}</p>
+            <h1 className="mt-3 max-w-[560px] font-display text-[3rem] leading-[.88] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.7rem]">{drama.title}</h1>
             <div className="mt-5 flex flex-wrap items-center gap-2 text-[11px] text-white/55">
               <span className="rounded bg-white/10 px-2 py-1 text-white/75">{drama.rating}</span>
               <span>{drama.year}</span><span className="text-white/20">•</span><span>{drama.episodeCount} episodes</span>
@@ -461,15 +464,15 @@ function DramaDetailPage() {
             </div>
             <p className="mt-5 max-w-[590px] text-sm leading-relaxed text-white/65">{drama.description}</p>
             <div className="mt-7 flex gap-3">
-              <Link href={`/watch/${drama.id}/${resumeEpisode}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#f47e68] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff987f]" data-testid="link-detail-play"><Play size={15} fill="currentColor" /> {resumeEpisode > 1 ? `Continue episode ${resumeEpisode}` : 'Play episode 1'}</Link>
-              <button type="button" onClick={() => toggleSaved(drama.id)} className={`grid h-11 w-11 place-items-center rounded-full border transition-all ${saved ? 'border-[#f47e68]/60 bg-[#f47e68]/15 text-[#f47e68]' : 'border-white/15 bg-white/[.05] text-white/75 hover:border-white/40'}`} aria-label={saved ? 'Remove from My List' : 'Save to My List'} data-testid="button-detail-save">{saved ? <BookmarkCheck size={17} /> : <Bookmark size={17} />}</button>
+              <Link href={`/watch/${drama.id}/${resumeEpisode}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#ff4fc3] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff8bdd]" data-testid="link-detail-play"><Play size={15} fill="currentColor" /> {resumeEpisode > 1 ? `Continue episode ${resumeEpisode}` : 'Play episode 1'}</Link>
+              <button type="button" onClick={() => toggleSaved(drama.id)} className={`grid h-11 w-11 place-items-center rounded-full border transition-all ${saved ? 'border-[#ff4fc3]/60 bg-[#ff4fc3]/15 text-[#ff4fc3]' : 'border-white/15 bg-white/[.05] text-white/75 hover:border-white/40'}`} aria-label={saved ? 'Remove from My List' : 'Save to My List'} data-testid="button-detail-save">{saved ? <BookmarkCheck size={17} /> : <Bookmark size={17} />}</button>
             </div>
           </div>
         </div>
       </section>
       <section className="mt-10">
         <div className="mb-4 flex items-end justify-between">
-          <div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Watch in order</p><h2 className="mt-1 font-display text-2xl text-white">Episodes</h2></div>
+          <div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Watch in order</p><h2 className="mt-1 font-display text-2xl text-white">Episodes</h2></div>
           <p className="text-xs text-white/35">{drama.episodeCount} chapters</p>
         </div>
         <div className="divide-y divide-white/[.06] overflow-hidden rounded-2xl border border-white/[.07] bg-white/[.02]">
@@ -485,14 +488,14 @@ function EpisodeDetailRow({ drama, episode }: { drama: Drama; episode: Episode }
     <Link href={`/watch/${drama.id}/${episode.number}`} className="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-white/[.045] sm:px-5" data-testid={`link-episode-${drama.id}-${episode.number}`}>
       <span className="w-6 font-mono-ui text-[11px] text-white/35">{String(episode.number).padStart(2, '0')}</span>
       <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded-lg bg-cover bg-center sm:h-16 sm:w-28" style={{ backgroundImage: `linear-gradient(90deg, rgba(20,20,29,.1), rgba(20,20,29,.6)), url("${drama.image}")` }}>
-        <span className="absolute inset-0 grid place-items-center opacity-0 transition-opacity group-hover:opacity-100"><span className="grid h-7 w-7 place-items-center rounded-full bg-[#f47e68] text-[#171720]"><Play size={12} fill="currentColor" /></span></span>
+        <span className="absolute inset-0 grid place-items-center opacity-0 transition-opacity group-hover:opacity-100"><span className="grid h-7 w-7 place-items-center rounded-full bg-[#ff4fc3] text-[#171720]"><Play size={12} fill="currentColor" /></span></span>
       </div>
       <div className="min-w-0 flex-1">
         <h3 className="truncate font-display text-[16px] text-white/85 group-hover:text-white">{episode.title}</h3>
         <p className="mt-1 line-clamp-1 text-xs text-white/40">{episode.synopsis}</p>
       </div>
       <div className="hidden items-center gap-1 text-[10px] text-white/35 sm:flex"><Clock3 size={12} /> {episode.runtime}</div>
-      <ChevronRight size={15} className="text-white/25 transition-transform group-hover:translate-x-1 group-hover:text-[#f47e68]" />
+      <ChevronRight size={15} className="text-white/25 transition-transform group-hover:translate-x-1 group-hover:text-[#ff4fc3]" />
     </Link>
   );
 }
@@ -509,15 +512,15 @@ function SearchPage() {
   return (
     <div className="animate-rise">
       <div className="mb-9">
-        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Find your next obsession</p>
-        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.2rem]">What are you<br />in the mood for?</h1>
+        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Find your next obsession</p>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">What are you<br />in the mood for?</h1>
       </div>
       <label className="relative block max-w-[650px]">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={18} />
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search titles, moods, genres..." className="h-14 w-full rounded-2xl border border-white/10 bg-white/[.05] pl-12 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-[#f47e68]/60" data-testid="input-search" />
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search titles, moods, genres..." className="h-14 w-full rounded-2xl border border-white/10 bg-white/[.05] pl-12 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-[#ff4fc3]/60" data-testid="input-search" />
       </label>
       <div className="scrollbar-none -mx-5 mt-5 flex gap-2 overflow-x-auto px-5 pb-2">
-        {genres.map((genre) => <button key={genre} type="button" onClick={() => setActiveGenre(genre)} className={`shrink-0 rounded-full border px-4 py-2 text-xs transition-all ${activeGenre === genre ? 'border-[#f47e68] bg-[#f47e68] text-[#171720]' : 'border-white/10 bg-white/[.03] text-white/55 hover:border-white/25 hover:text-white'}`} data-testid={`button-genre-${genre.toLowerCase()}`}>{genre}</button>)}
+        {genres.map((genre) => <button key={genre} type="button" onClick={() => setActiveGenre(genre)} className={`shrink-0 rounded-full border px-4 py-2 text-xs transition-all ${activeGenre === genre ? 'border-[#ff4fc3] bg-[#ff4fc3] text-[#171720]' : 'border-white/10 bg-white/[.03] text-white/55 hover:border-white/25 hover:text-white'}`} data-testid={`button-genre-${genre.toLowerCase()}`}>{genre}</button>)}
       </div>
       <div className="mt-10">
         <div className="mb-5 flex items-center justify-between"><h2 className="font-display text-2xl text-white">{query || activeGenre !== 'All' ? `${results.length} stories found` : 'The full collection'}</h2><SlidersHorizontal size={16} className="text-white/35" /></div>
@@ -533,7 +536,7 @@ function EmptySearch({ onReset }: { onReset: () => void }) {
       <Search size={22} className="mx-auto text-white/30" />
       <h3 className="mt-4 font-display text-xl text-white">No stories in that frequency</h3>
       <p className="mt-2 text-sm text-white/40">Try a different title, genre, or let the night surprise you.</p>
-      <button type="button" onClick={onReset} className="mt-5 text-xs font-semibold text-[#f47e68] hover:text-white" data-testid="button-reset-search">Clear search</button>
+      <button type="button" onClick={onReset} className="mt-5 text-xs font-semibold text-[#ff4fc3] hover:text-white" data-testid="button-reset-search">Clear search</button>
     </div>
   );
 }
@@ -544,8 +547,8 @@ function SavedPage() {
   return (
     <div className="animate-rise">
       <div className="mb-9">
-        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Your VEYRA collection</p>
-        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.2rem]">My List<span className="text-[#f47e68]">.</span></h1>
+        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your VEYRA collection</p>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">My List<span className="text-[#ff4fc3]">.</span></h1>
         <p className="mt-4 text-sm text-white/45">{savedDramas.length ? `${savedDramas.length} stories waiting for you` : 'Save something for a later night.'}</p>
       </div>
       {savedDramas.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{savedDramas.map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}
@@ -568,7 +571,7 @@ function FollowingPage() {
   }, []);
   return (
     <div className="animate-rise">
-      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Your watch circle</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.2rem]">Following<span className="text-[#f47e68]">.</span></h1><p className="mt-4 text-sm text-white/45">{loading ? 'Loading your followed stories…' : `${following.length} stories in your circle`}</p></div>
+      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your watch circle</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Following<span className="text-[#ff4fc3]">.</span></h1><p className="mt-4 text-sm text-white/45">{loading ? 'Loading your followed stories…' : `${following.length} stories in your circle`}</p></div>
       {following.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{following.map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}
     </div>
   );
@@ -592,13 +595,13 @@ function RewardsPage() {
   if (status === 'signed-out') return <AuthPrompt title="Rewards are waiting" copy="Sign in to collect coins, complete missions, and keep your balance across devices." />;
   return (
     <div className="animate-rise">
-      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#e7b769]">Your VEYRA wallet</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8] sm:text-[4.2rem]">Rewards<span className="text-[#e7b769]">.</span></h1><p className="mt-4 text-sm text-white/45">Watch, return, and unlock more stories.</p></div>
-      {message && <div className="mb-5 rounded-xl border border-[#e7b769]/30 bg-[#e7b769]/10 px-4 py-3 text-sm text-[#f5d68c]">{message}</div>}
+      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#b78cff]">Your VEYRA wallet</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Rewards<span className="text-[#b78cff]">.</span></h1><p className="mt-4 text-sm text-white/45">Watch, return, and unlock more stories.</p></div>
+      {message && <div className="mb-5 rounded-xl border border-[#b78cff]/30 bg-[#b78cff]/10 px-4 py-3 text-sm text-[#f5d68c]">{message}</div>}
       <div className="grid gap-5 md:grid-cols-2">
-        <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-3"><Coins className="text-[#e7b769]" /><div><p className="text-xs text-white/45">Available balance</p><p className="mt-1 font-display text-3xl text-white">Sign in to view</p></div></div><p className="mt-5 text-xs leading-relaxed text-white/40">Coins are granted by verified server-side ledger entries. Payments and ads remain unavailable until a provider is configured.</p></section>
-        <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#f47e68]">Missions</p>{data.missions.length ? data.missions.map((mission) => <div key={mission.id} className="mt-4 flex items-center justify-between gap-3"><div><p className="text-sm text-white/85">{mission.name}</p><p className="mt-1 text-xs text-white/40">{mission.description}</p></div><span className="font-mono-ui text-[10px] text-[#e7b769]">{mission.progress?.progress ?? 0}/{mission.target}</span></div>) : <p className="mt-5 text-sm text-white/40">Missions will appear here when the catalog team activates them.</p>}</section>
+        <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-3"><Coins className="text-[#b78cff]" /><div><p className="text-xs text-white/45">Available balance</p><p className="mt-1 font-display text-3xl text-white">Sign in to view</p></div></div><p className="mt-5 text-xs leading-relaxed text-white/40">Coins are granted by verified server-side ledger entries. Payments and ads remain unavailable until a provider is configured.</p></section>
+        <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Missions</p>{data.missions.length ? data.missions.map((mission) => <div key={mission.id} className="mt-4 flex items-center justify-between gap-3"><div><p className="text-sm text-white/85">{mission.name}</p><p className="mt-1 text-xs text-white/40">{mission.description}</p></div><span className="font-mono-ui text-[10px] text-[#b78cff]">{mission.progress?.progress ?? 0}/{mission.target}</span></div>) : <p className="mt-5 text-sm text-white/40">Missions will appear here when the catalog team activates them.</p>}</section>
       </div>
-      <section className="mt-8"><SectionHeader eyebrow="Collect" title="Available rewards" href="/rewards" /><div className="grid gap-3 sm:grid-cols-2">{data.rewards.length ? data.rewards.map((reward) => <div key={reward.id} className="flex items-center justify-between rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div><p className="font-display text-lg text-white/90">{reward.name}</p><p className="mt-1 text-xs text-[#e7b769]">+{reward.coinAmount} coins{reward.bonusAmount ? ` · +${reward.bonusAmount} bonus` : ''}</p></div><button type="button" onClick={() => claim(reward.key)} className="rounded-full bg-[#e7b769] px-3 py-2 text-xs font-semibold text-[#171720]">Claim</button></div>) : <p className="text-sm text-white/40">No rewards are active yet.</p>}</div></section>
+      <section className="mt-8"><SectionHeader eyebrow="Collect" title="Available rewards" href="/rewards" /><div className="grid gap-3 sm:grid-cols-2">{data.rewards.length ? data.rewards.map((reward) => <div key={reward.id} className="flex items-center justify-between rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div><p className="font-display text-lg text-white/90">{reward.name}</p><p className="mt-1 text-xs text-[#b78cff]">+{reward.coinAmount} coins{reward.bonusAmount ? ` · +${reward.bonusAmount} bonus` : ''}</p></div><button type="button" onClick={() => claim(reward.key)} className="rounded-full bg-[#b78cff] px-3 py-2 text-xs font-semibold text-[#171720]">Claim</button></div>) : <p className="text-sm text-white/40">No rewards are active yet.</p>}</div></section>
     </div>
   );
 }
@@ -607,7 +610,7 @@ function ProfilePage() {
   const { isSignedIn, user } = useUser();
   const { savedIds } = useAppValue();
   if (!isSignedIn) return <AuthPrompt title="Make VEYRA yours" copy="Sign in to sync your list, watch progress, notifications, and profile across devices." />;
-  return <div className="animate-rise"><div className="mb-9 flex items-center gap-4"><div className="grid h-16 w-16 place-items-center rounded-2xl bg-[#f47e68]/15 text-[#f47e68]"><UserCircle size={30} /></div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Your profile</p><h1 className="mt-1 font-display text-3xl text-white">{user?.firstName ?? user?.username ?? 'VEYRA viewer'}</h1><p className="mt-1 text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? 'Signed in'}</p></div></div><div className="grid gap-4 sm:grid-cols-3"><ProfileStat label="My List" value={String(savedIds.length)} /><ProfileStat label="Wallet" value="View rewards" href="/rewards" /><ProfileStat label="Admin" value="Console" href="/admin" /></div><section className="mt-10"><SectionHeader eyebrow="Saved for later" title="My List" href="/saved" />{savedIds.length ? <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">{dramas.filter((drama) => savedIds.includes(drama.id)).map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}</section></div>;
+  return <div className="animate-rise"><div className="mb-9 flex items-center gap-4"><div className="grid h-16 w-16 place-items-center rounded-2xl bg-[#ff4fc3]/15 text-[#ff4fc3]"><UserCircle size={30} /></div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your profile</p><h1 className="mt-1 font-display text-3xl text-white">{user?.firstName ?? user?.username ?? 'VEYRA viewer'}</h1><p className="mt-1 text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? 'Signed in'}</p></div></div><div className="grid gap-4 sm:grid-cols-4"><ProfileStat label="My List" value={String(savedIds.length)} /><ProfileStat label="Rewards" value="Collect coins" href="/rewards" /><ProfileStat label="Wallet" value="View balance" href="/wallet" /><ProfileStat label="VIP" value="Unlock all" href="/vip" /></div><div className="mt-8 grid gap-3 sm:grid-cols-3"><Link href="/settings" className="rounded-xl border border-white/[.08] p-4 text-xs text-white/65">Settings</Link><Link href="/settings/language" className="rounded-xl border border-white/[.08] p-4 text-xs text-white/65">Language</Link><Link href="/settings/notifications" className="rounded-xl border border-white/[.08] p-4 text-xs text-white/65">Notifications</Link></div><section className="mt-10"><SectionHeader eyebrow="Saved for later" title="My List" href="/saved" />{savedIds.length ? <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">{dramas.filter((drama) => savedIds.includes(drama.id)).map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}</section></div>;
 }
 
 function ProfileStat({ label, value, href }: { label: string; value: string; href?: string }) {
@@ -616,7 +619,7 @@ function ProfileStat({ label, value, href }: { label: string; value: string; hre
 }
 
 function AuthPrompt({ title, copy }: { title: string; copy: string }) {
-  return <div className="mx-auto max-w-xl rounded-[1.5rem] border border-white/[.08] bg-white/[.03] px-6 py-16 text-center"><UserCircle size={28} className="mx-auto text-[#f47e68]" /><h1 className="mt-5 font-display text-3xl text-white">{title}</h1><p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/45">{copy}</p><SignInButton mode="modal"><button type="button" className="mt-7 rounded-full bg-[#f47e68] px-5 py-3 text-sm font-semibold text-[#171720]">Sign in to continue</button></SignInButton></div>;
+  return <div className="mx-auto max-w-xl rounded-[1.5rem] border border-white/[.08] bg-white/[.03] px-6 py-16 text-center"><UserCircle size={28} className="mx-auto text-[#ff4fc3]" /><h1 className="mt-5 font-display text-3xl text-white">{title}</h1><p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/45">{copy}</p><SignInButton mode="modal"><button type="button" className="mt-7 rounded-full bg-[#ff4fc3] px-5 py-3 text-sm font-semibold text-[#171720]">Sign in to continue</button></SignInButton></div>;
 }
 
 function AdminPage() {
@@ -630,18 +633,18 @@ function AdminPage() {
     fetch('/api/admin/overview', { credentials: 'include' }).then(async (response) => { const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.error ?? 'Admin access denied'); setData(body); }).catch((reason: Error) => setError(reason.message));
   }, [isSignedIn]);
   if (!isSignedIn) return <AuthPrompt title="VEYRA Console" copy="This is a protected administration area. Sign in with an authorized admin account." />;
-  return <div className="animate-rise"><div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#f47e68]">Protected workspace</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#fbf3e8]">Admin Console<span className="text-[#f47e68]">.</span></h1></div><span className="inline-flex items-center gap-2 rounded-full border border-[#76b7bd]/30 bg-[#76b7bd]/10 px-3 py-2 text-xs text-[#a9d6d8]"><ShieldCheck size={14} /> Server protected</span></div>{error ? <div className="rounded-xl border border-[#f47e68]/30 bg-[#f47e68]/10 px-4 py-3 text-sm text-[#ffb2a3]">{error}</div> : <><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{[['Users', data?.users ?? '—'], ['Series', data?.series ?? '—'], ['Episodes', data?.episodes ?? '—'], ['Events', data?.events ?? '—'], ['Revenue', data ? `$${(data.revenueMinor / 100).toFixed(2)}` : '—']].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/[.08] bg-white/[.03] p-4"><p className="text-xs text-white/40">{label}</p><p className="mt-2 font-display text-2xl text-white">{value}</p></div>)}</div><div className="mt-8 grid gap-5 lg:grid-cols-[1fr_.8fr]"><section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-2"><Library size={16} className="text-[#f47e68]" /><h2 className="font-display text-xl text-white">Catalog operations</h2></div><p className="mt-3 text-sm leading-relaxed text-white/45">Series, episode, media, user, transaction, monetization, reward, and analytics endpoints are now available under the protected admin API.</p><div className="mt-5 grid grid-cols-2 gap-2 text-xs text-white/55"><span className="rounded-lg bg-white/[.04] px-3 py-2">Catalog CRUD surface</span><span className="rounded-lg bg-white/[.04] px-3 py-2">User moderation</span><span className="rounded-lg bg-white/[.04] px-3 py-2">Coin ledger review</span><span className="rounded-lg bg-white/[.04] px-3 py-2">Analytics summary</span></div></section><section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-2"><Upload size={16} className="text-[#e7b769]" /><h2 className="font-display text-xl text-white">Media intake</h2></div><p className="mt-3 text-sm leading-relaxed text-white/45">Uploads use a server-issued presigned URL. No storage credentials are exposed to the browser.</p><label className="mt-5 flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-white/15 bg-white/[.025] px-3 py-3 text-xs text-white/65 hover:border-[#e7b769]/50"><span>{isUploading ? `Uploading ${progress}%` : 'Choose MP4, HLS manifest, image, or subtitle'}</span><input type="file" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadFile(file); }} /></label>{uploadNote && <p className="mt-3 text-xs text-[#a9d6d8]">{uploadNote}</p>}</section></div></>}</div>;
+  return <div className="animate-rise"><div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Protected workspace</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff]">Admin Console<span className="text-[#ff4fc3]">.</span></h1></div><span className="inline-flex items-center gap-2 rounded-full border border-[#76b7bd]/30 bg-[#76b7bd]/10 px-3 py-2 text-xs text-[#a9d6d8]"><ShieldCheck size={14} /> Server protected</span></div>{error ? <div className="rounded-xl border border-[#ff4fc3]/30 bg-[#ff4fc3]/10 px-4 py-3 text-sm text-[#ffb2a3]">{error}</div> : <><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">{[['Users', data?.users ?? '—'], ['Series', data?.series ?? '—'], ['Episodes', data?.episodes ?? '—'], ['Events', data?.events ?? '—'], ['Revenue', data ? `$${(data.revenueMinor / 100).toFixed(2)}` : '—']].map(([label, value]) => <div key={label} className="rounded-2xl border border-white/[.08] bg-white/[.03] p-4"><p className="text-xs text-white/40">{label}</p><p className="mt-2 font-display text-2xl text-white">{value}</p></div>)}</div><div className="mt-8 grid gap-5 lg:grid-cols-[1fr_.8fr]"><section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-2"><Library size={16} className="text-[#ff4fc3]" /><h2 className="font-display text-xl text-white">Catalog operations</h2></div><p className="mt-3 text-sm leading-relaxed text-white/45">Series, episode, media, user, transaction, monetization, reward, and analytics endpoints are now available under the protected admin API.</p><div className="mt-5 grid grid-cols-2 gap-2 text-xs text-white/55"><span className="rounded-lg bg-white/[.04] px-3 py-2">Catalog CRUD surface</span><span className="rounded-lg bg-white/[.04] px-3 py-2">User moderation</span><span className="rounded-lg bg-white/[.04] px-3 py-2">Coin ledger review</span><span className="rounded-lg bg-white/[.04] px-3 py-2">Analytics summary</span></div></section><section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-2"><Upload size={16} className="text-[#b78cff]" /><h2 className="font-display text-xl text-white">Media intake</h2></div><p className="mt-3 text-sm leading-relaxed text-white/45">Uploads use a server-issued presigned URL. No storage credentials are exposed to the browser.</p><label className="mt-5 flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-white/15 bg-white/[.025] px-3 py-3 text-xs text-white/65 hover:border-[#b78cff]/50"><span>{isUploading ? `Uploading ${progress}%` : 'Choose MP4, HLS manifest, image, or subtitle'}</span><input type="file" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadFile(file); }} /></label>{uploadNote && <p className="mt-3 text-xs text-[#a9d6d8]">{uploadNote}</p>}</section></div></>}</div>;
 }
 
 function EmptySaved() {
   return (
     <div className="relative overflow-hidden rounded-[1.4rem] border border-white/[.08] bg-[#181a25] px-6 py-16 text-center">
-      <div className="absolute left-1/2 top-[-80px] h-52 w-52 -translate-x-1/2 rounded-full bg-[#f47e68]/10 blur-3xl" />
+      <div className="absolute left-1/2 top-[-80px] h-52 w-52 -translate-x-1/2 rounded-full bg-[#ff4fc3]/10 blur-3xl" />
       <div className="relative">
-        <Bookmark size={24} className="mx-auto text-[#f47e68]" />
+        <Bookmark size={24} className="mx-auto text-[#ff4fc3]" />
         <h2 className="mt-5 font-display text-2xl text-white">Nothing saved yet</h2>
         <p className="mx-auto mt-2 max-w-[290px] text-sm leading-relaxed text-white/40">The best stories are the ones you cannot stop thinking about. Keep a few close.</p>
-        <Link href="/search" className="mt-6 inline-flex h-10 items-center gap-2 rounded-full bg-[#f47e68] px-5 text-xs font-semibold text-[#171720]" data-testid="link-empty-browse">Browse dramas <ChevronRight size={14} /></Link>
+        <Link href="/search" className="mt-6 inline-flex h-10 items-center gap-2 rounded-full bg-[#ff4fc3] px-5 text-xs font-semibold text-[#171720]" data-testid="link-empty-browse">Browse dramas <ChevronRight size={14} /></Link>
       </div>
     </div>
   );
@@ -703,6 +706,8 @@ function WatchPage() {
   const [controlsNonce, setControlsNonce] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const nextEpisode = drama.episodes[episodeIndex + 1];
   const previousEpisode = drama.episodes[episodeIndex - 1];
 
@@ -900,6 +905,26 @@ function WatchPage() {
     }
   };
 
+  const cycleSpeed = () => {
+    const next = playbackRate >= 2 ? 0.75 : playbackRate === 0.75 ? 1 : playbackRate + 0.5;
+    setPlaybackRate(next);
+    if (videoRef.current) videoRef.current.playbackRate = next;
+    pokeControls();
+  };
+  const shareEpisode = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) await navigator.share({ title: `${drama.title} — Episode ${episode.number}`, url });
+      else await navigator.clipboard?.writeText(url);
+    } catch { /* user cancelled */ }
+    setMoreOpen(false);
+  };
+  const downloadEpisode = () => {
+    const a = document.createElement('a');
+    a.href = episode.videoUrl; a.target = '_blank'; a.rel = 'noopener'; a.download = `${drama.id}-episode-${episode.number}.mp4`; a.click();
+    setMoreOpen(false);
+  };
+
   const handleEnded = () => {
     setPlaying(false);
     setProgress(100);
@@ -998,7 +1023,7 @@ function WatchPage() {
               {buffering && !loadError && !episodeFinished && (
                 <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
                   <div className="flex flex-col items-center gap-3">
-                    <span className="h-11 w-11 animate-spin rounded-full border-2 border-white/15 border-t-[#f47e68]" aria-hidden="true" />
+                    <span className="h-11 w-11 animate-spin rounded-full border-2 border-white/15 border-t-[#ff4fc3]" aria-hidden="true" />
                     <span className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-white/50">Loading episode</span>
                   </div>
                 </div>
@@ -1008,11 +1033,11 @@ function WatchPage() {
               {loadError && (
                 <div className="absolute inset-0 z-40 grid place-items-center bg-[#0d0d13]/88 px-6 backdrop-blur-sm">
                   <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#111118]/92 p-6 text-center shadow-2xl" data-testid="player-error-card">
-                    <AlertTriangle size={26} className="mx-auto text-[#f47e68]" />
+                    <AlertTriangle size={26} className="mx-auto text-[#ff4fc3]" />
                     <h3 className="mt-3 font-display text-xl">Playback failed</h3>
                     <p className="mt-2 text-xs leading-relaxed text-white/55">{loadError}</p>
                     <div className="mt-5 flex items-center justify-center gap-2">
-                      <button type="button" onClick={handleRetry} className="inline-flex items-center gap-1.5 rounded-full bg-[#f47e68] px-4 py-2 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="button-player-retry">
+                      <button type="button" onClick={handleRetry} className="inline-flex items-center gap-1.5 rounded-full bg-[#ff4fc3] px-4 py-2 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]" data-testid="button-player-retry">
                         <RotateCw size={13} /> Try again
                       </button>
                       <Link href={`/drama/${drama.id}`} className="rounded-full border border-white/15 px-4 py-2 text-xs text-white/70 transition-colors hover:border-white/40 hover:text-white">Back to story</Link>
@@ -1029,7 +1054,7 @@ function WatchPage() {
                     pokeControls();
                     void togglePlay();
                   }}
-                  className={`grid h-16 w-16 place-items-center rounded-full border border-white/30 bg-[#111118]/45 text-white backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-[#f47e68] hover:text-[#f47e68] ${playing && !controlsVisible ? 'pointer-events-none scale-90 opacity-0' : 'pointer-events-auto opacity-100'}`}
+                  className={`grid h-16 w-16 place-items-center rounded-full border border-white/30 bg-[#111118]/45 text-white backdrop-blur-md transition-all duration-300 hover:scale-105 hover:border-[#ff4fc3] hover:text-[#ff4fc3] ${playing && !controlsVisible ? 'pointer-events-none scale-90 opacity-0' : 'pointer-events-auto opacity-100'}`}
                   aria-label={playing ? 'Pause episode' : 'Play episode'}
                   data-testid="button-player-toggle"
                 >
@@ -1045,7 +1070,7 @@ function WatchPage() {
                     <p className="truncate font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/50">{drama.title}</p>
                     <p className="mt-1 truncate text-xs text-white/85">Episode {episode.number} <span className="text-white/30">·</span> {episode.title}</p>
                   </div>
-                  <button type="button" className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/25 text-white/75 transition-colors hover:border-white/50" aria-label="More options" data-testid="button-player-more"><MoreHorizontal size={17} /></button>
+                  <div className="relative"><button type="button" onClick={(e)=>{e.stopPropagation(); setMoreOpen((v)=>!v); pokeControls();}} className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/25 text-white/75 transition-colors hover:border-white/50" aria-label="More options" data-testid="button-player-more"><MoreHorizontal size={17} /></button>{moreOpen && <div data-player-ui className="absolute right-0 top-11 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111118]/95 p-1 shadow-2xl backdrop-blur-xl"><button type="button" onClick={shareEpisode} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><Share2 size={14}/> Share</button><button type="button" onClick={downloadEpisode} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><Download size={14}/> Download</button><button type="button" onClick={cycleSpeed} className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><span className="flex items-center gap-3"><Zap size={14}/> Speed</span><span className="text-white/45">{playbackRate}x</span></button></div>}</div>
                 </div>
               </div>
 
@@ -1055,7 +1080,7 @@ function WatchPage() {
                   <div className="w-full max-w-[21rem] overflow-hidden rounded-3xl border border-white/12 bg-[#111118]/94 shadow-2xl">
                     <div className="relative h-32 bg-cover bg-center" style={{ backgroundImage: `linear-gradient(180deg, rgba(13,13,19,.15), rgba(17,17,24,.92)), url("${drama.image}")` }}>
                       <div className="absolute inset-x-0 bottom-0 p-4">
-                        <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#f47e68]">{nextEpisode ? 'Up next' : 'Season complete'}</p>
+                        <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">{nextEpisode ? 'Up next' : 'Season complete'}</p>
                         <p className="mt-1 font-display text-lg leading-tight">{nextEpisode ? nextEpisode.title : drama.title}</p>
                       </div>
                     </div>
@@ -1063,13 +1088,13 @@ function WatchPage() {
                       {nextEpisode ? (
                         <>
                           <p className="text-center text-[11px] text-white/55">
-                            Next episode starts in <span className="font-mono-ui text-[#f47e68]">{countdown ?? NEXT_EPISODE_COUNTDOWN}s</span>
+                            Next episode starts in <span className="font-mono-ui text-[#ff4fc3]">{countdown ?? NEXT_EPISODE_COUNTDOWN}s</span>
                           </p>
                           <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
-                            <div className="h-full rounded-full bg-[#f47e68] transition-all duration-1000 ease-linear" style={{ width: `${((countdown ?? 0) / NEXT_EPISODE_COUNTDOWN) * 100}%` }} />
+                            <div className="h-full rounded-full bg-[#ff4fc3] transition-all duration-1000 ease-linear" style={{ width: `${((countdown ?? 0) / NEXT_EPISODE_COUNTDOWN) * 100}%` }} />
                           </div>
                           <div className="mt-4 flex items-center gap-2">
-                            <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex flex-1 items-center justify-center gap-1 rounded-full bg-[#f47e68] px-4 py-2.5 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="link-player-next-complete">
+                            <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex flex-1 items-center justify-center gap-1 rounded-full bg-[#ff4fc3] px-4 py-2.5 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]" data-testid="link-player-next-complete">
                               Play next <ChevronRight size={13} />
                             </Link>
                             <button type="button" onClick={handleReplay} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-white/40 hover:text-white" aria-label="Replay episode"><RotateCw size={14} /></button>
@@ -1078,7 +1103,7 @@ function WatchPage() {
                         </>
                       ) : (
                         <div className="flex items-center gap-2">
-                          <button type="button" onClick={handleReplay} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#f47e68] px-4 py-2.5 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]"><RotateCw size={13} /> Replay</button>
+                          <button type="button" onClick={handleReplay} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#ff4fc3] px-4 py-2.5 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]"><RotateCw size={13} /> Replay</button>
                           <Link href={`/drama/${drama.id}`} className="inline-flex flex-1 items-center justify-center rounded-full border border-white/15 px-4 py-2.5 text-xs text-white/75 transition-colors hover:border-white/40 hover:text-white">Back to story</Link>
                         </div>
                       )}
@@ -1101,7 +1126,7 @@ function WatchPage() {
 
                   <div className={`overflow-hidden transition-all duration-300 ${showControls ? 'max-h-16 opacity-100' : 'max-h-0 opacity-0'}`}>
                     <div className="flex items-center gap-3" data-player-ui="controls">
-                      <input type="range" min="0" max="100" step="0.1" value={progress} onChange={(event) => handleSeek(Number(event.target.value))} className="h-1 min-w-0 flex-1 accent-[#f47e68]" aria-label="Episode progress" data-testid="input-player-progress" />
+                      <input type="range" min="0" max="100" step="0.1" value={progress} onChange={(event) => handleSeek(Number(event.target.value))} className="h-1 min-w-0 flex-1 accent-[#ff4fc3]" aria-label="Episode progress" data-testid="input-player-progress" />
                       <span className="shrink-0 font-mono-ui text-[10px] tabular-nums text-white/55">{timeLabel}</span>
                       <button type="button" onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} className="shrink-0 text-white/70 transition-colors hover:text-white" data-testid="button-player-mute">{muted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
                       <button type="button" onClick={() => void handleFullscreen()} aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} className="shrink-0 text-white/70 transition-colors hover:text-white" data-testid="button-player-fullscreen">{isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}</button>
@@ -1117,7 +1142,7 @@ function WatchPage() {
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3 text-xs">
                     {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 transition-colors hover:text-white" data-testid="link-player-previous-mobile">Previous episode</Link> : <span className="text-white/15">First episode</span>}
-                    {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#f47e68] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff987f]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/35">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
+                    {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#ff4fc3] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/35">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
                   </div>
                 </div>
               </div>
@@ -1132,23 +1157,23 @@ function WatchPage() {
         </section>
         <aside className="w-full border-t border-white/[.08] bg-[#111118] lg:w-[350px] lg:border-l lg:border-t-0">
           <div className="flex items-center justify-between border-b border-white/[.08] px-5 py-5">
-            <div><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#f47e68]">Now watching</p><h2 className="mt-1 font-display text-xl">{drama.title}</h2></div>
+            <div><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Now watching</p><h2 className="mt-1 font-display text-xl">{drama.title}</h2></div>
             <span className="font-mono-ui text-[10px] text-white/35">{episode.number} / {drama.episodeCount}</span>
           </div>
           <div className="scrollbar-none max-h-[330px] overflow-y-auto p-3 lg:max-h-[calc(100vh-100px)]">
             {drama.episodes.map((entry) => (
-              <Link href={`/watch/${drama.id}/${entry.number}`} key={entry.number} className={`group flex items-center gap-3 rounded-xl p-2.5 transition-colors ${entry.number === episode.number ? 'bg-[#f47e68]/12' : 'hover:bg-white/[.05]'}`} data-testid={`link-player-episode-${entry.number}`}>
+              <Link href={`/watch/${drama.id}/${entry.number}`} key={entry.number} className={`group flex items-center gap-3 rounded-xl p-2.5 transition-colors ${entry.number === episode.number ? 'bg-[#ff4fc3]/12' : 'hover:bg-white/[.05]'}`} data-testid={`link-player-episode-${entry.number}`}>
                 <div className="relative h-12 w-[76px] shrink-0 overflow-hidden rounded-lg bg-cover bg-center" style={{ backgroundImage: `linear-gradient(90deg, rgba(10,10,16,.1), rgba(10,10,16,.7)), url("${drama.image}")` }}>
-                  <span className={`absolute inset-0 grid place-items-center ${entry.number === episode.number ? 'text-[#f47e68]' : 'text-white/0 group-hover:text-white'}`}><CirclePlay size={20} /></span>
+                  <span className={`absolute inset-0 grid place-items-center ${entry.number === episode.number ? 'text-[#ff4fc3]' : 'text-white/0 group-hover:text-white'}`}><CirclePlay size={20} /></span>
                 </div>
-                <div className="min-w-0"><p className={`truncate text-xs font-medium ${entry.number === episode.number ? 'text-[#f47e68]' : 'text-white/75'}`}>{String(entry.number).padStart(2, '0')} <span className="ml-1 text-white/25">·</span> {entry.title}</p><p className="mt-1 text-[10px] text-white/35">{entry.runtime}</p></div>
+                <div className="min-w-0"><p className={`truncate text-xs font-medium ${entry.number === episode.number ? 'text-[#ff4fc3]' : 'text-white/75'}`}>{String(entry.number).padStart(2, '0')} <span className="ml-1 text-white/25">·</span> {entry.title}</p><p className="mt-1 text-[10px] text-white/35">{entry.runtime}</p></div>
               </Link>
             ))}
           </div>
           <div className="hidden border-t border-white/[.08] px-5 py-4 lg:block">
             <div className="flex items-center justify-between text-xs">
               {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 hover:text-white" data-testid="link-player-previous">Previous</Link> : <span className="text-white/15">Previous</span>}
-              {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 text-[#f47e68] hover:text-white" data-testid="link-player-next">Next episode <ChevronRight size={13} /></Link> : <span className="text-white/15">End of story</span>}
+              {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 text-[#ff4fc3] hover:text-white" data-testid="link-player-next">Next episode <ChevronRight size={13} /></Link> : <span className="text-white/15">End of story</span>}
             </div>
           </div>
         </aside>
@@ -1156,6 +1181,35 @@ function WatchPage() {
     </div>
   );
 }
+
+
+function WalletPage() {
+  const [balance, setBalance] = useState<number>(() => Number(localStorage.getItem('veyra:coins') ?? 0));
+  useEffect(() => { const h=()=>setBalance(Number(localStorage.getItem('veyra:coins') ?? 0)); window.addEventListener('veyra:coins',h); return()=>window.removeEventListener('veyra:coins',h); }, []);
+  const packs = [['700','+35','$4.99'],['1,200','+200','$8.99'],['2,500','+500','$17.99'],['5,000','+1,250','$32.99']];
+  return <div className="animate-rise">
+    <div className="mb-8"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your wallet</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-white sm:text-[4rem]">Coins<span className="text-[#ff4fc3]">.</span></h1><p className="mt-3 text-sm text-white/45">Unlock more episodes and keep watching without interruption.</p></div>
+    <div className="rounded-[1.5rem] border border-white/[.08] bg-gradient-to-br from-[#ff4fc3]/20 via-[#9f7cff]/10 to-transparent p-6">
+      <p className="text-[10px] uppercase tracking-[.2em] text-white/45">Current balance</p><div className="mt-2 flex items-center gap-2 font-display text-4xl text-white"><Coins size={30} className="text-[#ff4fc3]"/>{balance}</div>
+    </div>
+    <div className="mt-8"><SectionHeader eyebrow="Top up" title="Coin packs" href="/wallet"/><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{packs.map(([coins,bonus,price])=><button key={coins} type="button" className="rounded-2xl border border-white/[.08] bg-white/[.025] p-5 text-left transition hover:border-[#ff4fc3]/40"><div className="flex items-center gap-2"><Coins size={16} className="text-[#ff4fc3]"/><span className="font-display text-2xl">{coins}</span></div><p className="mt-1 text-xs text-[#70d59b]">Bonus {bonus}</p><div className="mt-5 flex items-center justify-between"><span className="text-xs text-white/40">One-time</span><span className="rounded-full bg-[#ff4fc3] px-3 py-1.5 text-[11px] font-bold text-black">{price}</span></div></button>)}</div></div>
+    <div className="mt-8 grid gap-3 sm:grid-cols-3">{[['Transaction history','Your coin purchases and bonuses'],['Opened episodes','See what you have unlocked'],['Membership rewards','VIP and daily reward history']].map(([t,c])=><div key={t} className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5"><p className="font-semibold text-white/90">{t}</p><p className="mt-2 text-xs leading-relaxed text-white/35">{c}</p></div>)}</div>
+  </div>;
+}
+
+function VipPage() {
+  const plans=[['Weekly','$4.99','Flexible'],['Monthly','$12.99','Most popular'],['Yearly','$49.99','Best value']];
+  return <div className="animate-rise">
+    <div className="mb-8 text-center"><Sparkles className="mx-auto text-[#ff4fc3]" size={22}/><p className="mt-3 font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA VIP</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-white sm:text-[4rem]">Unlock every story<span className="text-[#ff4fc3]">.</span></h1><p className="mx-auto mt-4 max-w-lg text-sm text-white/45">Ad-free viewing, 1080p quality, daily rewards and automatic episode unlocks.</p></div>
+    <div className="grid gap-4 md:grid-cols-3">{plans.map(([name,price,label],i)=><div key={name} className={`rounded-[1.5rem] border p-6 ${i===1?'border-[#ff4fc3]/70 bg-[#ff4fc3]/[.06]':'border-white/[.08] bg-white/[.025]'}`}><span className="rounded-full bg-white/[.06] px-2.5 py-1 text-[9px] uppercase tracking-[.12em] text-white/45">{label}</span><h2 className="mt-5 font-display text-xl">{name}</h2><p className="mt-2 font-display text-3xl">{price}</p><ul className="mt-6 space-y-3 text-xs text-white/65">{['Unlimited episodes','No ads','1080p quality','Daily VIP reward','Auto-unlock next episode'].map(x=><li key={x} className="flex items-center gap-2"><Check size={14} className="text-[#70d59b]"/>{x}</li>)}</ul><button type="button" className="mt-7 w-full rounded-full bg-[#ff4fc3] px-4 py-3 text-xs font-bold text-black">Continue</button></div>)}</div>
+  </div>;
+}
+
+function LanguagePage(){ const langs=['English','Türkçe','Español','Português','Français','Deutsch','हिन्दी','Bahasa Indonesia']; return <SimpleSettingsPage title="Language" icon={<Languages size={18}/>}>{<div className="grid grid-cols-2 gap-2">{langs.map(x=><button key={x} type="button" className={`rounded-xl border p-3 text-left text-xs ${x==='English'?'border-[#ff4fc3] bg-[#ff4fc3]/10 text-white':'border-white/[.08] bg-white/[.02] text-white/65'}`}>{x}</button>)}</div>}</SimpleSettingsPage>; }
+function NotificationsPage(){ return <SimpleSettingsPage title="Notifications" icon={<Bell size={18}/>}>{<div className="space-y-2">{['New episode alerts','Daily reward reminder','Personalized recommendations','VIP offers'].map(x=><div key={x} className="flex items-center justify-between rounded-xl border border-white/[.08] p-4"><span className="text-sm">{x}</span><span className="rounded-full bg-[#ff4fc3]/15 px-3 py-1 text-[10px] font-semibold text-[#ff4fc3]">ON</span></div>)}</div>}</SimpleSettingsPage>; }
+function SettingsPage(){ return <SimpleSettingsPage title="Settings" icon={<Settings size={18}/>}>{<div className="space-y-2"><Link href="/settings/language" className="block rounded-xl border border-white/[.08] p-4 text-sm">Language</Link><Link href="/settings/notifications" className="block rounded-xl border border-white/[.08] p-4 text-sm">Notifications</Link><Link href="/privacy" className="block rounded-xl border border-white/[.08] p-4 text-sm">Privacy Policy</Link><Link href="/terms" className="block rounded-xl border border-white/[.08] p-4 text-sm">Terms of Service</Link><Link href="/feedback" className="block rounded-xl border border-white/[.08] p-4 text-sm">Feedback</Link></div>}</SimpleSettingsPage>; }
+function SimpleSettingsPage({title,icon,children}:{title:string;icon:ReactNode;children:ReactNode}){ return <div className="animate-rise max-w-2xl"><Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45"><ArrowLeft size={14}/> Back to Profile</Link><div className="mt-7 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff4fc3]/12 text-[#ff4fc3]">{icon}</div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA</p><h1 className="mt-1 font-display text-3xl">{title}</h1></div></div><div className="mt-7 rounded-2xl border border-white/[.08] bg-white/[.02] p-5">{children}</div></div>; }
+function InfoPage({title,text}:{title:string;text:string}){ return <SimpleSettingsPage title={title} icon={<ShieldCheck size={18}/>}>{<p className="text-sm leading-7 text-white/60">{text}</p>}</SimpleSettingsPage>; }
 
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
   const [location] = useLocation();
@@ -1174,7 +1228,16 @@ function AppRouter() {
         <Route path="/saved" component={() => <PageFrame><SavedPage /></PageFrame>} />
          <Route path="/following" component={() => <PageFrame><FollowingPage /></PageFrame>} />
          <Route path="/rewards" component={() => <PageFrame><RewardsPage /></PageFrame>} />
+         <Route path="/wallet" component={() => <PageFrame><WalletPage /></PageFrame>} />
+         <Route path="/vip" component={() => <PageFrame><VipPage /></PageFrame>} />
          <Route path="/profile" component={() => <PageFrame><ProfilePage /></PageFrame>} />
+         <Route path="/settings" component={() => <PageFrame><SettingsPage /></PageFrame>} />
+         <Route path="/settings/language" component={() => <PageFrame><LanguagePage /></PageFrame>} />
+         <Route path="/settings/notifications" component={() => <PageFrame><NotificationsPage /></PageFrame>} />
+         <Route path="/privacy" component={() => <PageFrame><InfoPage title="Privacy Policy" text="VEYRA will publish its final privacy policy before public launch." /></PageFrame>} />
+         <Route path="/terms" component={() => <PageFrame><InfoPage title="Terms of Service" text="VEYRA will publish its final terms before public launch." /></PageFrame>} />
+         <Route path="/help" component={() => <PageFrame><InfoPage title="Help & FAQ" text="Help, account support, billing and playback guidance will be available here." /></PageFrame>} />
+         <Route path="/feedback" component={() => <PageFrame><InfoPage title="Feedback" text="Send feedback to help us improve VEYRA." /></PageFrame>} />
          <Route path="/admin" component={() => <PageFrame><AdminPage /></PageFrame>} />
         <Route component={NotFound} />
       </Switch>
@@ -1182,7 +1245,7 @@ function AppRouter() {
   );
 }
 
-function AppContent() {
+function AuthenticatedApp() {
   const [savedIds, setSavedIds] = useState<string[]>(['after-midnight']);
   const { isSignedIn } = useAuth();
   useEffect(() => {
@@ -1204,26 +1267,12 @@ function AppContent() {
     },
     isSaved: (id) => savedIds.includes(id),
   }), [isSignedIn, savedIds]);
-  return (
-    <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AppContext.Provider value={value}>
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-              <AppRouter />
-            </WouterRouter>
-          </AppContext.Provider>
-          <Toaster />
-        </TooltipProvider>
-      </QueryClientProvider>
-  );
+  return <QueryClientProvider client={queryClient}><TooltipProvider><AppContext.Provider value={value}><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><AppRouter /></WouterRouter></AppContext.Provider><Toaster /></TooltipProvider></QueryClientProvider>;
 }
 
 function App() {
-  return (
-    <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
-      <AppContent />
-    </ClerkProvider>
-  );
+  const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+  return <ClerkProvider publishableKey={publishableKey}><AuthenticatedApp /></ClerkProvider>;
 }
 
 export default App;
