@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from 'react';
 import {
   AlertTriangle,
   Bell,
@@ -38,7 +38,7 @@ import {
   Zap,
   FileText,
 } from 'lucide-react';
-import { ClerkProvider, Show, SignInButton, UserButton, useAuth, useUser } from '@clerk/react';
+import { ClerkProvider, Show, SignInButton, UserButton, useAuth, useClerk, useUser } from '@clerk/react';
 import { useUpload } from '@workspace/object-storage-web';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/error-boundary';
@@ -50,6 +50,11 @@ import '@/index.css';
 
 const queryClient = new QueryClient();
 
+const getPublicAppUrl = () => {
+  const configuredUrl = import.meta.env.VITE_PUBLIC_APP_URL as string | undefined;
+  return configuredUrl?.startsWith('http') ? configuredUrl.replace(/\/$/, '') : 'https://veyra.app';
+};
+
 type Episode = {
   number: number;
   title: string;
@@ -57,9 +62,11 @@ type Episode = {
   released: string;
   synopsis: string;
   videoUrl: string;
+  videoSources: Partial<Record<VideoQuality, string>>;
   captions: CaptionCue[];
 };
 
+type VideoQuality = '540p' | '720p' | '1080p';
 type CaptionCue = {
   language: string;
   start: number;
@@ -116,6 +123,16 @@ const getLastEpisode = (dramaId: string) => {
   return Number.isFinite(storedEpisode) && storedEpisode > 0 ? storedEpisode : 1;
 };
 
+const hasDownloadedEpisode = (dramaId: string) => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const downloads = JSON.parse(localStorage.getItem('veyra:downloads') ?? '[]') as Array<{ dramaId?: string; status?: string }>;
+    return downloads.some((download) => download.dramaId === dramaId && download.status === 'downloaded');
+  } catch {
+    return false;
+  }
+};
+
 const createEpisodes = (titles: string[], runtimes: string[], synopses: string[]): Episode[] =>
   titles.map((title, index) => {
     const synopsis = synopses[index] ?? 'A small decision turns the night in an unexpected direction.';
@@ -126,6 +143,7 @@ const createEpisodes = (titles: string[], runtimes: string[], synopses: string[]
       released: index === 0 ? 'Today' : `${index}d ago`,
       synopsis,
       videoUrl: placeholderVideos[index % placeholderVideos.length],
+      videoSources: { '720p': placeholderVideos[index % placeholderVideos.length] },
       captions: [{ language: 'en', start: 0, end: 90, text: synopsis }],
     };
   });
@@ -257,6 +275,11 @@ type AppContextValue = {
   savedIds: string[];
   toggleSaved: (id: string) => void;
   isSaved: (id: string) => boolean;
+  followingIds: string[];
+  toggleFollowing: (id: string) => void;
+  isFollowing: (id: string) => boolean;
+  miniPlayer: { dramaId: string; episode: number; title: string; source: string; currentTime: number; playing: boolean } | null;
+  setMiniPlayer: (player: AppContextValue['miniPlayer']) => void;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -302,7 +325,7 @@ function PageFrame({ children }: { children: ReactNode }) {
           <Logo />
           <nav className="hidden items-center gap-6 lg:flex">
             <Link href="/" className="text-[13px] text-white/65 transition-colors hover:text-white">Home</Link>
-            <Link href="/discover" className="text-[13px] text-white/65 transition-colors hover:text-white">Discover</Link>
+            <Link href="/for-you" className="text-[13px] text-white/65 transition-colors hover:text-white">Senin İçin</Link>
             <Link href="/rewards" className="text-[13px] text-white/65 transition-colors hover:text-white">Rewards</Link>
             <Link href="/wallet" className="text-[13px] text-white/65 transition-colors hover:text-white">Wallet</Link>
             <Link href="/vip" className="text-[13px] font-semibold text-[#ff4fc3] transition-colors hover:text-white">VIP</Link>
@@ -317,12 +340,12 @@ function PageFrame({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-[1240px] px-4 pb-28 pt-6 md:px-7 md:pb-12 md:pt-9">{children}</main>
-      <nav className="glass fixed inset-x-3 bottom-3 z-40 flex h-[3.9rem] items-center justify-around rounded-2xl md:hidden">
+      <nav className="veyra-bottom-nav glass fixed inset-x-3 bottom-3 z-40 flex h-[3.9rem] items-center justify-around rounded-2xl md:hidden">
         <MobileNavLink href="/" icon={<HomeIcon size={18}/>} label="Home" />
-        <MobileNavLink href="/discover" icon={<Search size={18}/>} label="Discover" />
-        <MobileNavLink href="/rewards" icon={<Gift size={18}/>} label="Rewards" />
-        <MobileNavLink href="/wallet" icon={<Wallet size={18}/>} label="Wallet" />
-        <MobileNavLink href="/profile" icon={<UserCircle size={18}/>} label="Profile" />
+        <MobileNavLink href="/for-you" icon={<Sparkles size={18}/>} label="Senin İçin" />
+        <MobileNavLink href="/rewards" icon={<Gift size={18}/>} label="Ödüller" />
+        <MobileNavLink href="/following" icon={<UsersRound size={18}/>} label="Takip" />
+        <MobileNavLink href="/profile" icon={<UserCircle size={18}/>} label="Profil" />
       </nav>
     </div>
   );
@@ -356,7 +379,7 @@ function DramaCard({ drama, compact = false }: { drama: Drama; compact?: boolean
   const saved = isSaved(drama.id);
   return (
     <article className={`group relative shrink-0 ${compact ? 'w-[146px]' : 'w-[158px] sm:w-[190px]'}`} data-testid={`card-drama-${drama.id}`}>
-      <Link href={`/drama/${drama.id}`} className="block" data-testid={`link-drama-${drama.id}`}>
+      <Link href={`/watch/${drama.id}/1`} className="block" data-testid={`link-drama-${drama.id}`}>
         <Poster drama={drama} className={`${compact ? 'aspect-[.69]' : 'aspect-[.72]'} transition-transform duration-500 group-hover:-translate-y-1 group-hover:shadow-2xl`} />
         <div className="mt-2.5 pr-7">
           <h3 className="truncate font-display text-[15px] leading-tight text-white/90">{drama.title}</h3>
@@ -378,157 +401,81 @@ function DramaCard({ drama, compact = false }: { drama: Drama; compact?: boolean
 
 function HomePage() {
   const { isSaved, toggleSaved } = useAppValue();
+  const { savedIds, followingIds } = useAppValue();
   const featured = dramas[0];
   const saved = isSaved(featured.id);
-  
-  // Get continue watching dramas (mock data based on localStorage)
-  const continueWatching = dramas.filter(drama => {
+  const continueWatching = dramas.filter((drama) => {
     const lastEpisode = getLastEpisode(drama.id);
     return lastEpisode > 1 && lastEpisode <= drama.episodeCount;
   }).slice(0, 4);
+  const denseRows = [
+    dramas.slice(0, 3),
+    dramas.slice(3, 6),
+    dramas.slice(6, 9),
+  ];
 
   return (
-    <div className="animate-rise space-y-12">
-      {/* Featured Drama - Hero Section */}
-      <section className="relative min-h-[455px] overflow-hidden rounded-[1.6rem] border border-white/[.08] bg-[#1b1a27] md:min-h-[510px]">
-        <div className="absolute inset-0 bg-cover bg-center md:bg-[position:58%_38%]" style={{ backgroundImage: `linear-gradient(90deg, #15151f 0%, rgba(21,21,31,.85) 28%, rgba(21,21,31,.22) 72%, rgba(21,21,31,.3) 100%), linear-gradient(0deg, #15151f 0%, transparent 40%), url("${featured.image}")` }} />
-        <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#ff4fc3]/10 blur-3xl" />
-        <div className="relative flex min-h-[455px] max-w-[570px] flex-col justify-end p-6 pb-7 md:min-h-[510px] md:p-10 md:pb-12">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="rounded-full bg-[#ff4fc3] px-2.5 py-1 font-mono-ui text-[9px] font-bold uppercase tracking-[.14em] text-[#15151f]">Featured tonight</span>
-            <span className="font-mono-ui text-[10px] uppercase tracking-[.15em] text-white/50">{featured.episodeCount} episodes · {featured.episodeCount * 8}m</span>
+    <div className="animate-rise space-y-8">
+      <section className="rounded-[1.2rem] border border-white/[.08] bg-[#1a1c28]/70 p-3 md:p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Trending now</p>
+            <h2 className="mt-1 font-display text-2xl text-white">Fresh picks</h2>
           </div>
-          <h1 className="max-w-[500px] font-display text-[3.25rem] leading-[.88] tracking-[-.065em] text-[#f7f2ff] sm:text-[4.4rem]">{featured.title}</h1>
-          <p className="mt-5 max-w-[430px] text-sm leading-relaxed text-white/62 md:text-[15px]">{featured.description}</p>
-          <div className="mt-7 flex items-center gap-3">
-            <Link href={`/drama/${featured.id}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#ff4fc3] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff8bdd] hover:shadow-[0_10px_30px_rgba(244,126,104,.2)]" data-testid="link-featured-play">
-              <Play size={15} fill="currentColor" /> Start watching
-            </Link>
-            <button type="button" onClick={() => toggleSaved(featured.id)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-all ${saved ? 'border-[#ff4fc3]/60 bg-[#ff4fc3]/15 text-[#ff4fc3]' : 'border-white/15 bg-white/[.06] text-white/80 hover:border-white/35'}`} data-testid="button-featured-save">
-              {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-              {saved ? 'In My List' : 'My List'}
-            </button>
-          </div>
+          <Link href="/discover" className="text-xs text-white/45 hover:text-white">Browse all</Link>
         </div>
-        <div className="absolute right-7 top-7 hidden items-center gap-2 md:flex">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#ff4fc3]" />
-          <span className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-white/45">New episode weekly</span>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          {dramas.slice(0, 9).map((drama) => (
+            <Link key={drama.id} href={`/watch/${drama.id}/1`} className="group block" data-testid={`link-home-grid-${drama.id}`}>
+              <div className="overflow-hidden rounded-xl border border-white/[.08] bg-[#111118] transition-transform duration-200 group-hover:-translate-y-0.5 group-hover:border-[#ff4fc3]/40">
+                <Poster drama={drama} className="aspect-[0.7]" showTitle={false} />
+                <div className="p-2">
+                  <p className="truncate font-display text-[12px] text-white/90">{drama.title}</p>
+                  <p className="mt-0.5 truncate text-[10px] text-white/40">{drama.genre.join(' · ')}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 
-      {/* Continue Watching */}
       {continueWatching.length > 0 && (
         <section>
           <SectionHeader eyebrow="Pick up where you left off" title="Continue Watching" />
-          <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {continueWatching.map((drama) => <DramaCard drama={drama} key={drama.id} />)}
           </div>
         </section>
       )}
 
-      {/* For You - Personalized Recommendations */}
-      <section>
-        <SectionHeader eyebrow="Curated for you" title="For You" />
-        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
-          {dramas.slice(0, 5).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
-        </div>
-      </section>
-
-      {/* Trending */}
-      <section>
-        <SectionHeader eyebrow="What's hot right now" title="Trending" />
-        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
-          {dramas.slice(1, 6).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
-        </div>
-      </section>
-
-      {/* Popular */}
-      <section>
-        <SectionHeader eyebrow="Most watched" title="Popular" />
-        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
-          {dramas.slice(2, 7).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
-        </div>
-      </section>
-
-      {/* New Releases */}
-      <section>
-        <SectionHeader eyebrow="Fresh content" title="New Releases" />
-        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
-          {dramas.slice(0, 5).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
-        </div>
-      </section>
-
-      {/* Top Rated */}
-      <section>
-        <SectionHeader eyebrow="Critically acclaimed" title="Top Rated" />
-        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
-          {dramas.slice(3, 8).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
-        </div>
-      </section>
-
-      {/* Recommended */}
-      <section>
-        <SectionHeader eyebrow="Based on your tastes" title="Recommended" />
-        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
-          {dramas.slice(4, 9).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
-        </div>
-      </section>
-
-      {/* New & Hot */}
-      <section>
-        <SectionHeader eyebrow="Trending now" title="New & Hot" />
-        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
-          {dramas.slice(0, 5).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
-        </div>
-      </section>
-
-      {/* Recently Added */}
-      <section>
-        <SectionHeader eyebrow="Just arrived" title="Recently Added" />
-        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
-          {dramas.slice(1, 6).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
-        </div>
-      </section>
-
-      {/* Genre Rows */}
-      <section>
-        <SectionHeader eyebrow="Browse by mood" title="Romance" />
-        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
-          {dramas.filter(d => d.genre.includes('Romance')).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
-        </div>
-      </section>
-
-      <section>
-        <SectionHeader eyebrow="Edge of your seat" title="Thriller" />
-        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
-          {dramas.filter(d => d.genre.includes('Thriller') || d.genre.includes('Mystery')).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
-        </div>
-      </section>
-
-      <section>
-        <SectionHeader eyebrow="Future worlds" title="Sci-fi" />
-        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
-          {dramas.filter(d => d.genre.includes('Sci-fi')).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
-        </div>
-      </section>
-
-      {/* New Episodes Row */}
-      <section className="grid gap-8 md:grid-cols-[1.2fr_.8fr] md:items-end">
-        <div>
-          <SectionHeader eyebrow="Fresh from the writers' room" title="New episodes" href="/search?filter=new" />
-          <div className="space-y-3">
-            {dramas.slice(0, 3).map((drama, index) => <EpisodeRow drama={drama} episode={drama.episodes[index]} key={drama.id} />)}
+      {denseRows.map((row, rowIndex) => (
+        <section key={`row-${rowIndex}`}>
+          <SectionHeader eyebrow={rowIndex === 0 ? 'Curated for you' : rowIndex === 1 ? 'Popular picks' : 'Top rated'} title={rowIndex === 0 ? 'For You' : rowIndex === 1 ? 'Popular' : 'Top Rated'} />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3">
+            {row.map((drama) => <DramaCard drama={drama} key={drama.id} />)}
           </div>
-        </div>
-        <div className="relative min-h-[245px] overflow-hidden rounded-[1.35rem] border border-white/[.08] bg-[#1b2029] p-6">
-          <div className="absolute -right-6 -top-10 h-48 w-48 rounded-full bg-[#6eabb2]/20 blur-3xl" />
-          <div className="absolute bottom-[-45px] right-[-15px] h-48 w-48 rounded-full border border-[#6eabb2]/20" />
-          <div className="relative">
-            <Sparkles size={18} className="text-[#b78cff]" />
-             <p className="mt-8 max-w-[230px] font-display text-2xl leading-[.98] text-[#f2efff]">Short stories.<br />Deep impact.</p>
-            <p className="mt-4 max-w-[240px] text-xs leading-relaxed text-white/45">A global slate of short stories, mini-series, and AI-generated films to carry with you.</p>
-            <Link href="/search" className="mt-6 inline-flex items-center gap-1 text-xs font-semibold text-[#b78cff] hover:text-white" data-testid="link-explore-all">Explore the collection <ChevronRight size={13} /></Link>
+        </section>
+      ))}
+
+      <section className="rounded-[1.25rem] border border-white/[.08] bg-[#1a1c28]/70 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">House picks</p>
+            <h2 className="mt-1 font-display text-xl text-white">Short stories</h2>
           </div>
+          <Link href="/search" className="text-xs text-white/45 hover:text-white">Explore all</Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {dramas.slice(0, 6).map((drama) => (
+            <Link key={`${drama.id}-quick`} href={`/watch/${drama.id}/1`} className="group block" data-testid={`link-home-quick-${drama.id}`}>
+              <div className="overflow-hidden rounded-xl border border-white/[.08] bg-[#111118] group-hover:border-[#ff4fc3]/40">
+                <Poster drama={drama} className="aspect-[0.72]" showTitle={false} />
+                <div className="p-2.5">
+                  <p className="truncate text-[12px] text-white/85">{drama.title}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
     </div>
@@ -552,12 +499,14 @@ function EpisodeRow({ drama, episode }: { drama: Drama; episode: Episode }) {
 
 function DramaDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [, navigate] = useLocation();
   const { isSaved, toggleSaved } = useAppValue();
   const drama = dramas.find((entry) => entry.id === id) ?? dramas[0];
   const saved = isSaved(drama.id);
   const [resumeEpisode, setResumeEpisode] = useState(1);
   const [episodeFilter, setEpisodeFilter] = useState<'All' | 'Free' | 'Locked' | 'Watched' | 'Unwatched'>('All');
-  const [following, setFollowing] = useState(false);
+  const { isFollowing, toggleFollowing } = useAppValue();
+  const following = isFollowing(drama.id);
 
   useEffect(() => {
     setResumeEpisode(Math.min(getLastEpisode(drama.id), drama.episodeCount));
@@ -580,7 +529,7 @@ function DramaDetailPage() {
 
   return (
     <div className="animate-rise">
-      <Link href="/" className="mb-7 inline-flex items-center gap-2 text-xs text-white/50 transition-colors hover:text-white" data-testid="link-detail-back"><ArrowLeft size={15} /> Back to Home</Link>
+      <button type="button" onClick={() => window.history.length > 1 ? window.history.back() : navigate('/')} className="mb-7 inline-flex items-center gap-2 text-xs text-white/50 transition-colors hover:text-white" data-testid="link-detail-back"><ArrowLeft size={15} /> Back</button>
       
       {/* Main Drama Info */}
       <section className="relative overflow-hidden rounded-[1.5rem] border border-white/[.08] bg-[#1c1b27]">
@@ -606,7 +555,7 @@ function DramaDetailPage() {
                 {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
                 {saved ? 'In My List' : 'My List'}
               </button>
-              <button type="button" onClick={() => setFollowing(!following)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-all ${following ? 'border-[#ff4fc3]/60 bg-[#ff4fc3]/15 text-[#ff4fc3]' : 'border-white/15 bg-white/[.06] text-white/80 hover:border-white/35'}`} aria-label={following ? 'Unfollow' : 'Follow'}>
+              <button type="button" onClick={() => toggleFollowing(drama.id)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-all ${following ? 'border-[#ff4fc3]/60 bg-[#ff4fc3]/15 text-[#ff4fc3]' : 'border-white/15 bg-white/[.06] text-white/80 hover:border-white/35'}`} aria-label={following ? 'Unfollow' : 'Follow'}>
                 {following ? <UsersRound size={16} /> : <UsersRound size={16} />}
                 {following ? 'Following' : 'Follow'}
               </button>
@@ -709,9 +658,87 @@ function EpisodeDetailRow({ drama, episode }: { drama: Drama; episode: Episode }
   );
 }
 
+function ForYouPage() {
+  const { savedIds, followingIds } = useAppValue();
+  const feedItems = dramas.filter((drama) => !savedIds.includes(drama.id) && !followingIds.includes(drama.id)).flatMap((drama) => drama.episodes.map((episode) => ({ drama, episode })));
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [muted, setMuted] = useState(true);
+  const [saved, setSaved] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const touchStartYRef = useRef<number | null>(null);
+  const active = feedItems[activeIndex];
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = muted;
+    video.load();
+    void video.play().catch(() => undefined);
+  }, [activeIndex, muted]);
+
+  const move = (direction: 1 | -1) => {
+    setActiveIndex((current) => Math.max(0, Math.min(feedItems.length - 1, current + direction)));
+  };
+
+  const share = async () => {
+    const url = `${getPublicAppUrl()}/watch/${active.drama.id}/${active.episode.number}`;
+    if (navigator.share) await navigator.share({ title: active.drama.title, url }).catch(() => undefined);
+    else await navigator.clipboard?.writeText(url).catch(() => undefined);
+  };
+
+  return (
+    <div className="relative -mx-4 -mt-6 flex min-h-[calc(100dvh-4.25rem)] justify-center bg-black md:-mx-7 md:-mt-9">
+      <div
+        className="relative aspect-[9/16] h-[calc(100dvh-4.25rem)] max-h-[900px] w-full max-w-[520px] overflow-hidden bg-[#09090d]"
+        onTouchStart={(event) => { touchStartYRef.current = event.touches[0]?.clientY ?? null; }}
+        onTouchEnd={(event) => {
+          const start = touchStartYRef.current;
+          touchStartYRef.current = null;
+          const end = event.changedTouches[0]?.clientY;
+          if (start === null || end === undefined || Math.abs(end - start) < 56) return;
+          move(end < start ? 1 : -1);
+        }}
+      >
+        <video
+          ref={videoRef}
+          key={`${active.drama.id}-${active.episode.number}`}
+          className="absolute inset-0 h-full w-full object-cover"
+          src={active.episode.videoUrl}
+          poster={active.drama.image}
+          playsInline
+          loop={false}
+          muted={muted}
+          onEnded={() => move(1)}
+          aria-label={`${active.drama.title}, episode ${active.episode.number}`}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/40" />
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4 text-white">
+          <Link href="/" aria-label="Back to Home" className="grid h-9 w-9 place-items-center rounded-full bg-black/35"><ArrowLeft size={16} /></Link>
+          <span className="font-mono-ui text-[10px] uppercase tracking-[.18em] text-white/65">For You</span>
+          <button type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? 'Unmute' : 'Mute'} className="grid h-9 w-9 place-items-center rounded-full bg-black/35">{muted ? <VolumeX size={16} /> : <Volume2 size={16} />}</button>
+        </div>
+        <div className="absolute bottom-0 inset-x-0 flex items-end gap-4 p-5 pb-7 text-white">
+          <div className="min-w-0 flex-1">
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">{active.drama.genre.join(' · ')}</p>
+            <h1 className="mt-2 font-display text-2xl leading-tight">{active.drama.title}</h1>
+            <p className="mt-1 text-xs text-white/65">Episode {active.episode.number} / {active.drama.episodeCount}</p>
+            <p className="mt-3 line-clamp-2 text-sm leading-relaxed text-white/70">{active.episode.synopsis}</p>
+            <Link href={`/watch/${active.drama.id}/${active.episode.number}`} className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#ff4fc3] px-4 py-2 text-xs font-semibold text-[#171720]"><Play size={13} fill="currentColor" /> Watch episode</Link>
+          </div>
+          <div className="flex shrink-0 flex-col items-center gap-4">
+            <button type="button" onClick={() => setSaved((value) => !value)} aria-label={saved ? 'Remove from My List' : 'Save'} className="grid h-10 w-10 place-items-center rounded-full bg-black/40">{saved ? <BookmarkCheck size={19} className="text-[#ff4fc3]" /> : <Bookmark size={19} />}</button>
+            <button type="button" onClick={() => void share()} aria-label="Share" className="grid h-10 w-10 place-items-center rounded-full bg-black/40"><Share2 size={19} /></button>
+            <Link href={`/drama/${active.drama.id}`} aria-label="Episodes" className="grid h-10 w-10 place-items-center rounded-full bg-black/40"><CirclePlay size={19} /></Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SearchPage() {
-  const [query, setQuery] = useState('');
-  const [activeGenre, setActiveGenre] = useState('All');
+  const [query, setQuery] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '');
+  const [activeGenre, setActiveGenre] = useState(() => new URLSearchParams(window.location.search).get('genre') ?? 'All');
   const [sortBy, setSortBy] = useState<'Popular' | 'Trending' | 'Newest' | 'Top Rated'>('Popular');
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     const stored = localStorage.getItem('veyra:recent-searches');
@@ -767,13 +794,12 @@ function SearchPage() {
 
   return (
     <div className="animate-rise">
-      <div className="mb-9">
-        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Find your next obsession</p>
-        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">What are you<br />in the mood for?</h1>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Explore VEYRA</p><h1 className="mt-1 font-display text-2xl text-white">Search</h1></div>
+        <Link href="/" aria-label="Back to Home" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/60"><ArrowLeft size={16} /></Link>
       </div>
-      
-      {/* Search Input */}
-      <label className="relative block max-w-[650px]">
+
+      <label className="relative block">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={18} />
         <input 
           value={query} 
@@ -1034,7 +1060,7 @@ function SavedPage() {
       case 'All': return true;
       case 'Watching': return isWatching;
       case 'Completed': return isCompleted;
-      case 'Downloaded': return false; // Downloads not implemented yet
+      case 'Downloaded': return hasDownloadedEpisode(drama.id);
       default: return true;
     }
   });
@@ -1096,20 +1122,9 @@ function SavedPage() {
 }
 
 function FollowingPage() {
-  const [following, setFollowing] = useState<Drama[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { followingIds } = useAppValue();
   const [filter, setFilter] = useState<'All' | 'Watching' | 'Completed' | 'Downloaded'>('All');
-  
-  useEffect(() => {
-    fetch('/api/me/following', { credentials: 'include' })
-      .then((response) => response.ok ? response.json() : [])
-      .then((items: Array<{ slug?: string; id?: number }>) => {
-        const ids = new Set(items.map((item) => String(item.slug ?? item.id)));
-        setFollowing(dramas.filter((drama) => ids.has(drama.id)));
-      })
-      .catch(() => setFollowing([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const following = dramas.filter((drama) => followingIds.includes(drama.id));
 
   const filteredFollowing = following.filter((drama) => {
     const lastEpisode = getLastEpisode(drama.id);
@@ -1120,7 +1135,7 @@ function FollowingPage() {
       case 'All': return true;
       case 'Watching': return isWatching;
       case 'Completed': return isCompleted;
-      case 'Downloaded': return false;
+      case 'Downloaded': return hasDownloadedEpisode(drama.id);
       default: return true;
     }
   });
@@ -1130,7 +1145,7 @@ function FollowingPage() {
       <div className="mb-9">
         <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your watch circle</p>
         <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Following<span className="text-[#ff4fc3]">.</span></h1>
-        <p className="mt-4 text-sm text-white/45">{loading ? 'Loading your followed stories…' : `${following.length} stories in your circle`}</p>
+        <p className="mt-4 text-sm text-white/45">{following.length} stories in your circle</p>
       </div>
 
       {/* Filters */}
@@ -1152,12 +1167,7 @@ function FollowingPage() {
       </div>
 
       {/* Drama Grid */}
-      {loading ? (
-        <div className="rounded-2xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-[#ff4fc3]" />
-          <p className="mt-3 text-sm text-white/40">Loading your followed stories…</p>
-        </div>
-      ) : filteredFollowing.length ? (
+      {filteredFollowing.length ? (
         <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {filteredFollowing.map((drama) => <DramaCard drama={drama} key={drama.id} />)}
         </div>
@@ -1437,14 +1447,13 @@ function RewardsPage() {
 
 function ProfilePage() {
   const { isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
   const { savedIds } = useAppValue();
   const [watchHistory, setWatchHistory] = useState<Array<{ dramaId: string; episode: number; date: string }>>(() => {
     const stored = localStorage.getItem('veyra:watch-history');
     return stored ? JSON.parse(stored) : [];
   });
   
-  if (!isSignedIn) return <AuthPrompt title="Make VEYRA yours" copy="Sign in to sync your list, watch progress, notifications, and profile across devices." />;
-
   const profileSections = [
     { icon: <Bookmark size={18} />, label: 'My List', value: String(savedIds.length), href: '/saved' },
     { icon: <UsersRound size={18} />, label: 'Following', value: 'View all', href: '/following' },
@@ -1475,10 +1484,19 @@ function ProfilePage() {
         </div>
         <div>
           <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your profile</p>
-          <h1 className="mt-1 font-display text-3xl text-white">{user?.firstName ?? user?.username ?? 'VEYRA viewer'}</h1>
-          <p className="mt-1 text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? 'Signed in'}</p>
+          <h1 className="mt-1 font-display text-3xl text-white">{user?.firstName ?? user?.username ?? 'Guest viewer'}</h1>
+          <p className="mt-1 text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? 'Guest account · local data only'}</p>
+          <p className="mt-1 font-mono-ui text-[10px] text-white/30">UID: {user?.id ?? 'guest-local'}</p>
         </div>
+        <Link href="/profile/edit" className="ml-auto rounded-full border border-white/10 px-3 py-2 text-xs text-white/60 hover:border-[#ff4fc3]/50 hover:text-white">Edit Profile</Link>
       </div>
+
+      {!isSignedIn && (
+        <section className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-[#ff4fc3]/25 bg-[#ff4fc3]/[.06] p-5">
+          <div><p className="font-display text-lg text-white">Sync your VEYRA profile</p><p className="mt-1 text-xs text-white/50">Sign in to keep My List, Following, history and rewards across devices.</p></div>
+          <SignInButton mode="modal"><button type="button" className="shrink-0 rounded-full bg-[#ff4fc3] px-4 py-2 text-xs font-semibold text-[#171720]">Sign in</button></SignInButton>
+        </section>
+      )}
 
       {/* Stats */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
@@ -1577,7 +1595,7 @@ function ProfilePage() {
           <button type="button" className="rounded-full border border-red-500/30 px-4 py-2 text-sm text-red-400 transition-colors hover:border-red-500/60 hover:bg-red-500/10">
             Delete Account
           </button>
-          <button type="button" className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:border-white/30 hover:text-white">
+          <button type="button" onClick={() => void signOut()} className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:border-white/30 hover:text-white">
             Sign Out
           </button>
         </div>
@@ -1629,8 +1647,8 @@ type WakeLockNavigator = Navigator & {
 };
 
 const CONTROLS_AUTO_HIDE_MS = 3200;
-const NEXT_EPISODE_COUNTDOWN = 5;
 const PROGRESS_SAVE_INTERVAL_SECONDS = 3;
+const VIP_QUALITY = '1080p';
 
 const formatTimestamp = (seconds: number) => {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -1657,6 +1675,7 @@ function WatchPage() {
   const { dramaId, episode: episodeParam } = useParams<{ dramaId: string; episode: string }>();
   const [, navigate] = useLocation();
   const drama = dramas.find((entry) => entry.id === dramaId) ?? dramas[0];
+  const { setMiniPlayer } = useAppValue();
   const selectedNumber = Math.max(1, Number(episodeParam) || 1);
   const episodeIndex = Math.min(selectedNumber - 1, drama.episodes.length - 1);
   const episode = drama.episodes[episodeIndex];
@@ -1678,12 +1697,26 @@ function WatchPage() {
   const [controlsVisible, setControlsVisible] = useState(true);
   const [controlsNonce, setControlsNonce] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [countdown, setCountdown] = useState<number | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const [speedOpen, setSpeedOpen] = useState(false);
+  const [qualityOpen, setQualityOpen] = useState(false);
+  const [quality, setQuality] = useState<VideoQuality>('720p');
   const [playbackRate, setPlaybackRate] = useState(1);
+  const [isVip, setIsVip] = useState<boolean>(() => localStorage.getItem('veyra:vip') === 'true');
+  const touchStartYRef = useRef<number | null>(null);
+  const playingRef = useRef(false);
+  const fullscreenRef = useRef(false);
   const nextEpisode = drama.episodes[episodeIndex + 1];
   const previousEpisode = drama.episodes[episodeIndex - 1];
+
+  useEffect(() => { playingRef.current = playing; }, [playing]);
+  useEffect(() => { fullscreenRef.current = isFullscreen; }, [isFullscreen]);
+  useEffect(() => () => {
+    const video = videoRef.current;
+    if (video && playingRef.current && !fullscreenRef.current && !window.location.pathname.includes('/watch/')) {
+      setMiniPlayer({ dramaId: drama.id, episode: episode.number, title: `${drama.title} · Episode ${episode.number}`, source: video.currentSrc || episode.videoUrl, currentTime: video.currentTime, playing: true });
+    }
+  }, []);
 
   // --- bölüm değişince durumu sıfırla + kaldığı yeriyi hatırla ---
   useEffect(() => {
@@ -1699,8 +1732,40 @@ function WatchPage() {
     setBuffering(true);
     setLoadError(null);
     setControlsVisible(true);
-    setCountdown(null);
-  }, [progressKey, drama.id, episode.number]);
+    const available = (['540p', '720p', '1080p'] as VideoQuality[]).filter((option) => Boolean(episode.videoSources[option]));
+    const nextQuality = available.includes(quality) ? quality : (available[0] ?? '720p');
+    setQuality(nextQuality);
+    const history = JSON.parse(localStorage.getItem('veyra:watch-history') ?? '[]') as Array<{ dramaId: string; episode: number; date: string }>;
+    const nextHistory = [{ dramaId: drama.id, episode: episode.number, date: new Date().toISOString() }, ...history.filter((entry) => !(entry.dramaId === drama.id && entry.episode === episode.number))].slice(0, 50);
+    localStorage.setItem('veyra:watch-history', JSON.stringify(nextHistory));
+  }, [progressKey, drama.id, episode.number, episode.videoSources, quality]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const availableQualities = (['540p', '720p', '1080p'] as VideoQuality[]).filter((option) => Boolean(episode.videoSources[option]));
+    const selectedQuality = availableQualities.includes(quality) ? quality : (availableQualities[0] ?? '720p');
+    const source = episode.videoSources[selectedQuality] ?? episode.videoUrl;
+    if (video.src.endsWith(source)) return;
+    const position = video.currentTime;
+    const wasPlaying = !video.paused;
+    video.src = source;
+    video.load();
+    video.addEventListener('loadedmetadata', () => {
+      if (position > 0 && Number.isFinite(position)) video.currentTime = position;
+      if (wasPlaying) void video.play().catch(() => undefined);
+    }, { once: true });
+  }, [episode.videoSources, episode.videoUrl, quality]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const video = videoRef.current;
+      if (!video || loadError) return;
+      setBuffering(true);
+      void video.play().catch(() => setPlaying(false));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [drama.id, episode.number]);
 
   const saveProgress = (seconds: number) => {
     if (Number.isFinite(seconds) && seconds > 0) {
@@ -1754,26 +1819,15 @@ function WatchPage() {
     return () => window.clearTimeout(timer);
   }, [playing, controlsVisible, controlsNonce]);
 
-  // --- bölüm bittiğinde geri sayım ile sonraki bölüme geç ---
+  // --- bölüm bittiğinde bir sonraki bölüme doğrudan geç ---
   useEffect(() => {
-    if (!episodeFinished || !nextEpisode) {
-      setCountdown(null);
-      return;
-    }
-    setCountdown(NEXT_EPISODE_COUNTDOWN);
-    const timer = window.setInterval(() => {
-      setCountdown((current) => {
-        if (current === null) return null;
-        if (current <= 1) {
-          window.clearInterval(timer);
-          navigate(`/watch/${drama.id}/${nextEpisode.number}`);
-          return null;
-        }
-        return current - 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [episodeFinished, nextEpisode, drama.id, navigate]);
+    if (!episodeFinished) return;
+    if (!nextEpisode) return;
+    const timer = window.setTimeout(() => {
+      navigateEpisode(nextEpisode.number);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [episodeFinished, nextEpisode, navigate]);
 
   // --- fullscreen durumunu takip et (tarayıcı + Escape) ---
   useEffect(() => {
@@ -1784,6 +1838,7 @@ function WatchPage() {
     const handleNativeExit = () => setIsFullscreen(false);
     const handleNativeBack = () => {
       if (isFullscreen) void handleFullscreen();
+      else navigate(`/drama/${drama.id}`, { replace: true });
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     window.addEventListener('veyra-fullscreen-enter', handleNativeEnter);
@@ -1795,7 +1850,7 @@ function WatchPage() {
       window.removeEventListener('veyra-fullscreen-exit', handleNativeExit);
       window.removeEventListener('veyra-native-back', handleNativeBack);
     };
-  }, [isFullscreen]);
+  }, [drama.id, isFullscreen, navigate]);
 
   useEffect(() => {
     document.body.classList.toggle('veyra-fullscreen-active', isFullscreen);
@@ -1866,6 +1921,23 @@ function WatchPage() {
     setControlsVisible((current) => !current);
   };
 
+  const navigateEpisode = (nextNumber: number) => {
+    if (nextNumber < 1 || nextNumber > drama.episodes.length) return;
+    navigate(`/watch/${drama.id}/${nextNumber}`, { replace: true });
+  };
+
+  const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
+    touchStartYRef.current = event.touches[0]?.clientY ?? null;
+  };
+
+  const handleTouchEnd = (event: ReactTouchEvent<HTMLDivElement>) => {
+    const startY = touchStartYRef.current;
+    touchStartYRef.current = null;
+    const endY = event.changedTouches[0]?.clientY;
+    if (startY === null || endY === undefined || Math.abs(endY - startY) < 56) return;
+    navigateEpisode(episode.number + (endY < startY ? 1 : -1));
+  };
+
   const handleSeek = (value: number) => {
     const video = videoRef.current;
     if (!video || !duration) return;
@@ -1890,10 +1962,14 @@ function WatchPage() {
     pokeControls();
     const frame = frameRef.current;
     const video = videoRef.current;
+    const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: 'landscape' | 'portrait' | 'any') => Promise<void>; unlock?: () => void };
 
     if (isFullscreen) {
       setIsFullscreen(false);
       window.VeyraNative?.setFullscreen?.(false);
+      if (orientation && typeof orientation.unlock === 'function') {
+        orientation.unlock();
+      }
       try {
         if (document.fullscreenElement) await document.exitFullscreen();
       } catch {
@@ -1907,15 +1983,33 @@ function WatchPage() {
     setIsFullscreen(true);
     if (window.VeyraNative?.setFullscreen) {
       window.VeyraNative.setFullscreen(true);
+      if (orientation && typeof orientation.lock === 'function') {
+        void orientation.lock('landscape');
+      }
       return;
     }
     try {
       if (frame?.requestFullscreen) {
         await frame.requestFullscreen();
+        if (orientation && typeof orientation.lock === 'function') {
+          void orientation.lock('landscape');
+        }
       }
     } catch {
       // Keep the app-level immersive layout even when WebView fullscreen is unavailable.
     }
+  };
+
+  const selectQuality = (nextQuality: VideoQuality) => {
+    if (nextQuality === VIP_QUALITY && !isVip) {
+      setQualityOpen(false);
+      setMoreOpen(false);
+      return;
+    }
+    if (!episode.videoSources[nextQuality]) return;
+    setQuality(nextQuality);
+    setQualityOpen(false);
+    setMoreOpen(false);
   };
 
   const setSpeed = (next: number) => {
@@ -1926,7 +2020,7 @@ function WatchPage() {
   };
   const shareEpisode = async () => {
     try {
-      const url = window.location.href;
+      const url = `${getPublicAppUrl()}${window.location.pathname}`;
       if (window.VeyraNative?.share) {
         window.VeyraNative.share(`${drama.title} — Episode ${episode.number}`, url);
       } else if (navigator.share) {
@@ -1984,7 +2078,6 @@ function WatchPage() {
     const video = videoRef.current;
     if (!video) return;
     setEpisodeFinished(false);
-    setCountdown(null);
     video.currentTime = 0;
     setProgress(0);
     saveProgress(0);
@@ -2017,6 +2110,8 @@ function WatchPage() {
               ref={frameRef}
               className="veyra-stage relative overflow-hidden bg-black"
               onClick={handleSurfaceClick}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
               onPointerMove={(event) => {
                 if (event.pointerType === 'mouse' && playing) pokeControls();
               }}
@@ -2032,10 +2127,12 @@ function WatchPage() {
                 onLoadedMetadata={handleLoadedMetadata}
                 onTimeUpdate={handleTimeUpdate}
                 onPlay={() => {
+                  playingRef.current = true;
                   setPlaying(true);
                   setEpisodeFinished(false);
                 }}
                 onPause={() => {
+                  playingRef.current = false;
                   setPlaying(false);
                   if (videoRef.current) saveProgress(videoRef.current.currentTime);
                 }}
@@ -2125,7 +2222,7 @@ function WatchPage() {
                     >
                       <MoreHorizontal size={17} />
                     </button>
-                    {moreOpen && !speedOpen && (
+                    {moreOpen && !speedOpen && !qualityOpen && (
                       <div
                         data-player-ui
                         className="absolute right-0 top-11 z-50 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111118]/95 p-1 shadow-2xl backdrop-blur-xl"
@@ -2166,6 +2263,20 @@ function WatchPage() {
                           </span>
                           <span className="text-white/45">{playbackRate}x</span>
                         </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setQualityOpen(true);
+                          }}
+                          className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"
+                        >
+                          <span className="flex items-center gap-3">
+                            <SlidersHorizontal size={14} />
+                            Quality
+                          </span>
+                          <span className="text-white/45">{quality}</span>
+                        </button>
                       </div>
                     )}
                     {moreOpen && speedOpen && (
@@ -2182,47 +2293,32 @@ function WatchPage() {
                         ))}
                       </div>
                     )}
+                    {moreOpen && qualityOpen && (
+                      <div data-player-ui className="absolute right-0 top-11 z-50 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111118]/95 p-1 shadow-2xl backdrop-blur-xl">
+                        <button type="button" onClick={() => setQualityOpen(false)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs text-white/60 hover:bg-white/[.06]">
+                          <ArrowLeft size={14} />
+                          Video quality
+                        </button>
+                        {(['540p', '720p', '1080p'] as VideoQuality[]).map((option) => {
+                          const available = Boolean(episode.videoSources[option]);
+                          const locked = option === VIP_QUALITY && !isVip;
+                          const disabled = !available || locked;
+                          return (
+                            <button key={option} type="button" disabled={disabled} onClick={() => selectQuality(option)} className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs ${disabled ? 'cursor-not-allowed text-white/25' : 'text-white/85 hover:bg-white/[.06]'}`}>
+                              <span>{locked ? `${option} · VIP` : option}</span>
+                              <span className="flex items-center gap-1.5">
+                                {disabled && <span className="text-[9px]">{locked ? 'VIP locked' : 'Unavailable'}</span>}
+                                {!disabled && option === quality && <Check size={14} />}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* bölüm bitti kartı — videonun üzerinde modern overlay */}
-              {episodeFinished && (
-                <div className="absolute inset-0 z-40 grid place-items-center bg-black/62 px-5 backdrop-blur-[3px]" data-testid="player-complete-card">
-                  <div className="w-full max-w-[21rem] overflow-hidden rounded-3xl border border-white/12 bg-[#111118]/94 shadow-2xl">
-                    <div className="relative h-32 bg-cover bg-center" style={{ backgroundImage: `linear-gradient(180deg, rgba(13,13,19,.15), rgba(17,17,24,.92)), url("${drama.image}")` }}>
-                      <div className="absolute inset-x-0 bottom-0 p-4">
-                        <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">{nextEpisode ? 'Up next' : 'Season complete'}</p>
-                        <p className="mt-1 font-display text-lg leading-tight">{nextEpisode ? nextEpisode.title : drama.title}</p>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      {nextEpisode ? (
-                        <>
-                          <p className="text-center text-[11px] text-white/55">
-                            Next episode starts in <span className="font-mono-ui text-[#ff4fc3]">{countdown ?? NEXT_EPISODE_COUNTDOWN}s</span>
-                          </p>
-                          <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/10">
-                            <div className="h-full rounded-full bg-[#ff4fc3] transition-all duration-1000 ease-linear" style={{ width: `${((countdown ?? 0) / NEXT_EPISODE_COUNTDOWN) * 100}%` }} />
-                          </div>
-                          <div className="mt-4 flex items-center gap-2">
-                            <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex flex-1 items-center justify-center gap-1 rounded-full bg-[#ff4fc3] px-4 py-2.5 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]" data-testid="link-player-next-complete">
-                              Play next <ChevronRight size={13} />
-                            </Link>
-                            <button type="button" onClick={handleReplay} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-white/40 hover:text-white" aria-label="Replay episode"><RotateCw size={14} /></button>
-                            <button type="button" onClick={() => setEpisodeFinished(false)} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 text-white/70 transition-colors hover:border-white/40 hover:text-white" aria-label="Stay on this episode"><Pause size={14} /></button>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <button type="button" onClick={handleReplay} className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#ff4fc3] px-4 py-2.5 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]"><RotateCw size={13} /> Replay</button>
-                          <Link href={`/drama/${drama.id}`} className="inline-flex flex-1 items-center justify-center rounded-full border border-white/15 px-4 py-2.5 text-xs text-white/75 transition-colors hover:border-white/40 hover:text-white">Back to story</Link>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* alt bölge: altyazı (güvenli alan) + açılır kontroller + bölüm bilgisi */}
               <div className="veyra-safe-bottom absolute inset-x-0 bottom-0 z-30">
@@ -2312,6 +2408,7 @@ function WalletPage() {
     const stored = localStorage.getItem('veyra:unlocks');
     return stored ? JSON.parse(stored) : [];
   });
+  const [checkoutMessage, setCheckoutMessage] = useState('');
   
   useEffect(() => {
     const h = () => setBalance(Number(localStorage.getItem('veyra:coins') ?? 0));
@@ -2326,28 +2423,15 @@ function WalletPage() {
     { coins: '5,000', bonus: '+1,250', price: '$32.99', bonusPercent: '25%' },
   ];
 
-  const purchaseCoins = (pack: typeof coinPacks[0]) => {
-    // Payment integration point - currently simulated
-    // In production, this would integrate with Google Play Billing or similar
-    const totalCoins = parseInt(pack.coins.replace(',', '')) + parseInt(pack.bonus.replace('+', '').replace(',', ''));
-    const newBalance = balance + totalCoins;
-    
-    setBalance(newBalance);
-    localStorage.setItem('veyra:coins', String(newBalance));
-    
-    // Add to transaction history
-    const newTransaction = {
-      date: new Date().toISOString(),
-      type: 'Purchase',
-      amount: totalCoins,
-      description: `${pack.coins} coins pack ${pack.bonus}`
-    };
-    const updatedHistory = [newTransaction, ...transactionHistory];
-    setTransactionHistory(updatedHistory);
-    localStorage.setItem('veyra:transactions', JSON.stringify(updatedHistory));
-    
-    // Dispatch event for other components
-    window.dispatchEvent(new Event('veyra:coins'));
+  const purchaseCoins = async (pack: typeof coinPacks[0]) => {
+    setCheckoutMessage('Connecting to the payment provider…');
+    try {
+      const response = await fetch('/api/payments/checkout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind: 'coins', pack: pack.coins }) });
+      const body = await response.json().catch(() => ({}));
+      setCheckoutMessage(response.ok ? 'Checkout started. Coins are added only after verified payment.' : body.reason ?? body.error ?? 'Coin checkout is currently unavailable.');
+    } catch {
+      setCheckoutMessage('Coin checkout is currently unavailable.');
+    }
   };
 
   return (
@@ -2390,6 +2474,7 @@ function WalletPage() {
             </button>
           ))}
         </div>
+        {checkoutMessage && <p className="mt-3 text-xs text-white/50">{checkoutMessage}</p>}
       </section>
 
       {/* Transaction History */}
@@ -2449,18 +2534,21 @@ function WalletPage() {
 
 function VipPage() {
   const [selectedPlan, setSelectedPlan] = useState<'Weekly' | 'Monthly' | 'Yearly'>('Monthly');
+  const [checkoutState, setCheckoutState] = useState('');
   
   const plans = [
     { 
       name: 'Weekly', 
-      price: '$4.99', 
+      price: '$9.99',
+      productId: 'veyra_vip_weekly',
       label: 'Flexible',
       period: 'week',
       benefits: ['Ad-free viewing', '720p quality', 'Daily VIP reward', 'Skip wait times']
     },
     { 
       name: 'Monthly', 
-      price: '$12.99', 
+      price: '$29.99',
+      productId: 'veyra_vip_monthly',
       label: 'Most popular',
       period: 'month',
       originalPrice: '$15.99',
@@ -2469,12 +2557,13 @@ function VipPage() {
     },
     { 
       name: 'Yearly', 
-      price: '$49.99', 
+      price: '$239.99',
+      productId: 'veyra_vip_yearly',
       label: 'Best value',
       period: 'year',
       originalPrice: '$155.88',
       savings: '68%',
-      benefits: ['All Monthly benefits', '2 bonus months free', 'Exclusive VIP events', 'Early access to new releases', 'Custom profile badge']
+    benefits: ['All Monthly benefits', 'Exclusive VIP events', 'Early access to new releases', 'Custom profile badge']
     }
   ];
 
@@ -2536,13 +2625,24 @@ function VipPage() {
               <p className="text-xs text-white/40">Total due today</p>
               <p className="font-display text-2xl text-white">{selectedPlanData.price}</p>
             </div>
-            <button 
+            <button
               type="button"
+              onClick={async () => {
+                setCheckoutState('Connecting to the payment provider…');
+                try {
+                  const response = await fetch('/api/payments/checkout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: selectedPlanData.productId }) });
+                  const body = await response.json().catch(() => ({}));
+                  setCheckoutState(response.ok ? 'Checkout started. Complete payment to activate VIP.' : body.reason ?? body.error ?? 'Checkout is currently unavailable.');
+                } catch {
+                  setCheckoutState('Checkout is currently unavailable.');
+                }
+              }}
               className="rounded-full bg-[#ff4fc3] px-6 py-3 text-sm font-bold text-[#171720] transition-colors hover:bg-[#ff8bdd]"
             >
               Subscribe to {selectedPlanData.name}
             </button>
           </div>
+          {checkoutState && <p className="mt-4 text-xs text-white/50">{checkoutState}</p>}
         </section>
       )}
 
@@ -2602,6 +2702,32 @@ function VipPage() {
 }
 
 function LanguagePage(){ const langs=['English','Türkçe','Español','Português','Français','Deutsch','हिन्दी','Bahasa Indonesia']; return <SimpleSettingsPage title="Language" icon={<Languages size={18}/>}>{<div className="grid grid-cols-2 gap-2">{langs.map(x=><button key={x} type="button" className={`rounded-xl border p-3 text-left text-xs ${x==='English'?'border-[#ff4fc3] bg-[#ff4fc3]/10 text-white':'border-white/[.08] bg-white/[.02] text-white/65'}`}>{x}</button>)}</div>}</SimpleSettingsPage>; }
+
+function HistoryPage() {
+  const history = JSON.parse(localStorage.getItem('veyra:watch-history') ?? '[]') as Array<{ dramaId: string; episode: number; date: string }>;
+  return (
+    <div className="animate-rise">
+      <Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45"><ArrowLeft size={14} /> Back to Profile</Link>
+      <div className="mt-7"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your viewing trail</p><h1 className="mt-1 font-display text-3xl">Watch History</h1></div>
+      <div className="mt-7 space-y-2">
+        {history.length ? history.map((entry) => {
+          const drama = dramas.find((item) => item.id === entry.dramaId);
+          const episode = drama?.episodes.find((item) => item.number === entry.episode);
+          if (!drama || !episode) return null;
+          return <Link key={`${entry.dramaId}-${entry.episode}`} href={`/watch/${drama.id}/${episode.number}`} className="flex items-center gap-3 rounded-xl border border-white/[.08] bg-white/[.02] p-3 hover:bg-white/[.05]"><div className="h-14 w-24 shrink-0 rounded-lg bg-cover bg-center" style={{ backgroundImage: `url("${drama.image}")` }} /><div className="min-w-0 flex-1"><p className="truncate font-display text-sm text-white/90">{drama.title}</p><p className="mt-1 truncate text-xs text-white/45">Episode {episode.number}: {episode.title}</p></div><ChevronRight size={15} className="text-white/30" /></Link>;
+        }) : <div className="rounded-xl border border-dashed border-white/15 p-8 text-center text-sm text-white/40">Your watched episodes will appear here.</div>}
+      </div>
+    </div>
+  );
+}
+
+function EditProfilePage() {
+  const { user } = useUser();
+  const [displayName, setDisplayName] = useState(() => localStorage.getItem('veyra:display-name') ?? user?.firstName ?? user?.username ?? 'VEYRA viewer');
+  const [saved, setSaved] = useState(false);
+  return <div className="animate-rise max-w-xl"><Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45"><ArrowLeft size={14} /> Back to Profile</Link><div className="mt-7"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your identity</p><h1 className="mt-1 font-display text-3xl">Edit Profile</h1></div><div className="mt-7 space-y-4 rounded-2xl border border-white/[.08] bg-white/[.02] p-5"><label className="block text-xs text-white/50">Display name<input value={displayName} onChange={(event) => { setDisplayName(event.target.value); setSaved(false); }} className="mt-2 h-11 w-full rounded-xl border border-white/10 bg-white/[.04] px-3 text-sm text-white outline-none focus:border-[#ff4fc3]/60" /></label><p className="text-xs text-white/35">UID: {user?.id ?? 'guest-local'}</p><button type="button" onClick={() => { localStorage.setItem('veyra:display-name', displayName.trim() || 'VEYRA viewer'); setSaved(true); }} className="rounded-full bg-[#ff4fc3] px-4 py-2 text-xs font-semibold text-[#171720]">Save profile</button>{saved && <p className="text-xs text-[#70d59b]">Profile saved on this device.</p>}</div></div>;
+}
+
 function DownloadsPage() {
   const [downloads, setDownloads] = useState<Array<{
     id: string;
@@ -2618,41 +2744,17 @@ function DownloadsPage() {
     return stored ? JSON.parse(stored) : [];
   });
 
-  const storageUsed = downloads.reduce((sum, d) => sum + (d.status === 'downloaded' ? 50 : 0), 0); // Mock 50MB per episode
+  const storageUsed = downloads.reduce((sum, download) => {
+    if (download.status !== 'downloaded') return sum;
+    const size = Number.parseFloat(download.size);
+    return Number.isFinite(size) ? sum + size : sum;
+  }, 0);
   const storageLimit = 1000; // 1GB limit
 
   const deleteDownload = (id: string) => {
     const updated = downloads.filter(d => d.id !== id);
     setDownloads(updated);
     localStorage.setItem('veyra:downloads', JSON.stringify(updated));
-  };
-
-  const retryDownload = (id: string) => {
-    const updated = downloads.map(d => 
-      d.id === id ? { ...d, status: 'downloading' as const, progress: 0 } : d
-    );
-    setDownloads(updated);
-    localStorage.setItem('veyra:downloads', JSON.stringify(updated));
-    
-    // Simulate download progress
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      if (progress >= 100) {
-        clearInterval(interval);
-        const finalUpdated = downloads.map(d => 
-          d.id === id ? { ...d, status: 'downloaded' as const, progress: 100 } : d
-        );
-        setDownloads(finalUpdated);
-        localStorage.setItem('veyra:downloads', JSON.stringify(finalUpdated));
-      } else {
-        const progressUpdated = downloads.map(d => 
-          d.id === id ? { ...d, progress } : d
-        );
-        setDownloads(progressUpdated);
-        localStorage.setItem('veyra:downloads', JSON.stringify(progressUpdated));
-      }
-    }, 500);
   };
 
   return (
@@ -2741,15 +2843,7 @@ function DownloadsPage() {
                       <p className="mt-1 text-[10px] text-white/30">{download.size} · {new Date(download.date).toLocaleDateString()}</p>
                     </div>
                     <div className="flex gap-2">
-                      {download.status === 'failed' && (
-                        <button
-                          type="button"
-                          onClick={() => retryDownload(download.id)}
-                          className="text-xs text-white/40 hover:text-white"
-                        >
-                          Retry
-                        </button>
-                      )}
+                      {download.status === 'failed' && <span className="text-xs text-white/40">Retry from the player</span>}
                       {download.status === 'downloaded' && (
                         <button
                           type="button"
@@ -2790,10 +2884,9 @@ function DownloadsPage() {
           <div className="flex items-start gap-3">
             <Sparkles size={18} className="text-[#b78cff] mt-0.5" />
             <div>
-              <p className="font-display text-sm text-white/90">Download Integration</p>
+                <p className="font-display text-sm text-white/90">Secure downloads</p>
               <p className="mt-2 text-xs text-white/60">
-                Offline video download functionality requires backend integration for secure content delivery and DRM. 
-                This interface provides the UI structure and safe integration points for future implementation.
+                Android downloads use the native DownloadManager. Offline playback and authenticated media delivery require a configured backend media entitlement service.
               </p>
             </div>
           </div>
@@ -2980,42 +3073,7 @@ function NotificationsPage() {
   }>>(() => {
     const stored = localStorage.getItem('veyra:notifications');
     if (stored) return JSON.parse(stored);
-    
-    // Initialize with sample notifications
-    return [
-      {
-        id: '1',
-        type: 'New episode',
-        title: 'New episode available',
-        message: 'The Last Voicemail: Episode 5 is now available to watch.',
-        date: new Date(Date.now() - 3600000).toISOString(),
-        read: false
-      },
-      {
-        id: '2',
-        type: 'Reward earned',
-        title: 'Daily check-in bonus',
-        message: 'You earned 30 coins for your 3-day streak!',
-        date: new Date(Date.now() - 86400000).toISOString(),
-        read: false
-      },
-      {
-        id: '3',
-        type: 'VIP reward',
-        title: 'VIP Daily Drop',
-        message: 'Your daily VIP reward of 50 coins is ready to claim.',
-        date: new Date(Date.now() - 172800000).toISOString(),
-        read: true
-      },
-      {
-        id: '4',
-        type: 'System',
-        title: 'Welcome to VEYRA',
-        message: 'Thanks for joining! Start exploring our collection of short dramas.',
-        date: new Date(Date.now() - 259200000).toISOString(),
-        read: true
-      }
-    ];
+    return [];
   });
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -3149,6 +3207,7 @@ function AppRouter() {
         <Route path="/" component={() => <PageFrame><HomePage /></PageFrame>} />
         <Route path="/drama/:id" component={() => <PageFrame><DramaDetailPage /></PageFrame>} />
         <Route path="/search" component={() => <PageFrame><SearchPage /></PageFrame>} />
+        <Route path="/for-you" component={() => <PageFrame><ForYouPage /></PageFrame>} />
          <Route path="/discover" component={() => <PageFrame><DiscoverPage /></PageFrame>} />
         <Route path="/saved" component={() => <PageFrame><SavedPage /></PageFrame>} />
          <Route path="/following" component={() => <PageFrame><FollowingPage /></PageFrame>} />
@@ -3156,6 +3215,8 @@ function AppRouter() {
          <Route path="/wallet" component={() => <PageFrame><WalletPage /></PageFrame>} />
          <Route path="/vip" component={() => <PageFrame><VipPage /></PageFrame>} />
          <Route path="/profile" component={() => <PageFrame><ProfilePage /></PageFrame>} />
+         <Route path="/history" component={() => <PageFrame><HistoryPage /></PageFrame>} />
+         <Route path="/profile/edit" component={() => <PageFrame><EditProfilePage /></PageFrame>} />
          <Route path="/settings" component={() => <PageFrame><SettingsPage /></PageFrame>} />
          <Route path="/settings/language" component={() => <PageFrame><LanguagePage /></PageFrame>} />
          <Route path="/settings/notifications" component={() => <PageFrame><NotificationsPage /></PageFrame>} />
@@ -3173,7 +3234,13 @@ function AppRouter() {
 }
 
 function AuthenticatedApp() {
-  const [savedIds, setSavedIds] = useState<string[]>(['after-midnight']);
+  const [savedIds, setSavedIds] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('veyra:saved') ?? '[]') as string[]; } catch { return []; }
+  });
+  const [followingIds, setFollowingIds] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('veyra:following') ?? '[]') as string[]; } catch { return []; }
+  });
+  const [miniPlayer, setMiniPlayer] = useState<AppContextValue['miniPlayer']>(null);
   const { isSignedIn } = useAuth();
   useEffect(() => {
     if (!isSignedIn) return;
@@ -3181,20 +3248,55 @@ function AuthenticatedApp() {
       const remoteIds = items.map((item) => item.slug).filter((slug): slug is string => Boolean(slug));
       if (remoteIds.length) setSavedIds(remoteIds);
     }).catch(() => undefined);
+      fetch('/api/me/following', { credentials: 'include' }).then((response) => response.ok ? response.json() : []).then((items: Array<{ slug?: string }>) => {
+        const remoteIds = items.map((item) => item.slug).filter((slug): slug is string => Boolean(slug));
+        setFollowingIds(remoteIds);
+        localStorage.setItem('veyra:following', JSON.stringify(remoteIds));
+      }).catch(() => undefined);
   }, [isSignedIn]);
   const value = useMemo<AppContextValue>(() => ({
     savedIds,
     toggleSaved: (id) => {
       const saving = !savedIds.includes(id);
-      setSavedIds((current) => saving ? [...current, id] : current.filter((entry) => entry !== id));
+      setSavedIds((current) => { const next = saving ? [...current, id] : current.filter((entry) => entry !== id); localStorage.setItem('veyra:saved', JSON.stringify(next)); return next; });
       if (isSignedIn) {
         const method = saving ? 'POST' : 'DELETE';
         void fetch(saving ? '/api/me/list' : `/api/me/list/${encodeURIComponent(id)}`, { method, credentials: 'include', headers: saving ? { 'Content-Type': 'application/json' } : undefined, body: saving ? JSON.stringify({ seriesId: id }) : undefined });
       }
     },
     isSaved: (id) => savedIds.includes(id),
-  }), [isSignedIn, savedIds]);
-  return <QueryClientProvider client={queryClient}><TooltipProvider><AppContext.Provider value={value}><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><AppRouter /></WouterRouter></AppContext.Provider><Toaster /></TooltipProvider></QueryClientProvider>;
+    followingIds,
+    toggleFollowing: (id) => {
+      const following = !followingIds.includes(id);
+      const next = following ? [...followingIds, id] : followingIds.filter((entry) => entry !== id);
+      setFollowingIds(next);
+      localStorage.setItem('veyra:following', JSON.stringify(next));
+      if (isSignedIn) {
+        void fetch(following ? '/api/me/following' : `/api/me/following/${encodeURIComponent(id)}`, { method: following ? 'POST' : 'DELETE', credentials: 'include', headers: following ? { 'Content-Type': 'application/json' } : undefined, body: following ? JSON.stringify({ seriesId: id }) : undefined });
+      }
+    },
+    isFollowing: (id) => followingIds.includes(id),
+    miniPlayer,
+    setMiniPlayer,
+  }), [followingIds, isSignedIn, miniPlayer, savedIds]);
+  return <QueryClientProvider client={queryClient}><TooltipProvider><AppContext.Provider value={value}><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><AppRouter /></WouterRouter><MiniPlayer /></AppContext.Provider><Toaster /></TooltipProvider></QueryClientProvider>;
+}
+
+function MiniPlayer() {
+  const { miniPlayer, setMiniPlayer } = useAppValue();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  if (!miniPlayer) return null;
+  const open = () => {
+    const video = videoRef.current;
+    if (video) setMiniPlayer({ ...miniPlayer, currentTime: video.currentTime, playing: !video.paused });
+    window.history.pushState({}, '', `/watch/${miniPlayer.dramaId}/${miniPlayer.episode}`);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    setMiniPlayer(null);
+  };
+  return <div className="veyra-mini-player fixed bottom-[5.25rem] right-3 z-[60] w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-white/15 bg-[#111118] shadow-2xl md:bottom-5" data-testid="mini-player">
+    <video ref={videoRef} className="aspect-video w-full bg-black object-cover" src={miniPlayer.source} poster={posterImages.voicemail} autoPlay playsInline onLoadedMetadata={(event) => { event.currentTarget.currentTime = miniPlayer.currentTime; }} onEnded={() => setMiniPlayer(null)} />
+    <div className="flex items-center gap-2 p-2"><button type="button" onClick={open} className="min-w-0 flex-1 truncate text-left text-xs text-white/80">{miniPlayer.title}</button><button type="button" onClick={() => { if (videoRef.current) videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 10); }} aria-label="Back 10 seconds" className="text-xs text-white/60">-10</button><button type="button" onClick={() => { const video = videoRef.current; if (video) video.paused ? void video.play() : video.pause(); }} aria-label="Play or pause" className="grid h-7 w-7 place-items-center rounded-full bg-[#ff4fc3] text-[#171720]"><Play size={12} fill="currentColor" /></button><button type="button" onClick={() => { const video = videoRef.current; if (video) video.currentTime += 10; }} aria-label="Forward 10 seconds" className="text-xs text-white/60">+10</button><button type="button" onClick={() => setMiniPlayer(null)} aria-label="Close mini player" className="grid h-7 w-7 place-items-center text-white/60">×</button></div>
+  </div>;
 }
 
 function App() {

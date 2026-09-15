@@ -55,7 +55,8 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
             
             // Hide system bars (status bar and navigation bar)
             hideSystemBars();
-            
+            activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+
             // Dispatch event to React
             dispatchToWeb("veyra-fullscreen-enter");
         } catch (RuntimeException error) {
@@ -100,7 +101,7 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
             
             // Clear keep screen on flag
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            
+
             activity.setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         } catch (RuntimeException ignored) {}
 

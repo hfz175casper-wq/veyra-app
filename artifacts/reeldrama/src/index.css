@@ -201,10 +201,17 @@
 
 /* App-level fullscreen fallback: used when Android WebView does not expose HTML5 fullscreen. */
 body.veyra-fullscreen-active { overflow: hidden !important; }
+body.veyra-fullscreen-active .veyra-bottom-nav { display: none !important; }
+body.veyra-fullscreen-active .mobile-nav, body.veyra-fullscreen-active [data-testid="mobile-nav"] { display: none !important; }
 .veyra-player-fullscreen-root > * { min-height: 100dvh !important; }
 .veyra-player-fullscreen-root [data-testid="player-surface"] { position: fixed !important; inset: 0 !important; z-index: 9999 !important; width: 100vw !important; height: 100dvh !important; min-height: 100dvh !important; margin: 0 !important; }
 .veyra-player-fullscreen-root .veyra-stage { width: 100vw !important; height: 100dvh !important; max-width: none !important; aspect-ratio: auto !important; }
 .veyra-player-fullscreen-root .veyra-stage video { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+.veyra-bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+@media (max-height: 520px) {
+  .veyra-bottom-nav { display: none !important; }
+}
 
 @media (orientation: landscape) {
   .veyra-stage,

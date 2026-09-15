@@ -13,7 +13,13 @@ const progressBody = z.object({
   completed: z.boolean().optional(),
 });
 
-const listBody = z.object({ seriesId: z.number().int().positive() });
+const listBody = z.object({ seriesId: z.union([z.number().int().positive(), z.string().min(1)]) });
+
+const resolveSeriesId = async (value: number | string) => {
+  if (typeof value === "number" || /^\d+$/.test(value)) return Number(value);
+  const [series] = await db.select({ id: seriesTable.id }).from(seriesTable).where(eq(seriesTable.slug, value));
+  return series?.id;
+};
 
 router.get("/me", requireAuth(), async (req, res) => {
   const user = await ensureLocalUser(req);
@@ -79,14 +85,18 @@ router.post("/me/list", requireAuth(), async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
   const user = await ensureLocalUser(req);
   if (!user) return res.status(401).json({ error: "Authentication required" });
-  await db.insert(favoritesTable).values({ userId: user.id, seriesId: parsed.data.seriesId }).onConflictDoNothing();
+  const seriesId = await resolveSeriesId(parsed.data.seriesId);
+  if (!seriesId) return res.status(404).json({ error: "Series not found" });
+  await db.insert(favoritesTable).values({ userId: user.id, seriesId }).onConflictDoNothing();
   return res.status(201).json({ saved: true });
 });
 
 router.delete("/me/list/:seriesId", requireAuth(), async (req, res) => {
   const user = await ensureLocalUser(req);
   if (!user) return res.status(401).json({ error: "Authentication required" });
-  await db.delete(favoritesTable).where(and(eq(favoritesTable.userId, user.id), eq(favoritesTable.seriesId, Number(req.params.seriesId))));
+  const seriesId = await resolveSeriesId(String(req.params.seriesId));
+  if (!seriesId) return res.status(404).json({ error: "Series not found" });
+  await db.delete(favoritesTable).where(and(eq(favoritesTable.userId, user.id), eq(favoritesTable.seriesId, seriesId)));
   return res.json({ saved: false });
 });
 
@@ -102,14 +112,18 @@ router.post("/me/following", requireAuth(), async (req, res) => {
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
   const user = await ensureLocalUser(req);
   if (!user) return res.status(401).json({ error: "Authentication required" });
-  await db.insert(followingTable).values({ userId: user.id, seriesId: parsed.data.seriesId }).onConflictDoNothing();
+  const seriesId = await resolveSeriesId(parsed.data.seriesId);
+  if (!seriesId) return res.status(404).json({ error: "Series not found" });
+  await db.insert(followingTable).values({ userId: user.id, seriesId }).onConflictDoNothing();
   return res.status(201).json({ following: true });
 });
 
 router.delete("/me/following/:seriesId", requireAuth(), async (req, res) => {
   const user = await ensureLocalUser(req);
   if (!user) return res.status(401).json({ error: "Authentication required" });
-  await db.delete(followingTable).where(and(eq(followingTable.userId, user.id), eq(followingTable.seriesId, Number(req.params.seriesId))));
+  const seriesId = await resolveSeriesId(String(req.params.seriesId));
+  if (!seriesId) return res.status(404).json({ error: "Series not found" });
+  await db.delete(followingTable).where(and(eq(followingTable.userId, user.id), eq(followingTable.seriesId, seriesId)));
   return res.json({ following: false });
 });
 

@@ -46,6 +46,11 @@ public class MainActivity extends BridgeActivity {
                     webViewBackFromFullscreen();
                     return;
                 }
+                WebView webView = getBridge() == null ? null : getBridge().getWebView();
+                if (webView != null && webView.getUrl() != null && webView.getUrl().contains("/watch/")) {
+                    webView.evaluateJavascript("window.dispatchEvent(new Event('veyra-native-back'));", null);
+                    return;
+                }
                 if (delegating) return;
                 delegating = true;
                 setEnabled(false);
@@ -66,7 +71,9 @@ public class MainActivity extends BridgeActivity {
             getWindow().getDecorView().setSystemUiVisibility(fullscreen
                     ? View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                     : View.SYSTEM_UI_FLAG_VISIBLE);
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+            setRequestedOrientation(fullscreen
+                    ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    : ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         });
     }
 
