@@ -199,35 +199,9 @@
   align-self: auto !important;
 }
 
-/* VEYRA native/WebView fullscreen fallback: keep the player portrait and
-   remove page chrome even when Android WebView does not expose document.fullscreenElement. */
-.veyra-player-fullscreen {
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 99999 !important;
-  width: 100vw !important;
-  height: 100dvh !important;
-  min-height: 100dvh !important;
-  max-width: none !important;
-  margin: 0 !important;
-  background: #000 !important;
-}
-.veyra-player-fullscreen > div:first-child {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-}
-.veyra-player-fullscreen .veyra-stage {
-  width: 100vw !important;
-  height: 100dvh !important;
-  max-width: none !important;
-  aspect-ratio: auto !important;
-}
-.veyra-player-fullscreen .player-info,
-.veyra-player-fullscreen .player-nav {
-  display: none !important;
-}
-.veyra-player-fullscreen .veyra-safe-bottom > div {
-  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
-}
+/* App-level fullscreen fallback: used when Android WebView does not expose HTML5 fullscreen. */
+body.veyra-fullscreen-active { overflow: hidden !important; }
+.veyra-player-fullscreen-root > *:not([data-testid="player-surface"]) { display: none !important; }
+.veyra-player-fullscreen-root [data-testid="player-surface"] { position: fixed !important; inset: 0 !important; z-index: 9999 !important; width: 100vw !important; height: 100dvh !important; min-height: 100dvh !important; margin: 0 !important; }
+.veyra-player-fullscreen-root .veyra-stage { width: 100vw !important; height: 100dvh !important; max-width: none !important; aspect-ratio: auto !important; }
+.veyra-player-fullscreen-root .veyra-stage video { width: 100% !important; height: 100% !important; object-fit: cover !important; }

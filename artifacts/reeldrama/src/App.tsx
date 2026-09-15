@@ -7,7 +7,6 @@ import {
   BookmarkCheck,
   ChevronRight,
   CirclePlay,
-  Download,
   Clock3,
   BarChart3,
   Check,
@@ -16,6 +15,7 @@ import {
   Home as HomeIcon,
   Library,
   Languages,
+  Lock,
   Maximize2,
   Minimize2,
   MoreHorizontal,
@@ -32,9 +32,11 @@ import {
   Volume2,
   VolumeX,
   UserCircle,
-  Zap,
   Share2,
   UsersRound,
+  Download,
+  Zap,
+  FileText,
 } from 'lucide-react';
 import { ClerkProvider, Show, SignInButton, UserButton, useAuth, useUser } from '@clerk/react';
 import { useUpload } from '@workspace/object-storage-web';
@@ -290,13 +292,13 @@ function PageFrame({ children }: { children: ReactNode }) {
             <Link href="/" className="text-[13px] text-white/65 transition-colors hover:text-white">Home</Link>
             <Link href="/discover" className="text-[13px] text-white/65 transition-colors hover:text-white">Discover</Link>
             <Link href="/rewards" className="text-[13px] text-white/65 transition-colors hover:text-white">Rewards</Link>
-            <Link href="/following" className="text-[13px] text-white/65 transition-colors hover:text-white">My List</Link>
             <Link href="/wallet" className="text-[13px] text-white/65 transition-colors hover:text-white">Wallet</Link>
             <Link href="/vip" className="text-[13px] font-semibold text-[#ff4fc3] transition-colors hover:text-white">VIP</Link>
           </nav>
           <div className="flex items-center gap-2">
             <Link href="/search" aria-label="Search dramas" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#ff4fc3]/50 hover:text-[#ff4fc3]" data-testid="link-search-button"><Search size={16} strokeWidth={2}/></Link>
-            <Link href="/wallet" aria-label="Wallet" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#ff4fc3]/50 hover:text-[#ff4fc3]"><Wallet size={16}/></Link>
+            <Link href="/saved" aria-label="My List" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#ff4fc3]/50 hover:text-[#ff4fc3]"><Bookmark size={16}/></Link>
+            <Link href="/settings/notifications" aria-label="Notifications" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#ff4fc3]/50 hover:text-[#ff4fc3]"><Bell size={16}/></Link>
             <Show when="signed-in"><UserButton appearance={{ elements: { avatarBox: 'h-8 w-8' } }} /></Show>
             <Show when="signed-out"><SignInButton mode="modal"><button type="button" className="hidden h-9 rounded-full border border-white/10 px-3 text-xs text-white/70 transition-colors hover:border-[#ff4fc3]/60 hover:text-white sm:block">Sign in</button></SignInButton></Show>
           </div>
@@ -307,7 +309,7 @@ function PageFrame({ children }: { children: ReactNode }) {
         <MobileNavLink href="/" icon={<HomeIcon size={18}/>} label="Home" />
         <MobileNavLink href="/discover" icon={<Search size={18}/>} label="Discover" />
         <MobileNavLink href="/rewards" icon={<Gift size={18}/>} label="Rewards" />
-        <MobileNavLink href="/following" icon={<Bookmark size={18}/>} label="My List" />
+        <MobileNavLink href="/wallet" icon={<Wallet size={18}/>} label="Wallet" />
         <MobileNavLink href="/profile" icon={<UserCircle size={18}/>} label="Profile" />
       </nav>
     </div>
@@ -366,17 +368,25 @@ function HomePage() {
   const { isSaved, toggleSaved } = useAppValue();
   const featured = dramas[0];
   const saved = isSaved(featured.id);
+  
+  // Get continue watching dramas (mock data based on localStorage)
+  const continueWatching = dramas.filter(drama => {
+    const lastEpisode = getLastEpisode(drama.id);
+    return lastEpisode > 1 && lastEpisode <= drama.episodeCount;
+  }).slice(0, 4);
+
   return (
     <div className="animate-rise space-y-12">
+      {/* Featured Drama - Hero Section */}
       <section className="relative min-h-[455px] overflow-hidden rounded-[1.6rem] border border-white/[.08] bg-[#1b1a27] md:min-h-[510px]">
         <div className="absolute inset-0 bg-cover bg-center md:bg-[position:58%_38%]" style={{ backgroundImage: `linear-gradient(90deg, #15151f 0%, rgba(21,21,31,.85) 28%, rgba(21,21,31,.22) 72%, rgba(21,21,31,.3) 100%), linear-gradient(0deg, #15151f 0%, transparent 40%), url("${featured.image}")` }} />
         <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-[#ff4fc3]/10 blur-3xl" />
         <div className="relative flex min-h-[455px] max-w-[570px] flex-col justify-end p-6 pb-7 md:min-h-[510px] md:p-10 md:pb-12">
           <div className="mb-4 flex items-center gap-2">
             <span className="rounded-full bg-[#ff4fc3] px-2.5 py-1 font-mono-ui text-[9px] font-bold uppercase tracking-[.14em] text-[#15151f]">Featured tonight</span>
-            <span className="font-mono-ui text-[10px] uppercase tracking-[.15em] text-white/50">8 episodes · 1h 12m</span>
+            <span className="font-mono-ui text-[10px] uppercase tracking-[.15em] text-white/50">{featured.episodeCount} episodes · {featured.episodeCount * 8}m</span>
           </div>
-          <h1 className="max-w-[500px] font-display text-[3.25rem] leading-[.88] tracking-[-.065em] text-[#f7f2ff] sm:text-[4.4rem]">The Last<br />Voicemail</h1>
+          <h1 className="max-w-[500px] font-display text-[3.25rem] leading-[.88] tracking-[-.065em] text-[#f7f2ff] sm:text-[4.4rem]">{featured.title}</h1>
           <p className="mt-5 max-w-[430px] text-sm leading-relaxed text-white/62 md:text-[15px]">{featured.description}</p>
           <div className="mt-7 flex items-center gap-3">
             <Link href={`/drama/${featured.id}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#ff4fc3] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff8bdd] hover:shadow-[0_10px_30px_rgba(244,126,104,.2)]" data-testid="link-featured-play">
@@ -394,13 +404,103 @@ function HomePage() {
         </div>
       </section>
 
+      {/* Continue Watching */}
+      {continueWatching.length > 0 && (
+        <section>
+          <SectionHeader eyebrow="Pick up where you left off" title="Continue Watching" />
+          <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+            {continueWatching.map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+          </div>
+        </section>
+      )}
+
+      {/* For You - Personalized Recommendations */}
       <section>
-        <SectionHeader eyebrow="What people are watching" title="Popular right now" />
+        <SectionHeader eyebrow="Curated for you" title="For You" />
+        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          {dramas.slice(0, 5).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+        </div>
+      </section>
+
+      {/* Trending */}
+      <section>
+        <SectionHeader eyebrow="What's hot right now" title="Trending" />
         <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
           {dramas.slice(1, 6).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
         </div>
       </section>
 
+      {/* Popular */}
+      <section>
+        <SectionHeader eyebrow="Most watched" title="Popular" />
+        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          {dramas.slice(2, 7).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+        </div>
+      </section>
+
+      {/* New Releases */}
+      <section>
+        <SectionHeader eyebrow="Fresh content" title="New Releases" />
+        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          {dramas.slice(0, 5).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+        </div>
+      </section>
+
+      {/* Top Rated */}
+      <section>
+        <SectionHeader eyebrow="Critically acclaimed" title="Top Rated" />
+        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          {dramas.slice(3, 8).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+        </div>
+      </section>
+
+      {/* Recommended */}
+      <section>
+        <SectionHeader eyebrow="Based on your tastes" title="Recommended" />
+        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          {dramas.slice(4, 9).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+        </div>
+      </section>
+
+      {/* New & Hot */}
+      <section>
+        <SectionHeader eyebrow="Trending now" title="New & Hot" />
+        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          {dramas.slice(0, 5).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+        </div>
+      </section>
+
+      {/* Recently Added */}
+      <section>
+        <SectionHeader eyebrow="Just arrived" title="Recently Added" />
+        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          {dramas.slice(1, 6).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+        </div>
+      </section>
+
+      {/* Genre Rows */}
+      <section>
+        <SectionHeader eyebrow="Browse by mood" title="Romance" />
+        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          {dramas.filter(d => d.genre.includes('Romance')).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+        </div>
+      </section>
+
+      <section>
+        <SectionHeader eyebrow="Edge of your seat" title="Thriller" />
+        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          {dramas.filter(d => d.genre.includes('Thriller') || d.genre.includes('Mystery')).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+        </div>
+      </section>
+
+      <section>
+        <SectionHeader eyebrow="Future worlds" title="Sci-fi" />
+        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          {dramas.filter(d => d.genre.includes('Sci-fi')).map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+        </div>
+      </section>
+
+      {/* New Episodes Row */}
       <section className="grid gap-8 md:grid-cols-[1.2fr_.8fr] md:items-end">
         <div>
           <SectionHeader eyebrow="Fresh from the writers' room" title="New episodes" href="/search?filter=new" />
@@ -444,14 +544,33 @@ function DramaDetailPage() {
   const drama = dramas.find((entry) => entry.id === id) ?? dramas[0];
   const saved = isSaved(drama.id);
   const [resumeEpisode, setResumeEpisode] = useState(1);
+  const [episodeFilter, setEpisodeFilter] = useState<'All' | 'Free' | 'Locked' | 'Watched' | 'Unwatched'>('All');
+  const [following, setFollowing] = useState(false);
 
   useEffect(() => {
     setResumeEpisode(Math.min(getLastEpisode(drama.id), drama.episodeCount));
   }, [drama.id, drama.episodeCount]);
 
+  const filteredEpisodes = drama.episodes.filter((episode) => {
+    const lastEpisode = getLastEpisode(drama.id);
+    const isWatched = episode.number < lastEpisode;
+    const isUnwatched = episode.number >= lastEpisode;
+    
+    switch (episodeFilter) {
+      case 'All': return true;
+      case 'Free': return episode.number <= 2; // First 2 episodes free
+      case 'Locked': return episode.number > 2;
+      case 'Watched': return isWatched;
+      case 'Unwatched': return isUnwatched;
+      default: return true;
+    }
+  });
+
   return (
     <div className="animate-rise">
       <Link href="/" className="mb-7 inline-flex items-center gap-2 text-xs text-white/50 transition-colors hover:text-white" data-testid="link-detail-back"><ArrowLeft size={15} /> Back to Home</Link>
+      
+      {/* Main Drama Info */}
       <section className="relative overflow-hidden rounded-[1.5rem] border border-white/[.08] bg-[#1c1b27]">
         <div className="absolute inset-0 bg-cover bg-center opacity-45" style={{ backgroundImage: `linear-gradient(90deg, #1b1b27 3%, rgba(27,27,39,.82) 46%, rgba(27,27,39,.2)), url("${drama.image}")` }} />
         <div className="relative grid gap-7 p-5 sm:p-8 md:grid-cols-[210px_1fr] md:gap-10 md:p-10">
@@ -465,20 +584,77 @@ function DramaDetailPage() {
               {drama.genre.map((item) => <span key={item} className="rounded-full border border-white/10 px-2 py-1">{item}</span>)}
             </div>
             <p className="mt-5 max-w-[590px] text-sm leading-relaxed text-white/65">{drama.description}</p>
-            <div className="mt-7 flex gap-3">
-              <Link href={`/watch/${drama.id}/${resumeEpisode}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#ff4fc3] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff8bdd]" data-testid="link-detail-play"><Play size={15} fill="currentColor" /> {resumeEpisode > 1 ? `Continue episode ${resumeEpisode}` : 'Play episode 1'}</Link>
-              <button type="button" onClick={() => toggleSaved(drama.id)} className={`grid h-11 w-11 place-items-center rounded-full border transition-all ${saved ? 'border-[#ff4fc3]/60 bg-[#ff4fc3]/15 text-[#ff4fc3]' : 'border-white/15 bg-white/[.05] text-white/75 hover:border-white/40'}`} aria-label={saved ? 'Remove from My List' : 'Save to My List'} data-testid="button-detail-save">{saved ? <BookmarkCheck size={17} /> : <Bookmark size={17} />}</button>
+            
+            {/* Action Buttons */}
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href={`/watch/${drama.id}/${resumeEpisode}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#ff4fc3] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff8bdd]" data-testid="link-detail-play">
+                <Play size={15} fill="currentColor" /> {resumeEpisode > 1 ? `Continue episode ${resumeEpisode}` : 'Play episode 1'}
+              </Link>
+              <button type="button" onClick={() => toggleSaved(drama.id)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-all ${saved ? 'border-[#ff4fc3]/60 bg-[#ff4fc3]/15 text-[#ff4fc3]' : 'border-white/15 bg-white/[.06] text-white/80 hover:border-white/35'}`} aria-label={saved ? 'Remove from My List' : 'Save to My List'} data-testid="button-detail-save">
+                {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
+                {saved ? 'In My List' : 'My List'}
+              </button>
+              <button type="button" onClick={() => setFollowing(!following)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-all ${following ? 'border-[#ff4fc3]/60 bg-[#ff4fc3]/15 text-[#ff4fc3]' : 'border-white/15 bg-white/[.06] text-white/80 hover:border-white/35'}`} aria-label={following ? 'Unfollow' : 'Follow'}>
+                {following ? <UsersRound size={16} /> : <UsersRound size={16} />}
+                {following ? 'Following' : 'Follow'}
+              </button>
+              <button type="button" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/[.05] text-white/75 transition-all hover:border-white/40" aria-label="Share">
+                <Share2 size={17} />
+              </button>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Additional Info */}
+      <section className="mt-10 grid gap-6 md:grid-cols-3">
+        <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Runtime</p>
+          <p className="mt-2 font-display text-xl text-white">{drama.episodeCount * 8} min total</p>
+          <p className="mt-1 text-xs text-white/40">~8 min per episode</p>
+        </div>
+        <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Status</p>
+          <p className="mt-2 font-display text-xl text-white">Ongoing</p>
+          <p className="mt-1 text-xs text-white/40">New episodes weekly</p>
+        </div>
+        <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Progress</p>
+          <p className="mt-2 font-display text-xl text-white">{Math.round((resumeEpisode / drama.episodeCount) * 100)}%</p>
+          <p className="mt-1 text-xs text-white/40">{resumeEpisode} of {drama.episodeCount} watched</p>
+        </div>
+      </section>
+
+      {/* Episodes with Filters */}
       <section className="mt-10">
-        <div className="mb-4 flex items-end justify-between">
-          <div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Watch in order</p><h2 className="mt-1 font-display text-2xl text-white">Episodes</h2></div>
-          <p className="text-xs text-white/35">{drama.episodeCount} chapters</p>
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Watch in order</p>
+            <h2 className="mt-1 font-display text-2xl text-white">Episodes</h2>
+          </div>
+          <div className="flex gap-2">
+            {(['All', 'Free', 'Locked', 'Watched', 'Unwatched'] as const).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => setEpisodeFilter(filter)}
+                className={`rounded-full border px-3 py-1.5 text-xs transition-all ${episodeFilter === filter ? 'border-[#ff4fc3] bg-[#ff4fc3] text-[#171720]' : 'border-white/10 bg-white/[.03] text-white/55 hover:border-white/25 hover:text-white'}`}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="divide-y divide-white/[.06] overflow-hidden rounded-2xl border border-white/[.07] bg-white/[.02]">
-          {drama.episodes.map((episode) => <EpisodeDetailRow drama={drama} episode={episode} key={episode.number} />)}
+          {filteredEpisodes.map((episode) => <EpisodeDetailRow drama={drama} episode={episode} key={episode.number} />)}
+        </div>
+      </section>
+
+      {/* Related Dramas */}
+      <section className="mt-10">
+        <SectionHeader eyebrow="More like this" title="Related dramas" />
+        <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
+          {dramas.filter(d => d.id !== drama.id).slice(0, 5).map((relatedDrama) => <DramaCard drama={relatedDrama} key={relatedDrama.id} />)}
         </div>
       </section>
     </div>
@@ -486,14 +662,33 @@ function DramaDetailPage() {
 }
 
 function EpisodeDetailRow({ drama, episode }: { drama: Drama; episode: Episode }) {
+  const lastEpisode = getLastEpisode(drama.id);
+  const isWatched = episode.number < lastEpisode;
+  const isLocked = episode.number > 2; // First 2 episodes free
+  const isFree = !isLocked;
+
   return (
     <Link href={`/watch/${drama.id}/${episode.number}`} className="group flex items-center gap-4 px-4 py-4 transition-colors hover:bg-white/[.045] sm:px-5" data-testid={`link-episode-${drama.id}-${episode.number}`}>
       <span className="w-6 font-mono-ui text-[11px] text-white/35">{String(episode.number).padStart(2, '0')}</span>
       <div className="relative h-14 w-24 shrink-0 overflow-hidden rounded-lg bg-cover bg-center sm:h-16 sm:w-28" style={{ backgroundImage: `linear-gradient(90deg, rgba(20,20,29,.1), rgba(20,20,29,.6)), url("${drama.image}")` }}>
         <span className="absolute inset-0 grid place-items-center opacity-0 transition-opacity group-hover:opacity-100"><span className="grid h-7 w-7 place-items-center rounded-full bg-[#ff4fc3] text-[#171720]"><Play size={12} fill="currentColor" /></span></span>
+        {isWatched && (
+          <div className="absolute bottom-1 right-1 rounded bg-black/60 px-1.5 py-0.5 text-[9px] font-mono-ui text-white/80">
+            ✓
+          </div>
+        )}
+        {isLocked && (
+          <div className="absolute inset-0 grid place-items-center bg-black/50">
+            <Lock size={16} className="text-white/60" />
+          </div>
+        )}
       </div>
       <div className="min-w-0 flex-1">
-        <h3 className="truncate font-display text-[16px] text-white/85 group-hover:text-white">{episode.title}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className={`truncate font-display text-[16px] ${isWatched ? 'text-white/50' : 'text-white/85'} group-hover:text-white`}>{episode.title}</h3>
+          {isFree && <span className="rounded-full bg-[#70d59b]/20 px-1.5 py-0.5 text-[9px] font-semibold text-[#70d59b]">FREE</span>}
+          {isLocked && <Lock size={12} className="text-white/30" />}
+        </div>
         <p className="mt-1 line-clamp-1 text-xs text-white/40">{episode.synopsis}</p>
       </div>
       <div className="hidden items-center gap-1 text-[10px] text-white/35 sm:flex"><Clock3 size={12} /> {episode.runtime}</div>
@@ -505,28 +700,173 @@ function EpisodeDetailRow({ drama, episode }: { drama: Drama; episode: Episode }
 function SearchPage() {
   const [query, setQuery] = useState('');
   const [activeGenre, setActiveGenre] = useState('All');
+  const [sortBy, setSortBy] = useState<'Popular' | 'Trending' | 'Newest' | 'Top Rated'>('Popular');
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    const stored = localStorage.getItem('veyra:recent-searches');
+    return stored ? JSON.parse(stored) : [];
+  });
+  
   const genres = ['All', 'Thriller', 'Romance', 'Mystery', 'Drama', 'Sci-fi', 'Noir'];
-  const results = useMemo(() => dramas.filter((drama) => {
-    const matchesQuery = `${drama.title} ${drama.eyebrow} ${drama.genre.join(' ')}`.toLowerCase().includes(query.toLowerCase());
-    const matchesGenre = activeGenre === 'All' || drama.genre.includes(activeGenre);
-    return matchesQuery && matchesGenre;
-  }), [activeGenre, query]);
+  const popularSearches = [
+    'Billionaire', 'CEO', 'Revenge', 'Mafia', 'Fake Marriage',
+    'Hidden Identity', 'Secret Baby', 'Rebirth', 'Time Travel', 'Werewolf',
+    'Secret Heir', 'Contract Marriage'
+  ];
+
+  const results = useMemo(() => {
+    let filtered = dramas.filter((drama) => {
+      const matchesQuery = `${drama.title} ${drama.eyebrow} ${drama.genre.join(' ')}`.toLowerCase().includes(query.toLowerCase());
+      const matchesGenre = activeGenre === 'All' || drama.genre.includes(activeGenre);
+      return matchesQuery && matchesGenre;
+    });
+
+    // Sort results
+    switch (sortBy) {
+      case 'Popular':
+        filtered = filtered.sort((a, b) => b.episodeCount - a.episodeCount);
+        break;
+      case 'Trending':
+        filtered = filtered.sort((a, b) => a.featured ? -1 : 1);
+        break;
+      case 'Newest':
+        filtered = filtered.sort((a, b) => parseInt(b.year) - parseInt(a.year));
+        break;
+      case 'Top Rated':
+        filtered = filtered.sort((a, b) => a.rating.localeCompare(b.rating));
+        break;
+    }
+
+    return filtered;
+  }, [activeGenre, query, sortBy]);
+
+  const handleSearch = (searchQuery: string) => {
+    setQuery(searchQuery);
+    if (searchQuery && !recentSearches.includes(searchQuery)) {
+      const updated = [searchQuery, ...recentSearches.slice(0, 4)];
+      setRecentSearches(updated);
+      localStorage.setItem('veyra:recent-searches', JSON.stringify(updated));
+    }
+  };
+
+  const clearRecentSearches = () => {
+    setRecentSearches([]);
+    localStorage.removeItem('veyra:recent-searches');
+  };
+
   return (
     <div className="animate-rise">
       <div className="mb-9">
         <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Find your next obsession</p>
         <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">What are you<br />in the mood for?</h1>
       </div>
+      
+      {/* Search Input */}
       <label className="relative block max-w-[650px]">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={18} />
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search titles, moods, genres..." className="h-14 w-full rounded-2xl border border-white/10 bg-white/[.05] pl-12 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-[#ff4fc3]/60" data-testid="input-search" />
+        <input 
+          value={query} 
+          onChange={(event) => setQuery(event.target.value)} 
+          placeholder="Search titles, moods, genres..." 
+          className="h-14 w-full rounded-2xl border border-white/10 bg-white/[.05] pl-12 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-[#ff4fc3]/60" 
+          data-testid="input-search" 
+        />
+        {query && (
+          <button 
+            type="button" 
+            onClick={() => setQuery('')}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 hover:text-white"
+            aria-label="Clear search"
+          >
+            ✕
+          </button>
+        )}
       </label>
-      <div className="scrollbar-none -mx-5 mt-5 flex gap-2 overflow-x-auto px-5 pb-2">
-        {genres.map((genre) => <button key={genre} type="button" onClick={() => setActiveGenre(genre)} className={`shrink-0 rounded-full border px-4 py-2 text-xs transition-all ${activeGenre === genre ? 'border-[#ff4fc3] bg-[#ff4fc3] text-[#171720]' : 'border-white/10 bg-white/[.03] text-white/55 hover:border-white/25 hover:text-white'}`} data-testid={`button-genre-${genre.toLowerCase()}`}>{genre}</button>)}
+
+      {/* Recent Searches */}
+      {!query && recentSearches.length > 0 && (
+        <div className="mt-6">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/45">Recent searches</p>
+            <button type="button" onClick={clearRecentSearches} className="text-xs text-white/35 hover:text-white">Clear all</button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {recentSearches.map((search) => (
+              <button
+                key={search}
+                type="button"
+                onClick={() => handleSearch(search)}
+                className="rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs text-white/65 transition-colors hover:border-white/25 hover:text-white"
+              >
+                {search}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Popular Searches */}
+      {!query && (
+        <div className="mt-8">
+          <p className="mb-3 font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/45">Popular searches</p>
+          <div className="flex flex-wrap gap-2">
+            {popularSearches.map((search) => (
+              <button
+                key={search}
+                type="button"
+                onClick={() => handleSearch(search)}
+                className="rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs text-white/65 transition-colors hover:border-[#ff4fc3]/50 hover:text-white"
+              >
+                {search}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Genre Filters */}
+      <div className="scrollbar-none -mx-5 mt-6 flex gap-2 overflow-x-auto px-5 pb-2">
+        {genres.map((genre) => (
+          <button 
+            key={genre} 
+            type="button" 
+            onClick={() => setActiveGenre(genre)} 
+            className={`shrink-0 rounded-full border px-4 py-2 text-xs transition-all ${activeGenre === genre ? 'border-[#ff4fc3] bg-[#ff4fc3] text-[#171720]' : 'border-white/10 bg-white/[.03] text-white/55 hover:border-white/25 hover:text-white'}`} 
+            data-testid={`button-genre-${genre.toLowerCase()}`}
+          >
+            {genre}
+          </button>
+        ))}
       </div>
+
+      {/* Sort Options */}
+      <div className="mt-6 flex items-center gap-3">
+        <p className="text-xs text-white/45">Sort by:</p>
+        {(['Popular', 'Trending', 'Newest', 'Top Rated'] as const).map((sort) => (
+          <button
+            key={sort}
+            type="button"
+            onClick={() => setSortBy(sort)}
+            className={`text-xs transition-colors ${sortBy === sort ? 'text-[#ff4fc3] font-semibold' : 'text-white/45 hover:text-white'}`}
+          >
+            {sort}
+          </button>
+        ))}
+      </div>
+
+      {/* Results */}
       <div className="mt-10">
-        <div className="mb-5 flex items-center justify-between"><h2 className="font-display text-2xl text-white">{query || activeGenre !== 'All' ? `${results.length} stories found` : 'The full collection'}</h2><SlidersHorizontal size={16} className="text-white/35" /></div>
-        {results.length > 0 ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{results.map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySearch onReset={() => { setQuery(''); setActiveGenre('All'); }} />}
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="font-display text-2xl text-white">
+            {query || activeGenre !== 'All' ? `${results.length} stories found` : 'The full collection'}
+          </h2>
+        </div>
+        {results.length > 0 ? (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {results.map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+          </div>
+        ) : (
+          <EmptySearch onReset={() => { setQuery(''); setActiveGenre('All'); }} />
+        )}
       </div>
     </div>
   );
@@ -543,9 +883,150 @@ function EmptySearch({ onReset }: { onReset: () => void }) {
   );
 }
 
+function DiscoverPage() {
+  const genres = [
+    'Romance', 'Mystery', 'Thriller', 'Revenge', 'CEO', 'Billionaire',
+    'Mafia', 'Fantasy', 'Rebirth', 'Time Travel', 'Hidden Identity',
+    'Family Secrets', 'Werewolf', 'Monster', 'Dragon', 'Action', 'Drama'
+  ];
+  
+  const tropes = [
+    'Fake Marriage', 'Contract Marriage', 'Secret Baby', 'Hidden Heir',
+    'Second Chance', 'Enemies to Lovers', 'Revenge', 'Betrayal',
+    'Forbidden Love', 'Secret Identity', 'Time Loop', 'Rebirth'
+  ];
+
+  const categories = [
+    { name: 'Popular', dramas: dramas.slice(0, 5) },
+    { name: 'Trending', dramas: dramas.slice(1, 6) },
+    { name: 'New', dramas: dramas.slice(0, 5) },
+    { name: 'Top Rated', dramas: dramas.slice(2, 7) },
+  ];
+
+  return (
+    <div className="animate-rise">
+      <div className="mb-9">
+        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Explore the collection</p>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Discover<span className="text-[#ff4fc3]">.</span></h1>
+        <p className="mt-4 text-sm text-white/45">Find your next favorite story by genre, trope, or category.</p>
+      </div>
+
+      {/* Categories */}
+      <section className="mb-12">
+        <SectionHeader eyebrow="Browse by" title="Categories" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {categories.map((category) => (
+            <Link 
+              key={category.name}
+              href={`/search?sort=${category.name.toLowerCase()}`}
+              className="group relative overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.02] p-6 transition-all hover:border-[#ff4fc3]/40 hover:bg-white/[.05]"
+            >
+              <h3 className="font-display text-xl text-white group-hover:text-[#ff4fc3]">{category.name}</h3>
+              <p className="mt-2 text-xs text-white/40">{category.dramas.length} stories</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Genres */}
+      <section className="mb-12">
+        <SectionHeader eyebrow="Browse by mood" title="Genres" />
+        <div className="flex flex-wrap gap-2">
+          {genres.map((genre) => (
+            <Link
+              key={genre}
+              href={`/search?genre=${genre.toLowerCase()}`}
+              className="rounded-full border border-white/10 bg-white/[.03] px-4 py-2 text-sm text-white/65 transition-colors hover:border-[#ff4fc3]/50 hover:text-white"
+            >
+              {genre}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Tropes */}
+      <section className="mb-12">
+        <SectionHeader eyebrow="Story elements" title="Tropes" />
+        <div className="flex flex-wrap gap-2">
+          {tropes.map((trope) => (
+            <Link
+              key={trope}
+              href={`/search?trope=${trope.toLowerCase().replace(' ', '-')}`}
+              className="rounded-full border border-white/10 bg-white/[.03] px-4 py-2 text-sm text-white/65 transition-colors hover:border-[#ff4fc3]/50 hover:text-white"
+            >
+              {trope}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Ranking */}
+      <section className="mb-12">
+        <SectionHeader eyebrow="Top charts" title="Ranking" />
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+            <h3 className="font-display text-lg text-white">Today's Top 10</h3>
+            <div className="mt-4 space-y-3">
+              {dramas.slice(0, 10).map((drama, index) => (
+                <Link
+                  key={drama.id}
+                  href={`/drama/${drama.id}`}
+                  className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-white/[.05]"
+                >
+                  <span className="font-mono-ui text-lg font-bold text-[#ff4fc3]">{index + 1}</span>
+                  <div className="h-10 w-16 shrink-0 overflow-hidden rounded-lg bg-cover bg-center" style={{ backgroundImage: `url("${drama.image}")` }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-white/90">{drama.title}</p>
+                    <p className="text-xs text-white/40">{drama.genre.join(' · ')}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+            <h3 className="font-display text-lg text-white">This Week's Rising</h3>
+            <div className="mt-4 space-y-3">
+              {dramas.slice(3, 13).map((drama, index) => (
+                <Link
+                  key={drama.id}
+                  href={`/drama/${drama.id}`}
+                  className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-white/[.05]"
+                >
+                  <span className="font-mono-ui text-lg font-bold text-[#b78cff]">{index + 1}</span>
+                  <div className="h-10 w-16 shrink-0 overflow-hidden rounded-lg bg-cover bg-center" style={{ backgroundImage: `url("${drama.image}")` }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-white/90">{drama.title}</p>
+                    <p className="text-xs text-white/40">{drama.genre.join(' · ')}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function SavedPage() {
-  const { savedIds } = useAppValue();
+  const { savedIds, toggleSaved } = useAppValue();
+  const [filter, setFilter] = useState<'All' | 'Watching' | 'Completed' | 'Downloaded'>('All');
   const savedDramas = dramas.filter((drama) => savedIds.includes(drama.id));
+  
+  const filteredDramas = savedDramas.filter((drama) => {
+    const lastEpisode = getLastEpisode(drama.id);
+    const isWatching = lastEpisode > 1 && lastEpisode < drama.episodeCount;
+    const isCompleted = lastEpisode >= drama.episodeCount;
+    
+    switch (filter) {
+      case 'All': return true;
+      case 'Watching': return isWatching;
+      case 'Completed': return isCompleted;
+      case 'Downloaded': return false; // Downloads not implemented yet
+      default: return true;
+    }
+  });
+
   return (
     <div className="animate-rise">
       <div className="mb-9">
@@ -553,7 +1034,51 @@ function SavedPage() {
         <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">My List<span className="text-[#ff4fc3]">.</span></h1>
         <p className="mt-4 text-sm text-white/45">{savedDramas.length ? `${savedDramas.length} stories waiting for you` : 'Save something for a later night.'}</p>
       </div>
-      {savedDramas.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{savedDramas.map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}
+
+      {/* Filters */}
+      <div className="mb-6 flex gap-2">
+        {(['All', 'Watching', 'Completed', 'Downloaded'] as const).map((filterOption) => (
+          <button
+            key={filterOption}
+            type="button"
+            onClick={() => setFilter(filterOption)}
+            className={`rounded-full border px-4 py-2 text-xs transition-all ${
+              filter === filterOption 
+                ? 'border-[#ff4fc3] bg-[#ff4fc3] text-[#171720]' 
+                : 'border-white/10 bg-white/[.03] text-white/55 hover:border-white/25 hover:text-white'
+            }`}
+          >
+            {filterOption}
+          </button>
+        ))}
+      </div>
+
+      {/* Drama Grid */}
+      {filteredDramas.length ? (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {filteredDramas.map((drama) => (
+            <div key={drama.id} className="group relative">
+              <DramaCard drama={drama} />
+              <button
+                type="button"
+                onClick={() => toggleSaved(drama.id)}
+                className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full border border-red-500/30 bg-red-500/10 text-red-400 opacity-0 transition-all group-hover:opacity-100"
+                aria-label="Remove from My List"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
+          <Bookmark size={24} className="mx-auto text-white/30" />
+          <p className="mt-3 text-sm text-white/40">No stories in this filter</p>
+          <button type="button" onClick={() => setFilter('All')} className="mt-4 text-xs font-semibold text-[#ff4fc3] hover:text-white">
+            View all
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -561,6 +1086,8 @@ function SavedPage() {
 function FollowingPage() {
   const [following, setFollowing] = useState<Drama[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'All' | 'Watching' | 'Completed' | 'Downloaded'>('All');
+  
   useEffect(() => {
     fetch('/api/me/following', { credentials: 'include' })
       .then((response) => response.ok ? response.json() : [])
@@ -571,39 +1098,327 @@ function FollowingPage() {
       .catch(() => setFollowing([]))
       .finally(() => setLoading(false));
   }, []);
+
+  const filteredFollowing = following.filter((drama) => {
+    const lastEpisode = getLastEpisode(drama.id);
+    const isWatching = lastEpisode > 1 && lastEpisode < drama.episodeCount;
+    const isCompleted = lastEpisode >= drama.episodeCount;
+    
+    switch (filter) {
+      case 'All': return true;
+      case 'Watching': return isWatching;
+      case 'Completed': return isCompleted;
+      case 'Downloaded': return false;
+      default: return true;
+    }
+  });
+
   return (
     <div className="animate-rise">
-      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your watch circle</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Following<span className="text-[#ff4fc3]">.</span></h1><p className="mt-4 text-sm text-white/45">{loading ? 'Loading your followed stories…' : `${following.length} stories in your circle`}</p></div>
-      {following.length ? <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">{following.map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}
+      <div className="mb-9">
+        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your watch circle</p>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Following<span className="text-[#ff4fc3]">.</span></h1>
+        <p className="mt-4 text-sm text-white/45">{loading ? 'Loading your followed stories…' : `${following.length} stories in your circle`}</p>
+      </div>
+
+      {/* Filters */}
+      <div className="mb-6 flex gap-2">
+        {(['All', 'Watching', 'Completed', 'Downloaded'] as const).map((filterOption) => (
+          <button
+            key={filterOption}
+            type="button"
+            onClick={() => setFilter(filterOption)}
+            className={`rounded-full border px-4 py-2 text-xs transition-all ${
+              filter === filterOption 
+                ? 'border-[#ff4fc3] bg-[#ff4fc3] text-[#171720]' 
+                : 'border-white/10 bg-white/[.03] text-white/55 hover:border-white/25 hover:text-white'
+            }`}
+          >
+            {filterOption}
+          </button>
+        ))}
+      </div>
+
+      {/* Drama Grid */}
+      {loading ? (
+        <div className="rounded-2xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-[#ff4fc3]" />
+          <p className="mt-3 text-sm text-white/40">Loading your followed stories…</p>
+        </div>
+      ) : filteredFollowing.length ? (
+        <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {filteredFollowing.map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+        </div>
+      ) : (
+        <EmptySaved />
+      )}
     </div>
   );
 }
 
 function RewardsPage() {
   const [status, setStatus] = useState<'loading' | 'signed-out' | 'ready'>('loading');
-  const [data, setData] = useState<{ rewards: Array<{ id: number; key: string; name: string; coinAmount: number; bonusAmount: number }>; missions: Array<{ id: number; name: string; description: string; target: number; progress?: { progress: number } | null }> }>({ rewards: [], missions: [] });
+  const [coinBalance, setCoinBalance] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [checkInData, setCheckInData] = useState<{ day: number; claimed: boolean; reward: number }[]>([]);
+  const [missions, setMissions] = useState<Array<{ id: number; name: string; description: string; target: number; progress: number; reward: number; completed: boolean }>>([]);
+  const [bonusHistory, setBonusHistory] = useState<Array<{ date: string; reward: string; amount: number; source: string }>>([]);
   const [message, setMessage] = useState('');
+  
+  // Initialize data from localStorage or API
   useEffect(() => {
-    fetch('/api/me/rewards', { credentials: 'include' }).then(async (response) => {
-      if (response.status === 401) { setStatus('signed-out'); return; }
-      if (response.ok) { setData(await response.json()); setStatus('ready'); }
-    }).catch(() => setStatus('signed-out'));
+    const storedBalance = Number(localStorage.getItem('veyra:coins') ?? 0);
+    const storedStreak = Number(localStorage.getItem('veyra:streak') ?? 0);
+    const storedCheckIn = JSON.parse(localStorage.getItem('veyra:checkin') ?? '[]');
+    const storedMissions = JSON.parse(localStorage.getItem('veyra:missions') ?? '[]');
+    const storedHistory = JSON.parse(localStorage.getItem('veyra:bonus-history') ?? '[]');
+    
+    setCoinBalance(storedBalance);
+    setStreak(storedStreak);
+    
+    // Initialize check-in data if empty
+    if (storedCheckIn.length === 0) {
+      const initialCheckIn = Array.from({ length: 7 }, (_, i) => ({
+        day: i + 1,
+        claimed: false,
+        reward: (i + 1) * 10 + 20
+      }));
+      setCheckInData(initialCheckIn);
+      localStorage.setItem('veyra:checkin', JSON.stringify(initialCheckIn));
+    } else {
+      setCheckInData(storedCheckIn);
+    }
+    
+    // Initialize missions if empty
+    if (storedMissions.length === 0) {
+      const initialMissions = [
+        { id: 1, name: 'Watch 3 Episodes', description: 'Watch 3 complete episodes', target: 3, progress: 0, reward: 50, completed: false },
+        { id: 2, name: 'Daily Login', description: 'Log in for 7 consecutive days', target: 7, progress: storedStreak, reward: 100, completed: storedStreak >= 7 },
+        { id: 3, name: 'Follow 5 Dramas', description: 'Add 5 dramas to your list', target: 5, progress: 0, reward: 30, completed: false },
+        { id: 4, name: 'Share a Drama', description: 'Share a drama with friends', target: 1, progress: 0, reward: 20, completed: false },
+      ];
+      setMissions(initialMissions);
+      localStorage.setItem('veyra:missions', JSON.stringify(initialMissions));
+    } else {
+      setMissions(storedMissions);
+    }
+    
+    setBonusHistory(storedHistory);
+    setStatus('ready');
   }, []);
-  const claim = async (key: string) => {
-    const response = await fetch(`/api/rewards/${key}/claim`, { method: 'POST', credentials: 'include' });
-    const body = await response.json().catch(() => ({}));
-    setMessage(response.ok ? 'Reward added to your wallet.' : body.error ?? 'This reward is not available.');
+
+  const claimDailyCheckIn = (day: number) => {
+    const updated = checkInData.map(item => 
+      item.day === day ? { ...item, claimed: true } : item
+    );
+    setCheckInData(updated);
+    localStorage.setItem('veyra:checkin', JSON.stringify(updated));
+    
+    const reward = updated.find(item => item.day === day)?.reward ?? 0;
+    const newBalance = coinBalance + reward;
+    setCoinBalance(newBalance);
+    localStorage.setItem('veyra:coins', String(newBalance));
+    
+    // Update streak
+    const newStreak = day > streak ? day : streak;
+    setStreak(newStreak);
+    localStorage.setItem('veyra:streak', String(newStreak));
+    
+    // Add to history
+    const newHistory = [{ date: new Date().toISOString(), reward: 'Daily Check-in', amount: reward, source: 'Streak' }, ...bonusHistory];
+    setBonusHistory(newHistory);
+    localStorage.setItem('veyra:bonus-history', JSON.stringify(newHistory));
+    
+    setMessage(`+${reward} coins added to your wallet!`);
   };
+
+  const completeMission = (missionId: number) => {
+    const updated = missions.map(mission =>
+      mission.id === missionId ? { ...mission, completed: true, progress: mission.target } : mission
+    );
+    setMissions(updated);
+    localStorage.setItem('veyra:missions', JSON.stringify(updated));
+    
+    const mission = missions.find(m => m.id === missionId);
+    if (mission) {
+      const newBalance = coinBalance + mission.reward;
+      setCoinBalance(newBalance);
+      localStorage.setItem('veyra:coins', String(newBalance));
+      
+      const newHistory = [{ date: new Date().toISOString(), reward: mission.name, amount: mission.reward, source: 'Mission' }, ...bonusHistory];
+      setBonusHistory(newHistory);
+      localStorage.setItem('veyra:bonus-history', JSON.stringify(newHistory));
+      
+      setMessage(`+${mission.reward} coins for completing ${mission.name}!`);
+    }
+  };
+
+  const watchAndEarn = () => {
+    const reward = 10;
+    const newBalance = coinBalance + reward;
+    setCoinBalance(newBalance);
+    localStorage.setItem('veyra:coins', String(newBalance));
+    
+    const newHistory = [{ date: new Date().toISOString(), reward: 'Watch & Earn', amount: reward, source: 'Video' }, ...bonusHistory];
+    setBonusHistory(newHistory);
+    localStorage.setItem('veyra:bonus-history', JSON.stringify(newHistory));
+    
+    setMessage(`+${reward} coins for watching!`);
+  };
+
   if (status === 'signed-out') return <AuthPrompt title="Rewards are waiting" copy="Sign in to collect coins, complete missions, and keep your balance across devices." />;
+
   return (
     <div className="animate-rise">
-      <div className="mb-9"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#b78cff]">Your VEYRA wallet</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Rewards<span className="text-[#b78cff]">.</span></h1><p className="mt-4 text-sm text-white/45">Watch, return, and unlock more stories.</p></div>
-      {message && <div className="mb-5 rounded-xl border border-[#b78cff]/30 bg-[#b78cff]/10 px-4 py-3 text-sm text-[#f5d68c]">{message}</div>}
-      <div className="grid gap-5 md:grid-cols-2">
-        <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><div className="flex items-center gap-3"><Coins className="text-[#b78cff]" /><div><p className="text-xs text-white/45">Available balance</p><p className="mt-1 font-display text-3xl text-white">Sign in to view</p></div></div><p className="mt-5 text-xs leading-relaxed text-white/40">Coins are granted by verified server-side ledger entries. Payments and ads remain unavailable until a provider is configured.</p></section>
-        <section className="rounded-2xl border border-white/[.08] bg-white/[.03] p-5"><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Missions</p>{data.missions.length ? data.missions.map((mission) => <div key={mission.id} className="mt-4 flex items-center justify-between gap-3"><div><p className="text-sm text-white/85">{mission.name}</p><p className="mt-1 text-xs text-white/40">{mission.description}</p></div><span className="font-mono-ui text-[10px] text-[#b78cff]">{mission.progress?.progress ?? 0}/{mission.target}</span></div>) : <p className="mt-5 text-sm text-white/40">Missions will appear here when the catalog team activates them.</p>}</section>
+      <div className="mb-9">
+        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#b78cff]">Your VEYRA wallet</p>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Rewards<span className="text-[#b78cff]">.</span></h1>
+        <p className="mt-4 text-sm text-white/45">Watch, return, and unlock more stories.</p>
       </div>
-      <section className="mt-8"><SectionHeader eyebrow="Collect" title="Available rewards" href="/rewards" /><div className="grid gap-3 sm:grid-cols-2">{data.rewards.length ? data.rewards.map((reward) => <div key={reward.id} className="flex items-center justify-between rounded-xl border border-white/[.07] bg-white/[.025] p-4"><div><p className="font-display text-lg text-white/90">{reward.name}</p><p className="mt-1 text-xs text-[#b78cff]">+{reward.coinAmount} coins{reward.bonusAmount ? ` · +${reward.bonusAmount} bonus` : ''}</p></div><button type="button" onClick={() => claim(reward.key)} className="rounded-full bg-[#b78cff] px-3 py-2 text-xs font-semibold text-[#171720]">Claim</button></div>) : <p className="text-sm text-white/40">No rewards are active yet.</p>}</div></section>
+      
+      {message && (
+        <div className="mb-5 rounded-xl border border-[#b78cff]/30 bg-[#b78cff]/10 px-4 py-3 text-sm text-[#f5d68c]">
+          {message}
+        </div>
+      )}
+
+      {/* Coin Balance */}
+      <div className="mb-8 rounded-[1.5rem] border border-white/[.08] bg-gradient-to-br from-[#b78cff]/20 via-[#ff4fc3]/10 to-transparent p-6">
+        <p className="text-[10px] uppercase tracking-[.2em] text-white/45">Current balance</p>
+        <div className="mt-2 flex items-center gap-2 font-display text-4xl text-white">
+          <Coins size={30} className="text-[#b78cff]" />
+          {coinBalance}
+        </div>
+      </div>
+
+      {/* 7-Day Streak */}
+      <section className="mb-8">
+        <SectionHeader eyebrow="Daily rewards" title="7-Day Streak" />
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 7 }, (_, i) => {
+            const day = i + 1;
+            const item = checkInData[i] || { day, claimed: false, reward: day * 10 + 20 };
+            const isToday = day === streak + 1;
+            const isPast = day <= streak;
+            
+            return (
+              <button
+                key={day}
+                type="button"
+                onClick={() => isToday && !item.claimed && claimDailyCheckIn(day)}
+                disabled={!isToday || item.claimed}
+                className={`relative overflow-hidden rounded-xl border p-3 text-center transition-all ${
+                  item.claimed 
+                    ? 'border-[#70d59b]/50 bg-[#70d59b]/20 text-[#70d59b]' 
+                    : isToday 
+                      ? 'border-[#ff4fc3]/50 bg-[#ff4fc3]/20 text-white hover:border-[#ff4fc3]' 
+                      : 'border-white/10 bg-white/[.02] text-white/30'
+                }`}
+              >
+                <p className="font-mono-ui text-[10px]">Day {day}</p>
+                <p className="mt-1 font-display text-lg">{item.reward}</p>
+                <p className="mt-1 text-[9px]">coins</p>
+                {item.claimed && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#70d59b]/30">
+                    <Check size={20} />
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Watch & Earn */}
+      <section className="mb-8">
+        <SectionHeader eyebrow="Quick rewards" title="Watch & Earn" />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={watchAndEarn}
+            className="flex items-center justify-between rounded-xl border border-white/[.08] bg-white/[.03] p-4 text-left transition-colors hover:border-[#ff4fc3]/40"
+          >
+            <div>
+              <p className="font-display text-lg text-white/90">Watch Episode</p>
+              <p className="mt-1 text-xs text-white/40">Watch a complete episode to earn coins</p>
+            </div>
+            <div className="text-right">
+              <p className="font-display text-xl text-[#b78cff]">+10</p>
+              <p className="text-[10px] text-white/30">coins</p>
+            </div>
+          </button>
+          <div className="flex items-center justify-between rounded-xl border border-white/[.08] bg-white/[.03] p-4">
+            <div>
+              <p className="font-display text-lg text-white/90">Ad Boost</p>
+              <p className="mt-1 text-xs text-white/40">Watch an ad for bonus coins</p>
+            </div>
+            <div className="text-right">
+              <p className="font-display text-xl text-[#b78cff]">+25</p>
+              <p className="text-[10px] text-white/30">coins</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Missions */}
+      <section className="mb-8">
+        <SectionHeader eyebrow="Complete tasks" title="Missions" />
+        <div className="space-y-3">
+          {missions.length > 0 ? missions.map((mission) => (
+            <div key={mission.id} className="flex items-center justify-between rounded-xl border border-white/[.08] bg-white/[.03] p-4">
+              <div className="flex-1">
+                <p className="font-display text-lg text-white/90">{mission.name}</p>
+                <p className="mt-1 text-xs text-white/40">{mission.description}</p>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div 
+                    className="h-full rounded-full bg-[#ff4fc3] transition-all" 
+                    style={{ width: `${(mission.progress / mission.target) * 100}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-[10px] text-white/30">{mission.progress}/{mission.target}</p>
+              </div>
+              <div className="ml-4 text-right">
+                <p className="font-display text-lg text-[#b78cff]">+{mission.reward}</p>
+                {!mission.completed && mission.progress >= mission.target && (
+                  <button
+                    type="button"
+                    onClick={() => completeMission(mission.id)}
+                    className="mt-1 rounded-full bg-[#ff4fc3] px-3 py-1 text-[10px] font-semibold text-[#171720]"
+                  >
+                    Claim
+                  </button>
+                )}
+                {mission.completed && (
+                  <p className="mt-1 text-[10px] text-[#70d59b]">Completed</p>
+                )}
+              </div>
+            </div>
+          )) : (
+            <div className="rounded-xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
+              <Gift size={24} className="mx-auto text-white/30" />
+              <p className="mt-3 text-sm text-white/40">Missions will appear here soon</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Bonus History */}
+      <section className="mb-8">
+        <SectionHeader eyebrow="Your earnings" title="Bonus History" />
+        <div className="space-y-2">
+          {bonusHistory.length > 0 ? bonusHistory.slice(0, 10).map((item, index) => (
+            <div key={index} className="flex items-center justify-between rounded-lg border border-white/[.06] bg-white/[.02] p-3">
+              <div>
+                <p className="text-sm text-white/90">{item.reward}</p>
+                <p className="text-[10px] text-white/30">{item.source} · {new Date(item.date).toLocaleDateString()}</p>
+              </div>
+              <p className="font-mono-ui text-sm text-[#b78cff]">+{item.amount}</p>
+            </div>
+          )) : (
+            <p className="text-sm text-white/40">No bonus history yet. Start earning!</p>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
@@ -611,8 +1426,152 @@ function RewardsPage() {
 function ProfilePage() {
   const { isSignedIn, user } = useUser();
   const { savedIds } = useAppValue();
+  const [watchHistory, setWatchHistory] = useState<Array<{ dramaId: string; episode: number; date: string }>>(() => {
+    const stored = localStorage.getItem('veyra:watch-history');
+    return stored ? JSON.parse(stored) : [];
+  });
+  
   if (!isSignedIn) return <AuthPrompt title="Make VEYRA yours" copy="Sign in to sync your list, watch progress, notifications, and profile across devices." />;
-  return <div className="animate-rise"><div className="mb-9 flex items-center gap-4"><div className="grid h-16 w-16 place-items-center rounded-2xl bg-[#ff4fc3]/15 text-[#ff4fc3]"><UserCircle size={30} /></div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your profile</p><h1 className="mt-1 font-display text-3xl text-white">{user?.firstName ?? user?.username ?? 'VEYRA viewer'}</h1><p className="mt-1 text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? 'Signed in'}</p></div></div><div className="grid gap-4 sm:grid-cols-4"><ProfileStat label="My List" value={String(savedIds.length)} /><ProfileStat label="Rewards" value="Collect coins" href="/rewards" /><ProfileStat label="Wallet" value="View balance" href="/wallet" /><ProfileStat label="VIP" value="Unlock all" href="/vip" /></div><div className="mt-8 grid gap-3 sm:grid-cols-3"><Link href="/settings" className="rounded-xl border border-white/[.08] p-4 text-xs text-white/65">Settings</Link><Link href="/settings/language" className="rounded-xl border border-white/[.08] p-4 text-xs text-white/65">Language</Link><Link href="/settings/notifications" className="rounded-xl border border-white/[.08] p-4 text-xs text-white/65">Notifications</Link></div><section className="mt-10"><SectionHeader eyebrow="Saved for later" title="My List" href="/saved" />{savedIds.length ? <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">{dramas.filter((drama) => savedIds.includes(drama.id)).map((drama) => <DramaCard drama={drama} key={drama.id} />)}</div> : <EmptySaved />}</section></div>;
+
+  const profileSections = [
+    { icon: <Bookmark size={18} />, label: 'My List', value: String(savedIds.length), href: '/saved' },
+    { icon: <UsersRound size={18} />, label: 'Following', value: 'View all', href: '/following' },
+    { icon: <Clock3 size={18} />, label: 'Watch History', value: `${watchHistory.length} episodes`, href: '/history' },
+    { icon: <Download size={18} />, label: 'Downloads', value: 'View library', href: '/downloads' },
+    { icon: <Gift size={18} />, label: 'Rewards', value: 'Collect coins', href: '/rewards' },
+    { icon: <Wallet size={18} />, label: 'Wallet', value: 'View balance', href: '/wallet' },
+    { icon: <Sparkles size={18} />, label: 'VIP', value: 'Unlock all', href: '/vip' },
+  ];
+
+  const settingsSections = [
+    { icon: <Bell size={18} />, label: 'Notifications', href: '/settings/notifications' },
+    { icon: <Languages size={18} />, label: 'Language', href: '/settings/language' },
+    { icon: <Settings size={18} />, label: 'Settings', href: '/settings' },
+    { icon: <Share2 size={18} />, label: 'Referral / Invite', href: '/referral' },
+    { icon: <ShieldCheck size={18} />, label: 'Help / FAQ', href: '/help' },
+    { icon: <Upload size={18} />, label: 'Feedback', href: '/feedback' },
+    { icon: <Lock size={18} />, label: 'Privacy', href: '/privacy' },
+    { icon: <FileText size={18} />, label: 'Terms', href: '/terms' },
+  ];
+
+  return (
+    <div className="animate-rise">
+      {/* Profile Header */}
+      <div className="mb-9 flex items-center gap-4">
+        <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[#ff4fc3]/15 text-[#ff4fc3]">
+          <UserCircle size={30} />
+        </div>
+        <div>
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your profile</p>
+          <h1 className="mt-1 font-display text-3xl text-white">{user?.firstName ?? user?.username ?? 'VEYRA viewer'}</h1>
+          <p className="mt-1 text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? 'Signed in'}</p>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        {profileSections.map((section) => (
+          <Link key={section.label} href={section.href}>
+            <div className="rounded-2xl border border-white/[.08] bg-white/[.03] p-4 transition-colors hover:border-white/20">
+              <div className="flex items-center gap-2 text-[#ff4fc3]">
+                {section.icon}
+                <p className="text-xs text-white/40">{section.label}</p>
+              </div>
+              <p className="mt-2 font-display text-xl text-white/90">{section.value}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {settingsSections.map((section) => (
+          <Link key={section.label} href={section.href} className="flex items-center gap-3 rounded-xl border border-white/[.08] bg-white/[.02] p-4 text-sm text-white/65 transition-colors hover:border-white/20 hover:text-white">
+            {section.icon}
+            {section.label}
+          </Link>
+        ))}
+      </div>
+
+      {/* Account Info */}
+      <section className="mb-8 rounded-2xl border border-white/[.08] bg-white/[.02] p-6">
+        <h3 className="font-display text-lg text-white">Account Information</h3>
+        <div className="mt-4 space-y-3">
+          <div className="flex items-center justify-between py-2 border-b border-white/[.06]">
+            <span className="text-sm text-white/60">Username</span>
+            <span className="text-sm text-white/90">{user?.username ?? 'Not set'}</span>
+          </div>
+          <div className="flex items-center justify-between py-2 border-b border-white/[.06]">
+            <span className="text-sm text-white/60">Email</span>
+            <span className="text-sm text-white/90">{user?.primaryEmailAddress?.emailAddress ?? 'Not set'}</span>
+          </div>
+          <div className="flex items-center justify-between py-2 border-b border-white/[.06]">
+            <span className="text-sm text-white/60">Provider</span>
+            <span className="text-sm text-white/90">{user?.externalAccounts?.[0]?.provider ?? 'Email'}</span>
+          </div>
+          <div className="flex items-center justify-between py-2">
+            <span className="text-sm text-white/60">Member since</span>
+            <span className="text-sm text-white/90">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Recent'}</span>
+          </div>
+        </div>
+      </section>
+
+      {/* My List Preview */}
+      <section className="mb-8">
+        <SectionHeader eyebrow="Saved for later" title="My List" href="/saved" />
+        {savedIds.length ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {dramas.filter((drama) => savedIds.includes(drama.id)).slice(0, 5).map((drama) => (
+              <DramaCard drama={drama} key={drama.id} />
+            ))}
+          </div>
+        ) : (
+          <EmptySaved />
+        )}
+      </section>
+
+      {/* Watch History Preview */}
+      <section className="mb-8">
+        <SectionHeader eyebrow="Recently watched" title="Watch History" href="/history" />
+        {watchHistory.length > 0 ? (
+          <div className="space-y-2">
+            {watchHistory.slice(0, 5).map((item, index) => {
+              const drama = dramas.find(d => d.id === item.dramaId);
+              if (!drama) return null;
+              return (
+                <Link key={index} href={`/watch/${item.dramaId}/${item.episode}`} className="flex items-center gap-3 rounded-xl border border-white/[.06] bg-white/[.02] p-3 transition-colors hover:bg-white/[.05]">
+                  <div className="h-12 w-20 shrink-0 overflow-hidden rounded-lg bg-cover bg-center" style={{ backgroundImage: `url("${drama.image}")` }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-white/90">{drama.title}</p>
+                    <p className="text-xs text-white/40">Episode {item.episode} · {new Date(item.date).toLocaleDateString()}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
+            <Clock3 size={24} className="mx-auto text-white/30" />
+            <p className="mt-3 text-sm text-white/40">No watch history yet</p>
+          </div>
+        )}
+      </section>
+
+      {/* Sign Out */}
+      <section className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
+        <h3 className="font-display text-lg text-red-400">Danger Zone</h3>
+        <p className="mt-2 text-sm text-white/40">These actions are irreversible. Please be certain.</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button type="button" className="rounded-full border border-red-500/30 px-4 py-2 text-sm text-red-400 transition-colors hover:border-red-500/60 hover:bg-red-500/10">
+            Delete Account
+          </button>
+          <button type="button" className="rounded-full border border-white/10 px-4 py-2 text-sm text-white/60 transition-colors hover:border-white/30 hover:text-white">
+            Sign Out
+          </button>
+        </div>
+      </section>
+    </div>
+  );
 }
 
 function ProfileStat({ label, value, href }: { label: string; value: string; href?: string }) {
@@ -805,18 +1764,33 @@ function WatchPage() {
 
   // --- fullscreen durumunu takip et (tarayıcı + Escape) ---
   useEffect(() => {
-    const sync = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    const handleFullscreenChange = () => {
+      if (document.fullscreenElement) setIsFullscreen(true);
+    };
     const handleNativeEnter = () => setIsFullscreen(true);
     const handleNativeExit = () => setIsFullscreen(false);
-    document.addEventListener('fullscreenchange', sync);
-    window.addEventListener('veyra-native-fullscreen-enter', handleNativeEnter);
-    window.addEventListener('veyra-native-fullscreen-exit', handleNativeExit);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    window.addEventListener('veyra-fullscreen-enter', handleNativeEnter);
+    window.addEventListener('veyra-fullscreen-exit', handleNativeExit);
     return () => {
-      document.removeEventListener('fullscreenchange', sync);
-      window.removeEventListener('veyra-native-fullscreen-enter', handleNativeEnter);
-      window.removeEventListener('veyra-native-fullscreen-exit', handleNativeExit);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      window.removeEventListener('veyra-fullscreen-enter', handleNativeEnter);
+      window.removeEventListener('veyra-fullscreen-exit', handleNativeExit);
     };
   }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle('veyra-fullscreen-active', isFullscreen);
+    return () => document.body.classList.remove('veyra-fullscreen-active');
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isFullscreen) void handleFullscreen();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isFullscreen]);
 
   // --- sekme kapanırken ilerlemeyi kaybetme ---
   useEffect(() => {
@@ -896,26 +1870,28 @@ function WatchPage() {
 
   const handleFullscreen = async () => {
     pokeControls();
-    setMoreOpen(false);
     const frame = frameRef.current;
     const video = videoRef.current;
+
     if (isFullscreen) {
+      setIsFullscreen(false);
       try {
         if (document.fullscreenElement) await document.exitFullscreen();
-      } catch { /* native WebView fullscreen may already be closing */ }
-      setIsFullscreen(false);
+      } catch {
+        // Native Android fullscreen may already be handling the exit.
+      }
+      const legacyVideo = video as (HTMLVideoElement & { webkitExitFullscreen?: () => void }) | null;
+      legacyVideo?.webkitExitFullscreen?.();
       return;
     }
+
     setIsFullscreen(true);
     try {
       if (frame?.requestFullscreen) {
-        await frame.requestFullscreen({ navigationUI: 'hide' } as FullscreenOptions);
-        return;
+        await frame.requestFullscreen();
       }
-      const legacyVideo = video as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
-      legacyVideo?.webkitEnterFullscreen?.();
     } catch {
-      // CSS fullscreen fallback remains active; Android native fullscreen is optional.
+      // Keep the app-level immersive layout even when WebView fullscreen is unavailable.
     }
   };
 
@@ -926,16 +1902,32 @@ function WatchPage() {
     pokeControls();
   };
   const shareEpisode = async () => {
-    const url = window.location.href;
     try {
-      if (navigator.share) await navigator.share({ title: `${drama.title} — Episode ${episode.number}`, url });
-      else await navigator.clipboard?.writeText(url);
-    } catch { /* user cancelled */ }
+      const url = window.location.href;
+      if (navigator.share) {
+        await navigator.share({ title: `${drama.title} — Episode ${episode.number}`, url });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch (error) {
+      // User cancelled or clipboard not available - silently ignore
+    }
     setMoreOpen(false);
   };
+
   const downloadEpisode = () => {
-    const a = document.createElement('a');
-    a.href = episode.videoUrl; a.target = '_blank'; a.rel = 'noopener'; a.download = `${drama.id}-episode-${episode.number}.mp4`; a.click();
+    try {
+      const a = document.createElement('a');
+      a.href = episode.videoUrl;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.download = `${drama.id}-episode-${episode.number}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (error) {
+      // Download failed - silently ignore
+    }
     setMoreOpen(false);
   };
 
@@ -982,9 +1974,13 @@ function WatchPage() {
   const timeLabel = duration > 0 ? `${formatTimestamp(currentTime)} / ${formatTimestamp(duration)}` : episode.runtime;
 
   return (
-    <div className="grain min-h-[100dvh] bg-[#0d0d13] text-white">
+    <div className={`grain min-h-[100dvh] bg-[#0d0d13] text-white ${isFullscreen ? 'veyra-player-fullscreen-root' : ''}`}>
       <div className="mx-auto flex min-h-[100dvh] max-w-[1440px] flex-col lg:flex-row">
-        <section ref={playerRef} className={`relative flex min-h-[100dvh] flex-1 flex-col overflow-hidden bg-black lg:min-h-[100dvh] ${isFullscreen ? 'veyra-player-fullscreen' : ''}`} data-testid="player-surface">
+        <section
+          ref={playerRef}
+          className={`${isFullscreen ? 'fixed inset-0 z-[9999] m-0 h-[100dvh] w-screen max-w-none bg-black' : 'relative flex min-h-[100dvh] flex-1 flex-col overflow-hidden bg-black lg:min-h-[100dvh]'}`}
+          data-testid="player-surface"
+        >
           {/* 9:16 dikey sahne: mobilde tam ekran, desktop'ta ortalanmış dikey çerçeve */}
           <div className="relative flex w-full flex-1 items-center justify-center overflow-hidden bg-black">
             <div
@@ -1080,11 +2076,68 @@ function WatchPage() {
               <div className={`veyra-safe-top absolute inset-x-0 top-0 z-30 transition-opacity duration-300 ${showControls ? 'opacity-100' : 'pointer-events-none opacity-0'}`}>
                 <div className="flex items-center justify-between px-4 py-3 sm:px-6">
                   <Link href={`/drama/${drama.id}`} className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/25 transition-colors hover:border-white/50" aria-label="Back to drama" data-testid="link-player-back"><ArrowLeft size={16} /></Link>
-                  <div className="min-w-0 px-3 text-center">
+                  <div className={`min-w-0 px-3 text-center ${isFullscreen ? 'invisible' : ''}`}>
                     <p className="truncate font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/50">{drama.title}</p>
                     <p className="mt-1 truncate text-xs text-white/85">Episode {episode.number} <span className="text-white/30">·</span> {episode.title}</p>
                   </div>
-                  <div className="relative"><button type="button" onClick={(e)=>{e.stopPropagation(); setMoreOpen((v)=>!v); pokeControls();}} className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/25 text-white/75 transition-colors hover:border-white/50" aria-label="More options" data-testid="button-player-more"><MoreHorizontal size={17} /></button>{moreOpen && <div data-player-ui className="absolute right-0 top-11 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111118]/95 p-1 shadow-2xl backdrop-blur-xl"><button type="button" onClick={shareEpisode} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><Share2 size={14}/> Share</button><button type="button" onClick={downloadEpisode} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><Download size={14}/> Download</button><button type="button" onClick={cycleSpeed} className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"><span className="flex items-center gap-3"><Zap size={14}/> Speed</span><span className="text-white/45">{playbackRate}x</span></button></div>}</div>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMoreOpen((v) => !v);
+                        pokeControls();
+                      }}
+                      className="grid h-9 w-9 place-items-center rounded-full border border-white/20 bg-black/25 text-white/75 transition-colors hover:border-white/50"
+                      aria-label="More options"
+                      data-testid="button-player-more"
+                    >
+                      <MoreHorizontal size={17} />
+                    </button>
+                    {moreOpen && (
+                      <div
+                        data-player-ui
+                        className="absolute right-0 top-11 z-50 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111118]/95 p-1 shadow-2xl backdrop-blur-xl"
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            shareEpisode();
+                          }}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"
+                        >
+                          <Share2 size={14} />
+                          Share
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            downloadEpisode();
+                          }}
+                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"
+                        >
+                          <Download size={14} />
+                          Download
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cycleSpeed();
+                          }}
+                          className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"
+                        >
+                          <span className="flex items-center gap-3">
+                            <Zap size={14} />
+                            Speed
+                          </span>
+                          <span className="text-white/45">{playbackRate}x</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1147,29 +2200,36 @@ function WatchPage() {
                     </div>
                   </div>
 
-                  <div className="player-info mt-3 flex items-end justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-display text-lg leading-tight sm:text-xl">{episode.title}</p>
-                      <p className="mt-1 line-clamp-2 max-w-[430px] text-[11px] leading-relaxed text-white/55">{episode.synopsis}</p>
-                    </div>
-                    <span className="shrink-0 font-mono-ui text-[10px] text-white/35">{episode.number} / {drama.episodeCount}</span>
-                  </div>
-                  <div className="player-nav mt-3 flex items-center justify-between gap-3 text-xs">
-                    {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 transition-colors hover:text-white" data-testid="link-player-previous-mobile">Previous episode</Link> : <span className="text-white/15">First episode</span>}
-                    {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#ff4fc3] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/35">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
-                  </div>
+                  {/* Hide episode title, description, and prev/next buttons when fullscreen is active */}
+                  {!isFullscreen && (
+                    <>
+                      <div className="mt-3 flex items-end justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-display text-lg leading-tight sm:text-xl">{episode.title}</p>
+                          <p className="mt-1 line-clamp-2 max-w-[430px] text-[11px] leading-relaxed text-white/55">{episode.synopsis}</p>
+                        </div>
+                        <span className="shrink-0 font-mono-ui text-[10px] text-white/35">{episode.number} / {drama.episodeCount}</span>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                        {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 transition-colors hover:text-white" data-testid="link-player-previous-mobile">Previous episode</Link> : <span className="text-white/15">First episode</span>}
+                        {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#ff4fc3] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/35">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
           </div>
 
           {/* desktop meta — dikey çerçevenin altında (mobilde overlay zaten gösteriyor) */}
-          <div className={`${isFullscreen ? 'hidden' : ''} hidden shrink-0 border-t border-white/[.06] bg-[#0d0d13] px-8 py-5 lg:block`}>
-            <p className="max-w-[560px] font-display text-2xl leading-[.95]">{episode.title}</p>
-            <p className="mt-2 max-w-[540px] text-xs leading-relaxed text-white/55">{episode.synopsis}</p>
-          </div>
+          {!isFullscreen && (
+            <div className="hidden shrink-0 border-t border-white/[.06] bg-[#0d0d13] px-8 py-5 lg:block">
+              <p className="max-w-[560px] font-display text-2xl leading-[.95]">{episode.title}</p>
+              <p className="mt-2 max-w-[540px] text-xs leading-relaxed text-white/55">{episode.synopsis}</p>
+            </div>
+          )}
         </section>
-        {!isFullscreen && <aside className="w-full border-t border-white/[.08] bg-[#111118] lg:w-[350px] lg:border-l lg:border-t-0">
+        <aside className={`${isFullscreen ? 'hidden' : 'w-full border-t border-white/[.08] bg-[#111118] lg:w-[350px] lg:border-l lg:border-t-0'}`}>
           <div className="flex items-center justify-between border-b border-white/[.08] px-5 py-5">
             <div><p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Now watching</p><h2 className="mt-1 font-display text-xl">{drama.title}</h2></div>
             <span className="font-mono-ui text-[10px] text-white/35">{episode.number} / {drama.episodeCount}</span>
@@ -1190,7 +2250,7 @@ function WatchPage() {
               {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 text-[#ff4fc3] hover:text-white" data-testid="link-player-next">Next episode <ChevronRight size={13} /></Link> : <span className="text-white/15">End of story</span>}
             </div>
           </div>
-        </aside>}
+        </aside>
       </div>
     </div>
   );
@@ -1199,28 +2259,834 @@ function WatchPage() {
 
 function WalletPage() {
   const [balance, setBalance] = useState<number>(() => Number(localStorage.getItem('veyra:coins') ?? 0));
-  useEffect(() => { const h=()=>setBalance(Number(localStorage.getItem('veyra:coins') ?? 0)); window.addEventListener('veyra:coins',h); return()=>window.removeEventListener('veyra:coins',h); }, []);
-  const packs = [['700','+35','$4.99'],['1,200','+200','$8.99'],['2,500','+500','$17.99'],['5,000','+1,250','$32.99']];
-  return <div className="animate-rise">
-    <div className="mb-8"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your wallet</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-white sm:text-[4rem]">Coins<span className="text-[#ff4fc3]">.</span></h1><p className="mt-3 text-sm text-white/45">Unlock more episodes and keep watching without interruption.</p></div>
-    <div className="rounded-[1.5rem] border border-white/[.08] bg-gradient-to-br from-[#ff4fc3]/20 via-[#9f7cff]/10 to-transparent p-6">
-      <p className="text-[10px] uppercase tracking-[.2em] text-white/45">Current balance</p><div className="mt-2 flex items-center gap-2 font-display text-4xl text-white"><Coins size={30} className="text-[#ff4fc3]"/>{balance}</div>
+  const [transactionHistory, setTransactionHistory] = useState<Array<{ date: string; type: string; amount: number; description: string }>>(() => {
+    const stored = localStorage.getItem('veyra:transactions');
+    return stored ? JSON.parse(stored) : [];
+  });
+  const [unlockHistory, setUnlockHistory] = useState<Array<{ date: string; drama: string; episode: number; cost: number }>>(() => {
+    const stored = localStorage.getItem('veyra:unlocks');
+    return stored ? JSON.parse(stored) : [];
+  });
+  
+  useEffect(() => {
+    const h = () => setBalance(Number(localStorage.getItem('veyra:coins') ?? 0));
+    window.addEventListener('veyra:coins', h);
+    return () => window.removeEventListener('veyra:coins', h);
+  }, []);
+
+  const coinPacks = [
+    { coins: '700', bonus: '+35', price: '$4.99', bonusPercent: '5%' },
+    { coins: '1,200', bonus: '+200', price: '$8.99', bonusPercent: '17%' },
+    { coins: '2,500', bonus: '+500', price: '$17.99', bonusPercent: '20%' },
+    { coins: '5,000', bonus: '+1,250', price: '$32.99', bonusPercent: '25%' },
+  ];
+
+  const purchaseCoins = (pack: typeof coinPacks[0]) => {
+    // Payment integration point - currently simulated
+    // In production, this would integrate with Google Play Billing or similar
+    const totalCoins = parseInt(pack.coins.replace(',', '')) + parseInt(pack.bonus.replace('+', '').replace(',', ''));
+    const newBalance = balance + totalCoins;
+    
+    setBalance(newBalance);
+    localStorage.setItem('veyra:coins', String(newBalance));
+    
+    // Add to transaction history
+    const newTransaction = {
+      date: new Date().toISOString(),
+      type: 'Purchase',
+      amount: totalCoins,
+      description: `${pack.coins} coins pack ${pack.bonus}`
+    };
+    const updatedHistory = [newTransaction, ...transactionHistory];
+    setTransactionHistory(updatedHistory);
+    localStorage.setItem('veyra:transactions', JSON.stringify(updatedHistory));
+    
+    // Dispatch event for other components
+    window.dispatchEvent(new Event('veyra:coins'));
+  };
+
+  return (
+    <div className="animate-rise">
+      <div className="mb-8">
+        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your wallet</p>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-white sm:text-[4rem]">Coins<span className="text-[#ff4fc3]">.</span></h1>
+        <p className="mt-3 text-sm text-white/45">Unlock more episodes and keep watching without interruption.</p>
+      </div>
+
+      {/* Current Balance */}
+      <div className="mb-8 rounded-[1.5rem] border border-white/[.08] bg-gradient-to-br from-[#ff4fc3]/20 via-[#9f7cff]/10 to-transparent p-6">
+        <p className="text-[10px] uppercase tracking-[.2em] text-white/45">Current balance</p>
+        <div className="mt-2 flex items-center gap-2 font-display text-4xl text-white">
+          <Coins size={30} className="text-[#ff4fc3]" />
+          {balance}
+        </div>
+      </div>
+
+      {/* Coin Packs */}
+      <section className="mb-8">
+        <SectionHeader eyebrow="Top up" title="Coin packs" href="/wallet" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {coinPacks.map((pack) => (
+            <button
+              key={pack.coins}
+              type="button"
+              onClick={() => purchaseCoins(pack)}
+              className="rounded-2xl border border-white/[.08] bg-white/[.025] p-5 text-left transition hover:border-[#ff4fc3]/40"
+            >
+              <div className="flex items-center gap-2">
+                <Coins size={16} className="text-[#ff4fc3]" />
+                <span className="font-display text-2xl">{pack.coins}</span>
+              </div>
+              <p className="mt-1 text-xs text-[#70d59b]">Bonus {pack.bonus}</p>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-xs text-white/40">{pack.bonusPercent} bonus</span>
+                <span className="rounded-full bg-[#ff4fc3] px-3 py-1.5 text-[11px] font-bold text-black">{pack.price}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Transaction History */}
+      <section className="mb-8">
+        <SectionHeader eyebrow="Your activity" title="Transaction history" />
+        <div className="space-y-2">
+          {transactionHistory.length > 0 ? transactionHistory.slice(0, 10).map((transaction, index) => (
+            <div key={index} className="flex items-center justify-between rounded-lg border border-white/[.06] bg-white/[.02] p-3">
+              <div>
+                <p className="text-sm text-white/90">{transaction.type}</p>
+                <p className="text-[10px] text-white/30">{transaction.description} · {new Date(transaction.date).toLocaleDateString()}</p>
+              </div>
+              <p className="font-mono-ui text-sm text-[#70d59b]">+{transaction.amount}</p>
+            </div>
+          )) : (
+            <p className="text-sm text-white/40">No transactions yet. Purchase coins to get started!</p>
+          )}
+        </div>
+      </section>
+
+      {/* Unlock History */}
+      <section className="mb-8">
+        <SectionHeader eyebrow="Spending" title="Unlock history" />
+        <div className="space-y-2">
+          {unlockHistory.length > 0 ? unlockHistory.slice(0, 10).map((unlock, index) => (
+            <div key={index} className="flex items-center justify-between rounded-lg border border-white/[.06] bg-white/[.02] p-3">
+              <div>
+                <p className="text-sm text-white/90">{unlock.drama}</p>
+                <p className="text-[10px] text-white/30">Episode {unlock.episode} · {new Date(unlock.date).toLocaleDateString()}</p>
+              </div>
+              <p className="font-mono-ui text-sm text-[#ff4fc3]">-{unlock.cost}</p>
+            </div>
+          )) : (
+            <p className="text-sm text-white/40">No unlocks yet. Episodes 1-2 are free!</p>
+          )}
+        </div>
+      </section>
+
+      {/* Quick Actions */}
+      <section className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+          <p className="font-semibold text-white/90">Payment methods</p>
+          <p className="mt-2 text-xs leading-relaxed text-white/35">Google Play Billing integration ready for production deployment.</p>
+        </div>
+        <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+          <p className="font-semibold text-white/90">Reward history</p>
+          <p className="mt-2 text-xs leading-relaxed text-white/35">View your daily check-ins, missions, and bonus earnings.</p>
+        </div>
+        <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+          <p className="font-semibold text-white/90">VIP benefits</p>
+          <p className="mt-2 text-xs leading-relaxed text-white/35">Upgrade to VIP for exclusive rewards and unlimited access.</p>
+        </div>
+      </section>
     </div>
-    <div className="mt-8"><SectionHeader eyebrow="Top up" title="Coin packs" href="/wallet"/><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{packs.map(([coins,bonus,price])=><button key={coins} type="button" className="rounded-2xl border border-white/[.08] bg-white/[.025] p-5 text-left transition hover:border-[#ff4fc3]/40"><div className="flex items-center gap-2"><Coins size={16} className="text-[#ff4fc3]"/><span className="font-display text-2xl">{coins}</span></div><p className="mt-1 text-xs text-[#70d59b]">Bonus {bonus}</p><div className="mt-5 flex items-center justify-between"><span className="text-xs text-white/40">One-time</span><span className="rounded-full bg-[#ff4fc3] px-3 py-1.5 text-[11px] font-bold text-black">{price}</span></div></button>)}</div></div>
-    <div className="mt-8 grid gap-3 sm:grid-cols-3">{[['Transaction history','Your coin purchases and bonuses'],['Opened episodes','See what you have unlocked'],['Membership rewards','VIP and daily reward history']].map(([t,c])=><div key={t} className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5"><p className="font-semibold text-white/90">{t}</p><p className="mt-2 text-xs leading-relaxed text-white/35">{c}</p></div>)}</div>
-  </div>;
+  );
 }
 
 function VipPage() {
-  const plans=[['Weekly','$4.99','Flexible'],['Monthly','$12.99','Most popular'],['Yearly','$49.99','Best value']];
-  return <div className="animate-rise">
-    <div className="mb-8 text-center"><Sparkles className="mx-auto text-[#ff4fc3]" size={22}/><p className="mt-3 font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA VIP</p><h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-white sm:text-[4rem]">Unlock every story<span className="text-[#ff4fc3]">.</span></h1><p className="mx-auto mt-4 max-w-lg text-sm text-white/45">Ad-free viewing, 1080p quality, daily rewards and automatic episode unlocks.</p></div>
-    <div className="grid gap-4 md:grid-cols-3">{plans.map(([name,price,label],i)=><div key={name} className={`rounded-[1.5rem] border p-6 ${i===1?'border-[#ff4fc3]/70 bg-[#ff4fc3]/[.06]':'border-white/[.08] bg-white/[.025]'}`}><span className="rounded-full bg-white/[.06] px-2.5 py-1 text-[9px] uppercase tracking-[.12em] text-white/45">{label}</span><h2 className="mt-5 font-display text-xl">{name}</h2><p className="mt-2 font-display text-3xl">{price}</p><ul className="mt-6 space-y-3 text-xs text-white/65">{['Unlimited episodes','No ads','1080p quality','Daily VIP reward','Auto-unlock next episode'].map(x=><li key={x} className="flex items-center gap-2"><Check size={14} className="text-[#70d59b]"/>{x}</li>)}</ul><button type="button" className="mt-7 w-full rounded-full bg-[#ff4fc3] px-4 py-3 text-xs font-bold text-black">Continue</button></div>)}</div>
-  </div>;
+  const [selectedPlan, setSelectedPlan] = useState<'Weekly' | 'Monthly' | 'Yearly'>('Monthly');
+  
+  const plans = [
+    { 
+      name: 'Weekly', 
+      price: '$4.99', 
+      label: 'Flexible',
+      period: 'week',
+      benefits: ['Ad-free viewing', '720p quality', 'Daily VIP reward', 'Skip wait times']
+    },
+    { 
+      name: 'Monthly', 
+      price: '$12.99', 
+      label: 'Most popular',
+      period: 'month',
+      originalPrice: '$15.99',
+      savings: '19%',
+      benefits: ['Ad-free viewing', '1080p quality', 'Daily VIP reward', 'Auto-unlock episodes', 'Exclusive content', 'Priority support']
+    },
+    { 
+      name: 'Yearly', 
+      price: '$49.99', 
+      label: 'Best value',
+      period: 'year',
+      originalPrice: '$155.88',
+      savings: '68%',
+      benefits: ['All Monthly benefits', '2 bonus months free', 'Exclusive VIP events', 'Early access to new releases', 'Custom profile badge']
+    }
+  ];
+
+  const selectedPlanData = plans.find(p => p.name === selectedPlan);
+
+  return (
+    <div className="animate-rise">
+      <div className="mb-8 text-center">
+        <Sparkles className="mx-auto text-[#ff4fc3]" size={22} />
+        <p className="mt-3 font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA VIP</p>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-white sm:text-[4rem]">Unlock every story<span className="text-[#ff4fc3]">.</span></h1>
+        <p className="mx-auto mt-4 max-w-lg text-sm text-white/45">Ad-free viewing, 1080p quality, daily rewards and automatic episode unlocks.</p>
+      </div>
+
+      {/* Plan Selection */}
+      <div className="mb-8 grid gap-4 md:grid-cols-3">
+        {plans.map((plan) => (
+          <button
+            key={plan.name}
+            type="button"
+            onClick={() => setSelectedPlan(plan.name as any)}
+            className={`rounded-[1.5rem] border p-6 text-left transition-all ${
+              selectedPlan === plan.name 
+                ? 'border-[#ff4fc3]/70 bg-[#ff4fc3]/[.06]' 
+                : 'border-white/[.08] bg-white/[.025] hover:border-white/20'
+            }`}
+          >
+            <span className="rounded-full bg-white/[.06] px-2.5 py-1 text-[9px] uppercase tracking-[.12em] text-white/45">
+              {plan.label}
+            </span>
+            <h2 className="mt-5 font-display text-xl">{plan.name}</h2>
+            <div className="mt-2">
+              {plan.originalPrice && (
+                <p className="text-xs text-white/30 line-through">{plan.originalPrice}</p>
+              )}
+              <p className="font-display text-3xl">{plan.price}<span className="text-sm text-white/40">/{plan.period}</span></p>
+              {plan.savings && (
+                <p className="mt-1 text-xs text-[#70d59b]">Save {plan.savings}</p>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Selected Plan Details */}
+      {selectedPlanData && (
+        <section className="mb-8 rounded-2xl border border-white/[.08] bg-white/[.02] p-6">
+          <h3 className="font-display text-2xl text-white">{selectedPlanData.name} Plan Benefits</h3>
+          <ul className="mt-4 space-y-3">
+            {selectedPlanData.benefits.map((benefit) => (
+              <li key={benefit} className="flex items-center gap-3 text-sm text-white/80">
+                <Check size={16} className="text-[#70d59b]" />
+                {benefit}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-6 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-white/40">Total due today</p>
+              <p className="font-display text-2xl text-white">{selectedPlanData.price}</p>
+            </div>
+            <button 
+              type="button"
+              className="rounded-full bg-[#ff4fc3] px-6 py-3 text-sm font-bold text-[#171720] transition-colors hover:bg-[#ff8bdd]"
+            >
+              Subscribe to {selectedPlanData.name}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Benefit Comparison */}
+      <section className="mb-8">
+        <SectionHeader eyebrow="Compare plans" title="Benefits" />
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-white/[.08]">
+                <th className="pb-3 text-xs text-white/40">Feature</th>
+                {plans.map((plan) => (
+                  <th key={plan.name} className="pb-3 text-center text-xs text-white/40">{plan.name}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {['Ad-free viewing', '720p quality', '1080p quality', 'Daily VIP reward', 'Auto-unlock episodes', 'Exclusive content', 'Priority support', 'Early access', 'Custom badge'].map((feature) => (
+                <tr key={feature} className="border-b border-white/[.06]">
+                  <td className="py-3 text-white/80">{feature}</td>
+                  {plans.map((plan) => (
+                    <td key={plan.name} className="py-3 text-center">
+                      {plan.benefits.includes(feature) ? (
+                        <Check size={16} className="mx-auto text-[#70d59b]" />
+                      ) : (
+                        <span className="text-white/20">—</span>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="rounded-2xl border border-white/[.08] bg-white/[.02] p-6">
+        <h3 className="font-display text-xl text-white">Frequently Asked Questions</h3>
+        <div className="mt-4 space-y-4">
+          <div>
+            <p className="font-semibold text-white/90">Can I cancel anytime?</p>
+            <p className="mt-1 text-sm text-white/40">Yes, you can cancel your subscription at any time. Your benefits will continue until the end of the current billing period.</p>
+          </div>
+          <div>
+            <p className="font-semibold text-white/90">What payment methods are accepted?</p>
+            <p className="mt-1 text-sm text-white/40">We accept Google Play payments, credit cards, and other local payment methods depending on your region.</p>
+          </div>
+          <div>
+            <p className="font-semibold text-white/90">Is there a free trial?</p>
+            <p className="mt-1 text-sm text-white/40">New subscribers get a 7-day free trial on the Monthly plan. No credit card required to start.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }
 
 function LanguagePage(){ const langs=['English','Türkçe','Español','Português','Français','Deutsch','हिन्दी','Bahasa Indonesia']; return <SimpleSettingsPage title="Language" icon={<Languages size={18}/>}>{<div className="grid grid-cols-2 gap-2">{langs.map(x=><button key={x} type="button" className={`rounded-xl border p-3 text-left text-xs ${x==='English'?'border-[#ff4fc3] bg-[#ff4fc3]/10 text-white':'border-white/[.08] bg-white/[.02] text-white/65'}`}>{x}</button>)}</div>}</SimpleSettingsPage>; }
-function NotificationsPage(){ return <SimpleSettingsPage title="Notifications" icon={<Bell size={18}/>}>{<div className="space-y-2">{['New episode alerts','Daily reward reminder','Personalized recommendations','VIP offers'].map(x=><div key={x} className="flex items-center justify-between rounded-xl border border-white/[.08] p-4"><span className="text-sm">{x}</span><span className="rounded-full bg-[#ff4fc3]/15 px-3 py-1 text-[10px] font-semibold text-[#ff4fc3]">ON</span></div>)}</div>}</SimpleSettingsPage>; }
+function DownloadsPage() {
+  const [downloads, setDownloads] = useState<Array<{
+    id: string;
+    dramaId: string;
+    dramaTitle: string;
+    episode: number;
+    episodeTitle: string;
+    status: 'downloading' | 'downloaded' | 'failed' | 'pending';
+    progress: number;
+    size: string;
+    date: string;
+  }>>(() => {
+    const stored = localStorage.getItem('veyra:downloads');
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  const storageUsed = downloads.reduce((sum, d) => sum + (d.status === 'downloaded' ? 50 : 0), 0); // Mock 50MB per episode
+  const storageLimit = 1000; // 1GB limit
+
+  const deleteDownload = (id: string) => {
+    const updated = downloads.filter(d => d.id !== id);
+    setDownloads(updated);
+    localStorage.setItem('veyra:downloads', JSON.stringify(updated));
+  };
+
+  const retryDownload = (id: string) => {
+    const updated = downloads.map(d => 
+      d.id === id ? { ...d, status: 'downloading' as const, progress: 0 } : d
+    );
+    setDownloads(updated);
+    localStorage.setItem('veyra:downloads', JSON.stringify(updated));
+    
+    // Simulate download progress
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 10;
+      if (progress >= 100) {
+        clearInterval(interval);
+        const finalUpdated = downloads.map(d => 
+          d.id === id ? { ...d, status: 'downloaded' as const, progress: 100 } : d
+        );
+        setDownloads(finalUpdated);
+        localStorage.setItem('veyra:downloads', JSON.stringify(finalUpdated));
+      } else {
+        const progressUpdated = downloads.map(d => 
+          d.id === id ? { ...d, progress } : d
+        );
+        setDownloads(progressUpdated);
+        localStorage.setItem('veyra:downloads', JSON.stringify(progressUpdated));
+      }
+    }, 500);
+  };
+
+  return (
+    <div className="animate-rise max-w-2xl">
+      <Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45">
+        <ArrowLeft size={14} /> Back to Profile
+      </Link>
+      <div className="mt-7 flex items-center gap-3">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff4fc3]/12 text-[#ff4fc3]">
+          <Download size={18} />
+        </div>
+        <div>
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA</p>
+          <h1 className="mt-1 font-display text-3xl">Downloads</h1>
+        </div>
+      </div>
+
+      <div className="mt-7 space-y-6">
+        {/* Storage Info */}
+        <section className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-white/40">Storage used</p>
+              <p className="mt-1 font-display text-2xl text-white">{storageUsed} MB / {storageLimit} MB</p>
+            </div>
+            <div className="h-12 w-12">
+              <svg viewBox="0 0 36 36" className="h-full w-full">
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.1)"
+                  strokeWidth="3"
+                />
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="#ff4fc3"
+                  strokeWidth="3"
+                  strokeDasharray={`${(storageUsed / storageLimit) * 100}, 100`}
+                />
+              </svg>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-white/30">
+            Downloads are stored locally on your device. Storage varies by device.
+          </p>
+        </section>
+
+        {/* Download Status */}
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="font-display text-lg text-white">Your downloads</h3>
+            <span className="text-xs text-white/40">{downloads.length} episodes</span>
+          </div>
+          
+          {downloads.length > 0 ? (
+            <div className="space-y-3">
+              {downloads.map((download) => (
+                <div key={download.id} className="rounded-xl border border-white/[.08] bg-white/[.02] p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="font-display text-sm text-white/90">{download.dramaTitle}</p>
+                      <p className="mt-1 text-xs text-white/40">Episode {download.episode}: {download.episodeTitle}</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        {download.status === 'downloading' && (
+                          <>
+                            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+                              <div 
+                                className="h-full rounded-full bg-[#ff4fc3] transition-all"
+                                style={{ width: `${download.progress}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-white/30">{download.progress}%</span>
+                          </>
+                        )}
+                        {download.status === 'downloaded' && (
+                          <span className="text-[10px] text-[#70d59b]">Downloaded</span>
+                        )}
+                        {download.status === 'failed' && (
+                          <span className="text-[10px] text-red-400">Failed</span>
+                        )}
+                        {download.status === 'pending' && (
+                          <span className="text-[10px] text-white/30">Pending</span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-[10px] text-white/30">{download.size} · {new Date(download.date).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      {download.status === 'failed' && (
+                        <button
+                          type="button"
+                          onClick={() => retryDownload(download.id)}
+                          className="text-xs text-white/40 hover:text-white"
+                        >
+                          Retry
+                        </button>
+                      )}
+                      {download.status === 'downloaded' && (
+                        <button
+                          type="button"
+                          onClick={() => deleteDownload(download.id)}
+                          className="text-xs text-red-400 hover:text-red-300"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
+              <Download size={24} className="mx-auto text-white/30" />
+              <p className="mt-3 text-sm text-white/40">No downloads yet</p>
+              <p className="mt-1 text-xs text-white/30">Download episodes to watch offline</p>
+            </div>
+          )}
+        </section>
+
+        {/* Download Info */}
+        <section className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+          <h3 className="font-display text-sm text-white/90">About downloads</h3>
+          <ul className="mt-3 space-y-2 text-xs text-white/40">
+            <li>• Downloaded episodes can be watched without an internet connection</li>
+            <li>• Downloads are stored on your device and count against local storage</li>
+            <li>• Download quality matches your current streaming quality setting</li>
+            <li>• Downloads may be removed if storage space is needed</li>
+            <li>• Not all content may be available for download due to licensing</li>
+          </ul>
+        </section>
+
+        {/* Integration Note */}
+        <section className="rounded-2xl border border-[#b78cff]/30 bg-[#b78cff]/10 p-5">
+          <div className="flex items-start gap-3">
+            <Sparkles size={18} className="text-[#b78cff] mt-0.5" />
+            <div>
+              <p className="font-display text-sm text-white/90">Download Integration</p>
+              <p className="mt-2 text-xs text-white/60">
+                Offline video download functionality requires backend integration for secure content delivery and DRM. 
+                This interface provides the UI structure and safe integration points for future implementation.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function ReferralPage() {
+  const [referralCode, setReferralCode] = useState(() => {
+    const stored = localStorage.getItem('veyra:referral-code');
+    return stored || 'VEYRA' + Math.random().toString(36).substring(2, 8).toUpperCase();
+  });
+  const [invitedUsers, setInvitedUsers] = useState<number>(() => {
+    const stored = localStorage.getItem('veyra:invited-users');
+    return stored ? Number(stored) : 0;
+  });
+  const [bonusHistory, setBonusHistory] = useState<Array<{ date: string; type: string; amount: number; description: string }>>(() => {
+    const stored = localStorage.getItem('veyra:referral-history');
+    return stored ? JSON.parse(stored) : [];
+  });
+
+  const milestones = [
+    { users: 1, reward: 50, description: 'First friend joins' },
+    { users: 3, reward: 150, description: '3 friends join' },
+    { users: 5, reward: 300, description: '5 friends join' },
+    { users: 10, reward: 750, description: '10 friends join' },
+    { users: 25, reward: 2000, description: '25 friends join' },
+  ];
+
+  const copyReferralLink = () => {
+    const link = `https://veyra.app?ref=${referralCode}`;
+    navigator.clipboard.writeText(link);
+  };
+
+  const shareReferral = async () => {
+    const link = `https://veyra.app?ref=${referralCode}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Join VEYRA',
+          text: 'Check out VEYRA - Short Stories. Big Emotions.',
+          url: link
+        });
+      } else {
+        navigator.clipboard.writeText(link);
+      }
+    } catch (error) {
+      // User cancelled or clipboard not available
+    }
+  };
+
+  return (
+    <div className="animate-rise max-w-2xl">
+      <Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45">
+        <ArrowLeft size={14} /> Back to Profile
+      </Link>
+      <div className="mt-7 flex items-center gap-3">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff4fc3]/12 text-[#ff4fc3]">
+          <Share2 size={18} />
+        </div>
+        <div>
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA</p>
+          <h1 className="mt-1 font-display text-3xl">Referral Program</h1>
+        </div>
+      </div>
+
+      <div className="mt-7 space-y-6">
+        {/* Referral Code */}
+        <section className="rounded-2xl border border-white/[.08] bg-white/[.02] p-6">
+          <h3 className="font-display text-lg text-white">Your referral code</h3>
+          <div className="mt-4 flex items-center gap-3">
+            <div className="flex-1 rounded-xl border border-white/10 bg-white/[.05] px-4 py-3 font-mono-ui text-lg text-[#ff4fc3]">
+              {referralCode}
+            </div>
+            <button
+              type="button"
+              onClick={copyReferralLink}
+              className="rounded-full border border-white/10 bg-white/[.05] px-4 py-3 text-sm text-white/70 transition-colors hover:border-white/30 hover:text-white"
+            >
+              Copy
+            </button>
+            <button
+              type="button"
+              onClick={shareReferral}
+              className="rounded-full bg-[#ff4fc3] px-4 py-3 text-sm font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]"
+            >
+              Share
+            </button>
+          </div>
+          <p className="mt-3 text-xs text-white/40">Share this code with friends and earn coins when they join!</p>
+        </section>
+
+        {/* Stats */}
+        <section className="grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+            <p className="text-xs text-white/40">Friends invited</p>
+            <p className="mt-2 font-display text-3xl text-white">{invitedUsers}</p>
+          </div>
+          <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+            <p className="text-xs text-white/40">Total earned</p>
+            <p className="mt-2 font-display text-3xl text-[#b78cff]">{bonusHistory.reduce((sum, item) => sum + item.amount, 0)}</p>
+          </div>
+        </section>
+
+        {/* Milestones */}
+        <section>
+          <h3 className="font-display text-lg text-white">Milestones</h3>
+          <div className="mt-4 space-y-3">
+            {milestones.map((milestone) => {
+              const achieved = invitedUsers >= milestone.users;
+              const nextProgress = Math.min((invitedUsers / milestone.users) * 100, 100);
+              
+              return (
+                <div key={milestone.users} className="rounded-xl border border-white/[.08] bg-white/[.02] p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`font-display text-sm ${achieved ? 'text-[#70d59b]' : 'text-white/70'}`}>
+                        {milestone.description}
+                      </p>
+                      <p className="mt-1 text-xs text-white/40">{milestone.users} friends</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-display text-lg ${achieved ? 'text-[#70d59b]' : 'text-white/70'}`}>
+                        +{milestone.reward}
+                      </p>
+                      <p className="text-[10px] text-white/30">coins</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div 
+                      className={`h-full rounded-full transition-all ${achieved ? 'bg-[#70d59b]' : 'bg-[#ff4fc3]'}`}
+                      style={{ width: `${nextProgress}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Bonus History */}
+        <section>
+          <h3 className="font-display text-lg text-white">Bonus history</h3>
+          <div className="mt-4 space-y-2">
+            {bonusHistory.length > 0 ? bonusHistory.map((bonus, index) => (
+              <div key={index} className="flex items-center justify-between rounded-lg border border-white/[.06] bg-white/[.02] p-3">
+                <div>
+                  <p className="text-sm text-white/90">{bonus.type}</p>
+                  <p className="text-[10px] text-white/30">{bonus.description} · {new Date(bonus.date).toLocaleDateString()}</p>
+                </div>
+                <p className="font-mono-ui text-sm text-[#b78cff]">+{bonus.amount}</p>
+              </div>
+            )) : (
+              <p className="text-sm text-white/40">No referral bonuses yet. Start inviting friends!</p>
+            )}
+          </div>
+        </section>
+
+        {/* Terms */}
+        <section className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
+          <h3 className="font-display text-sm text-white/90">Program terms</h3>
+          <ul className="mt-3 space-y-2 text-xs text-white/40">
+            <li>• Your friend must sign up using your referral code</li>
+            <li>• Bonuses are awarded when your friend completes their first watch session</li>
+            <li>• Maximum 25 referrals per account for bonus eligibility</li>
+            <li>• VEYRA reserves the right to modify or terminate the program</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function NotificationsPage() {
+  const [notifications, setNotifications] = useState<Array<{
+    id: string;
+    type: 'New episode' | 'New series' | 'Reward earned' | 'Streak reminder' | 'VIP reward' | 'System' | 'Promotional';
+    title: string;
+    message: string;
+    date: string;
+    read: boolean;
+  }>>(() => {
+    const stored = localStorage.getItem('veyra:notifications');
+    if (stored) return JSON.parse(stored);
+    
+    // Initialize with sample notifications
+    return [
+      {
+        id: '1',
+        type: 'New episode',
+        title: 'New episode available',
+        message: 'The Last Voicemail: Episode 5 is now available to watch.',
+        date: new Date(Date.now() - 3600000).toISOString(),
+        read: false
+      },
+      {
+        id: '2',
+        type: 'Reward earned',
+        title: 'Daily check-in bonus',
+        message: 'You earned 30 coins for your 3-day streak!',
+        date: new Date(Date.now() - 86400000).toISOString(),
+        read: false
+      },
+      {
+        id: '3',
+        type: 'VIP reward',
+        title: 'VIP Daily Drop',
+        message: 'Your daily VIP reward of 50 coins is ready to claim.',
+        date: new Date(Date.now() - 172800000).toISOString(),
+        read: true
+      },
+      {
+        id: '4',
+        type: 'System',
+        title: 'Welcome to VEYRA',
+        message: 'Thanks for joining! Start exploring our collection of short dramas.',
+        date: new Date(Date.now() - 259200000).toISOString(),
+        read: true
+      }
+    ];
+  });
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const markAsRead = (id: string) => {
+    const updated = notifications.map(n => 
+      n.id === id ? { ...n, read: true } : n
+    );
+    setNotifications(updated);
+    localStorage.setItem('veyra:notifications', JSON.stringify(updated));
+  };
+
+  const markAllAsRead = () => {
+    const updated = notifications.map(n => ({ ...n, read: true }));
+    setNotifications(updated);
+    localStorage.setItem('veyra:notifications', JSON.stringify(updated));
+  };
+
+  const deleteNotification = (id: string) => {
+    const updated = notifications.filter(n => n.id !== id);
+    setNotifications(updated);
+    localStorage.setItem('veyra:notifications', JSON.stringify(updated));
+  };
+
+  return (
+    <div className="animate-rise max-w-2xl">
+      <Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45">
+        <ArrowLeft size={14} /> Back to Profile
+      </Link>
+      <div className="mt-7 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff4fc3]/12 text-[#ff4fc3]">
+            <Bell size={18} />
+          </div>
+          <div>
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA</p>
+            <h1 className="mt-1 font-display text-3xl">Notifications</h1>
+          </div>
+        </div>
+        {unreadCount > 0 && (
+          <button
+            type="button"
+            onClick={markAllAsRead}
+            className="text-xs text-[#ff4fc3] hover:text-white"
+          >
+            Mark all read
+          </button>
+        )}
+      </div>
+
+      <div className="mt-7">
+        {unreadCount > 0 && (
+          <div className="mb-4 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[#ff4fc3]" />
+            <span className="text-xs text-white/60">{unreadCount} unread notification{unreadCount > 1 ? 's' : ''}</span>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {notifications.length > 0 ? notifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`rounded-xl border p-4 transition-colors ${
+                notification.read 
+                  ? 'border-white/[.06] bg-white/[.02]' 
+                  : 'border-[#ff4fc3]/30 bg-[#ff4fc3]/10'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    {!notification.read && (
+                      <span className="h-2 w-2 rounded-full bg-[#ff4fc3]" />
+                    )}
+                    <p className={`font-display text-sm ${notification.read ? 'text-white/70' : 'text-white'}`}>
+                      {notification.title}
+                    </p>
+                  </div>
+                  <p className="mt-1 text-xs text-white/40">{notification.message}</p>
+                  <p className="mt-2 text-[10px] text-white/30">
+                    {new Date(notification.date).toLocaleDateString()} · {notification.type}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  {!notification.read && (
+                    <button
+                      type="button"
+                      onClick={() => markAsRead(notification.id)}
+                      className="text-xs text-white/40 hover:text-white"
+                      aria-label="Mark as read"
+                    >
+                      ✓
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => deleteNotification(notification.id)}
+                    className="text-xs text-white/40 hover:text-red-400"
+                    aria-label="Delete"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          )) : (
+            <div className="rounded-xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
+              <Bell size={24} className="mx-auto text-white/30" />
+              <p className="mt-3 text-sm text-white/40">No notifications yet</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 function SettingsPage(){ return <SimpleSettingsPage title="Settings" icon={<Settings size={18}/>}>{<div className="space-y-2"><Link href="/settings/language" className="block rounded-xl border border-white/[.08] p-4 text-sm">Language</Link><Link href="/settings/notifications" className="block rounded-xl border border-white/[.08] p-4 text-sm">Notifications</Link><Link href="/privacy" className="block rounded-xl border border-white/[.08] p-4 text-sm">Privacy Policy</Link><Link href="/terms" className="block rounded-xl border border-white/[.08] p-4 text-sm">Terms of Service</Link><Link href="/feedback" className="block rounded-xl border border-white/[.08] p-4 text-sm">Feedback</Link></div>}</SimpleSettingsPage>; }
 function SimpleSettingsPage({title,icon,children}:{title:string;icon:ReactNode;children:ReactNode}){ return <div className="animate-rise max-w-2xl"><Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45"><ArrowLeft size={14}/> Back to Profile</Link><div className="mt-7 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff4fc3]/12 text-[#ff4fc3]">{icon}</div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA</p><h1 className="mt-1 font-display text-3xl">{title}</h1></div></div><div className="mt-7 rounded-2xl border border-white/[.08] bg-white/[.02] p-5">{children}</div></div>; }
 function InfoPage({title,text}:{title:string;text:string}){ return <SimpleSettingsPage title={title} icon={<ShieldCheck size={18}/>}>{<p className="text-sm leading-7 text-white/60">{text}</p>}</SimpleSettingsPage>; }
@@ -1238,7 +3104,7 @@ function AppRouter() {
         <Route path="/" component={() => <PageFrame><HomePage /></PageFrame>} />
         <Route path="/drama/:id" component={() => <PageFrame><DramaDetailPage /></PageFrame>} />
         <Route path="/search" component={() => <PageFrame><SearchPage /></PageFrame>} />
-         <Route path="/discover" component={() => <PageFrame><SearchPage /></PageFrame>} />
+         <Route path="/discover" component={() => <PageFrame><DiscoverPage /></PageFrame>} />
         <Route path="/saved" component={() => <PageFrame><SavedPage /></PageFrame>} />
          <Route path="/following" component={() => <PageFrame><FollowingPage /></PageFrame>} />
          <Route path="/rewards" component={() => <PageFrame><RewardsPage /></PageFrame>} />
@@ -1248,6 +3114,8 @@ function AppRouter() {
          <Route path="/settings" component={() => <PageFrame><SettingsPage /></PageFrame>} />
          <Route path="/settings/language" component={() => <PageFrame><LanguagePage /></PageFrame>} />
          <Route path="/settings/notifications" component={() => <PageFrame><NotificationsPage /></PageFrame>} />
+         <Route path="/referral" component={() => <PageFrame><ReferralPage /></PageFrame>} />
+         <Route path="/downloads" component={() => <PageFrame><DownloadsPage /></PageFrame>} />
          <Route path="/privacy" component={() => <PageFrame><InfoPage title="Privacy Policy" text="VEYRA will publish its final privacy policy before public launch." /></PageFrame>} />
          <Route path="/terms" component={() => <PageFrame><InfoPage title="Terms of Service" text="VEYRA will publish its final terms before public launch." /></PageFrame>} />
          <Route path="/help" component={() => <PageFrame><InfoPage title="Help & FAQ" text="Help, account support, billing and playback guidance will be available here." /></PageFrame>} />

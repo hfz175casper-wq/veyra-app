@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.WebChromeClient;
+import android.webkit.WebView;
 import android.widget.FrameLayout;
 
 import androidx.core.view.WindowCompat;
@@ -44,17 +45,24 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
             container.addView(view, new FrameLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT));
-            ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
-            decor.addView(container, new ViewGroup.LayoutParams(
+            ViewGroup decorView = (ViewGroup) activity.getWindow().getDecorView();
+            decorView.addView(container, new ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT));
             customViewContainer = container;
 
-            activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            // Force portrait orientation for true 9:16 fullscreen
             activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+            
+            // Keep screen on
+            activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            
+            // Hide system bars (status bar and navigation bar)
             hideSystemBars();
-            dispatch("veyra-native-fullscreen-enter");
-        } catch (RuntimeException ignored) {
+            
+            // Dispatch event to React
+            dispatchToWeb("veyra-fullscreen-enter");
+        } catch (RuntimeException error) {
             exitCustomView();
         }
     }
@@ -64,54 +72,56 @@ public class VeyraWebChromeClient extends BridgeWebChromeClient {
         if (customView != null) exitCustomView();
     }
 
-    public boolean isCustomViewShowing() {
-        return customView != null;
-    }
+    public boolean isCustomViewShowing() { return customView != null; }
 
     private void hideSystemBars() {
         Window window = activity.getWindow();
         View decor = window.getDecorView();
         WindowCompat.setDecorFitsSystemWindows(window, false);
         WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, decor);
-        if (controller != null) {
-            controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-            controller.hide(WindowInsetsCompat.Type.systemBars());
-        }
+        controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        controller.hide(WindowInsetsCompat.Type.systemBars());
     }
 
     private void exitCustomView() {
         try {
             if (customViewContainer != null) {
                 if (customView != null) customViewContainer.removeView(customView);
-                ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
-                decor.removeView(customViewContainer);
+                ((ViewGroup) activity.getWindow().getDecorView()).removeView(customViewContainer);
             }
-        } catch (RuntimeException ignored) {
-        }
+        } catch (RuntimeException ignored) {}
+
         customViewContainer = null;
         customView = null;
+
         try {
             Window window = activity.getWindow();
+            
+            // Restore system bars
             WindowCompat.setDecorFitsSystemWindows(window, true);
             WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, window.getDecorView());
-            if (controller != null) controller.show(WindowInsetsCompat.Type.systemBars());
+            controller.show(WindowInsetsCompat.Type.systemBars());
+            
+            // Clear keep screen on flag
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
-        } catch (RuntimeException ignored) {
-        }
-        dispatch("veyra-native-fullscreen-exit");
+            
+            // Keep portrait orientation (never rotate to landscape)
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        } catch (RuntimeException ignored) {}
+
         CustomViewCallback callback = customViewCallback;
         customViewCallback = null;
         if (callback != null) callback.onCustomViewHidden();
+        dispatchToWeb("veyra-fullscreen-exit");
     }
 
-    private void dispatch(String eventName) {
+    private void dispatchToWeb(String eventName) {
         try {
-            if (bridge != null && bridge.getWebView() != null) {
-                bridge.getWebView().post(() -> bridge.getWebView().evaluateJavascript(
-                        "window.dispatchEvent(new Event('" + eventName + "'))", null));
+            WebView webView = bridge.getWebView();
+            if (webView != null) {
+                String js = "window.dispatchEvent(new Event('" + eventName + "'));";
+                webView.post(() -> webView.evaluateJavascript(js, null));
             }
-        } catch (RuntimeException ignored) {
-        }
+        } catch (RuntimeException ignored) {}
     }
 }
