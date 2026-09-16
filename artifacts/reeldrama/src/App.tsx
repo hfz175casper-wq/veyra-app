@@ -55,6 +55,94 @@ const getPublicAppUrl = () => {
   return configuredUrl?.startsWith('http') ? configuredUrl.replace(/\/$/, '') : 'https://veyra.app';
 };
 
+const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+const authConfigured = Boolean(clerkPublishableKey?.trim());
+type Locale = 'English' | 'Türkçe' | 'Español' | 'Português' | 'Français' | 'Deutsch' | 'Bahasa Indonesia' | '日本語' | '繁體中文' | '简体中文' | '한국어' | 'ภาษาไทย' | 'Italiano' | 'Melayu' | 'العربية' | 'Tiếng Việt' | 'हिन्दी';
+
+const translations: Record<Locale, Record<string, string>> = {
+  English: {},
+  Türkçe: {
+    Home: 'Ana Sayfa', 'For You': 'Senin İçin', Rewards: 'Ödüller', Wallet: 'Cüzdan', VIP: 'VIP', Search: 'Ara', 'My List': 'Listem', Following: 'Takip', Profile: 'Profil', Discover: 'Keşfet', Categories: 'Kategoriler', Genres: 'Türler', Tropes: 'Temalar', Recommended: 'Önerilen diziler', stories: 'dizi', Back: 'Geri', 'Browse by': 'Şuna göre göz at', 'Browse by mood': 'Ruh haline göre göz at', 'Story elements': 'Hikaye ögeleri', 'Pick up where you left off': 'Kaldığın yerden devam et', 'Popular picks': 'Popüler seçimler', 'Top rated': 'En yüksek puanlı', 'House picks': 'Editör seçimleri', 'View all': 'Tümünü gör', 'View library': 'Kütüphaneyi gör', 'Collect coins': 'Jeton topla', 'View balance': 'Bakiyeyi gör', 'Unlock all': 'Tümünü aç', 'Sign in to keep My List, Following, history and rewards across devices.': 'Listeni, takibini, geçmişini ve ödüllerini korumak için giriş yap.', 'See all': 'Tümünü gör', 'Back to Profile': 'Profile dön', 'More like this': 'Bunlara benzer', 'Related dramas': 'Benzer dramalar', 'Daily rewards': 'Günlük ödüller', 'Quick rewards': 'Hızlı ödüller', 'Watch & Earn': 'İzle ve kazan',
+    'Trending now': 'Şimdi trend', 'Fresh picks': 'Yeni seçimler', 'Browse all': 'Tümünü gör', 'Free start': 'Ücretsiz başlangıç', 'Continue Watching': 'İzlemeye devam et', 'Curated for you': 'Senin için seçildi', Popular: 'Popüler', 'Top Rated': 'En yüksek puanlı', 'Short stories': 'Kısa hikayeler', 'Explore all': 'Tümünü keşfet',
+    'Explore VEYRA': "VEYRA'yı keşfet", 'Search titles, moods, genres...': 'Başlık, tür veya konu ara...', 'Recent searches': 'Son aramalar', 'Clear all': 'Tümünü temizle', 'Popular searches': 'Popüler aramalar', 'Sort by:': 'Sıralama:', Trending: 'Trend', Newest: 'En yeni', 'The full collection': 'Tüm koleksiyon', 'stories found': 'hikaye bulundu', 'No stories in that frequency': 'Sonuç bulunamadı', 'Try a different title, genre, or let the night surprise you.': 'Başka bir başlık veya tür deneyin.', 'Clear search': 'Aramayı temizle',
+    Episodes: 'Bölümler', Episode: 'Bölüm', 'Play episode 1': '1. bölümü oynat', 'Continue episode': 'bölüme devam et', 'In My List': 'Listemde', 'New episodes weekly': 'Her hafta yeni bölümler', 'Watch episode': 'Bölümü izle', Follow: 'Takip et', 'Unfollow': 'Takibi bırak', 'Following status': 'Takip ediliyor', 'Back to story': 'Hikayeye dön', 'Previous episode': 'Önceki bölüm', 'Next Episode': 'Sonraki bölüm', 'Next episode': 'Sonraki bölüm', 'First episode': 'İlk bölüm', 'End of story': 'Hikaye sonu', 'Now watching': 'Şimdi izleniyor', 'Loading episode': 'Bölüm yükleniyor', 'Playback failed': 'Oynatma başarısız', 'Try again': 'Tekrar dene', Share: 'Paylaş', Download: 'İndir', Speed: 'Hız', Quality: 'Kalite', 'Playback speed': 'Oynatma hızı', 'Video quality': 'Video kalitesi', 'VIP locked': 'VIP kilitli', Unavailable: 'Kullanılamıyor',
+    'Your profile': 'Profilin', 'Guest viewer': 'Misafir izleyici', 'Guest account · local data only': 'Misafir hesabı · yalnızca cihaz verisi', 'Sync your VEYRA profile': 'VEYRA profilini eşitle', 'Sign in': 'Giriş yap', 'Auth unavailable': 'Kimlik doğrulama yok', 'Watch History': 'İzleme geçmişi', Downloads: 'İndirilenler', Notifications: 'Bildirimler', Language: 'Dil', Settings: 'Ayarlar', Help: 'Yardım', Privacy: 'Gizlilik', Terms: 'Koşullar', Account: 'Hesap', 'Account Information': 'Hesap bilgileri', Username: 'Kullanıcı adı', Email: 'E-posta', Provider: 'Sağlayıcı', 'Member since': 'Üyelik tarihi', 'Danger Zone': 'Tehlikeli bölge', 'Sign Out': 'Çıkış yap',
+       'Your earnings': 'Kazançların', 'Bonus History': 'Bonus geçmişi', 'Missions will appear here soon': 'Görevler yakında burada görünecek', 'Your wallet': 'Cüzdanın', Coins: 'Jetonlar', 'Current balance': 'Mevcut bakiye', 'Your viewing trail': 'İzleme geçmişin', 'No watch history yet': 'Henüz izleme geçmişi yok', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'Seçilen dil bu cihazda saklanır. Gerçek alternatif ses parçası yoksa video sesi değişmez.', 'Watch 3 Episodes': '3 bölüm izle', 'Watch 3 complete episodes': '3 bölümü tamamla', 'Daily Login': 'Günlük giriş', 'Log in for 7 consecutive days': '7 gün üst üste giriş yap', 'Follow 5 Dramas': '5 dramayı takip et', 'Add 5 dramas to your list': '5 dramayı listene ekle', 'Share a Drama': 'Drama paylaş', 'Share a drama with friends': 'Bir dramayı arkadaşlarınla paylaş', 'coins added to your wallet': 'jeton cüzdanına eklendi', 'coins for completing': 'jeton tamamlandı', 'coins for watching': 'jeton izleme ödülü', 'Watch, return, and unlock more stories.': 'İzle, geri dön ve daha fazla hikayenin kilidini aç.', Day: 'Gün', coins: 'jeton', 'Watch Episode': 'Bölüm izle', 'Watch a complete episode to earn coins': 'Jeton kazanmak için bir bölümü tamamla', 'Ad Boost': 'Reklam bonusu', 'Watch an ad for bonus coins': 'Bonus jeton için reklam izle', Claim: 'Al', Completed: 'Tamamlandı', 'No bonus history yet. Start earning!': 'Henüz bonus geçmişi yok. Kazanmaya başla!', 'Storage used': 'Kullanılan alan', 'Your downloads': 'İndirmelerin', 'No downloads yet': 'Henüz indirme yok', Downloaded: 'İndirildi', Downloading: 'İndiriliyor', Failed: 'Başarısız', Pending: 'Bekliyor', Delete: 'Sil', 'Downloads are stored locally on your device. Storage varies by device.': 'İndirmeler cihazında yerel olarak saklanır.',
+  },
+  Español: { Home: 'Inicio', Search: 'Buscar', 'My List': 'Mi lista', Following: 'Siguiendo', Profile: 'Perfil', Rewards: 'Recompensas', Wallet: 'Billetera', Discover: 'Descubrir', Recommended: 'Recomendado', Back: 'Atrás', Episodes: 'Episodios', Episode: 'Episodio', Share: 'Compartir', Download: 'Descargar', Speed: 'Velocidad', Quality: 'Calidad', 'Previous episode': 'Episodio anterior', 'Next episode': 'Siguiente episodio', 'Playback failed': 'Error de reproducción', 'Try again': 'Reintentar' },
+  Português: { Home: 'Início', Search: 'Pesquisar', 'My List': 'Minha lista', Following: 'Seguindo', Profile: 'Perfil', Rewards: 'Recompensas', Wallet: 'Carteira', Discover: 'Descobrir', Recommended: 'Recomendado', Back: 'Voltar', Episodes: 'Episódios', Episode: 'Episódio', Share: 'Compartilhar', Download: 'Baixar', Speed: 'Velocidade', Quality: 'Qualidade', 'Previous episode': 'Episódio anterior', 'Next episode': 'Próximo episódio', 'Playback failed': 'Falha na reprodução', 'Try again': 'Tentar novamente' },
+  Français: { Home: 'Accueil', Search: 'Rechercher', 'My List': 'Ma liste', Following: 'Suivis', Profile: 'Profil', Rewards: 'Récompenses', Wallet: 'Portefeuille', Discover: 'Découvrir', Recommended: 'Recommandé', Back: 'Retour', Episodes: 'Épisodes', Episode: 'Épisode', Share: 'Partager', Download: 'Télécharger', Speed: 'Vitesse', Quality: 'Qualité', 'Previous episode': 'Épisode précédent', 'Next episode': 'Épisode suivant', 'Playback failed': 'Échec de lecture', 'Try again': 'Réessayer' },
+  Deutsch: { Home: 'Startseite', Search: 'Suchen', 'My List': 'Meine Liste', Following: 'Folge ich', Profile: 'Profil', Rewards: 'Belohnungen', Wallet: 'Wallet', Discover: 'Entdecken', Recommended: 'Empfohlen', Back: 'Zurück', Episodes: 'Episoden', Episode: 'Episode', Share: 'Teilen', Download: 'Herunterladen', Speed: 'Geschwindigkeit', Quality: 'Qualität', 'Previous episode': 'Vorherige Episode', 'Next episode': 'Nächste Episode', 'Playback failed': 'Wiedergabe fehlgeschlagen', 'Try again': 'Erneut versuchen' },
+  'Bahasa Indonesia': { Home: 'Beranda', Search: 'Cari', 'My List': 'Daftar Saya', Following: 'Mengikuti', Profile: 'Profil', Rewards: 'Hadiah', Wallet: 'Dompet', Discover: 'Temukan', Recommended: 'Rekomendasi', Back: 'Kembali', Episodes: 'Episode', Episode: 'Episode', Share: 'Bagikan', Download: 'Unduh', Speed: 'Kecepatan', Quality: 'Kualitas', 'Previous episode': 'Episode sebelumnya', 'Next episode': 'Episode berikutnya', 'Playback failed': 'Pemutaran gagal', 'Try again': 'Coba lagi' },
+  '日本語': { Home: 'ホーム', Search: '検索', 'My List': 'マイリスト', Following: 'フォロー中', Profile: 'プロフィール', Rewards: 'リワード', Wallet: 'ウォレット', Discover: '見つける', Recommended: 'おすすめ', Back: '戻る', Episodes: 'エピソード', Episode: 'エピソード', Share: '共有', Download: 'ダウンロード', Speed: '速度', Quality: '画質', 'Previous episode': '前のエピソード', 'Next episode': '次のエピソード', 'Playback failed': '再生に失敗しました', 'Try again': '再試行' },
+  '繁體中文': { Home: '首頁', Search: '搜尋', 'My List': '我的片單', Following: '關注中', Profile: '個人資料', Rewards: '獎勵', Wallet: '錢包', Discover: '探索', Recommended: '推薦劇集', Back: '返回', Episodes: '集數', Episode: '第集', Share: '分享', Download: '下載', Speed: '速度', Quality: '畫質', 'Previous episode': '上一集', 'Next episode': '下一集', 'Playback failed': '播放失敗', 'Try again': '重試' },
+  '简体中文': { Home: '首页', Search: '搜索', 'My List': '我的片单', Following: '关注中', Profile: '个人资料', Rewards: '奖励', Wallet: '钱包', Discover: '发现', Recommended: '推荐剧集', Back: '返回', Episodes: '集数', Episode: '第集', Share: '分享', Download: '下载', Speed: '速度', Quality: '画质', 'Previous episode': '上一集', 'Next episode': '下一集', 'Playback failed': '播放失败', 'Try again': '重试' },
+  '한국어': { Home: '홈', Search: '검색', 'My List': '내 목록', Following: '팔로잉', Profile: '프로필', Rewards: '보상', Wallet: '지갑', Discover: '탐색', Recommended: '추천 드라마', Back: '뒤로', Episodes: '에피소드', Episode: '에피소드', Share: '공유', Download: '다운로드', Speed: '속도', Quality: '화질', 'Previous episode': '이전 에피소드', 'Next episode': '다음 에피소드', 'Playback failed': '재생 실패', 'Try again': '다시 시도' },
+  'ภาษาไทย': { Home: 'หน้าหลัก', Search: 'ค้นหา', 'My List': 'รายการของฉัน', Following: 'กำลังติดตาม', Profile: 'โปรไฟล์', Rewards: 'รางวัล', Wallet: 'กระเป๋าเงิน', Discover: 'ค้นพบ', Recommended: 'เรื่องแนะนำ', Back: 'ย้อนกลับ', Episodes: 'ตอน', Episode: 'ตอนที่', Share: 'แชร์', Download: 'ดาวน์โหลด', Speed: 'ความเร็ว', Quality: 'คุณภาพ', 'Previous episode': 'ตอนก่อนหน้า', 'Next episode': 'ตอนถัดไป', 'Playback failed': 'เล่นไม่สำเร็จ', 'Try again': 'ลองอีกครั้ง' },
+  Italiano: { Home: 'Home', Search: 'Cerca', 'My List': 'La mia lista', Following: 'Seguiti', Profile: 'Profilo', Rewards: 'Ricompense', Wallet: 'Portafoglio', Discover: 'Scopri', Recommended: 'Consigliati', Back: 'Indietro', Episodes: 'Episodi', Episode: 'Episodio', Share: 'Condividi', Download: 'Scarica', Speed: 'Velocità', Quality: 'Qualità', 'Previous episode': 'Episodio precedente', 'Next episode': 'Episodio successivo', 'Playback failed': 'Riproduzione non riuscita', 'Try again': 'Riprova' },
+  Melayu: { Home: 'Laman Utama', Search: 'Cari', 'My List': 'Senarai Saya', Following: 'Mengikuti', Profile: 'Profil', Rewards: 'Ganjaran', Wallet: 'Dompet', Discover: 'Teroka', Recommended: 'Disyorkan', Back: 'Kembali', Episodes: 'Episod', Episode: 'Episod', Share: 'Kongsi', Download: 'Muat turun', Speed: 'Kelajuan', Quality: 'Kualiti', 'Previous episode': 'Episod sebelumnya', 'Next episode': 'Episod seterusnya', 'Playback failed': 'Main balik gagal', 'Try again': 'Cuba lagi' },
+  العربية: { Home: 'الرئيسية', Search: 'بحث', 'My List': 'قائمتي', Following: 'المتابعة', Profile: 'الملف الشخصي', Rewards: 'المكافآت', Wallet: 'المحفظة', Discover: 'اكتشف', Recommended: 'مقترح', Back: 'رجوع', Episodes: 'الحلقات', Episode: 'حلقة', Share: 'مشاركة', Download: 'تنزيل', Speed: 'السرعة', Quality: 'الجودة', 'Previous episode': 'الحلقة السابقة', 'Next episode': 'الحلقة التالية', 'Playback failed': 'فشل التشغيل', 'Try again': 'حاول مرة أخرى' },
+  'Tiếng Việt': { Home: 'Trang chủ', Search: 'Tìm kiếm', 'My List': 'Danh sách của tôi', Following: 'Đang theo dõi', Profile: 'Hồ sơ', Rewards: 'Phần thưởng', Wallet: 'Ví', Discover: 'Khám phá', Recommended: 'Đề xuất', Back: 'Quay lại', Episodes: 'Tập phim', Episode: 'Tập', Share: 'Chia sẻ', Download: 'Tải xuống', Speed: 'Tốc độ', Quality: 'Chất lượng', 'Previous episode': 'Tập trước', 'Next episode': 'Tập tiếp theo', 'Playback failed': 'Phát thất bại', 'Try again': 'Thử lại' },
+  'हिन्दी': { Home: 'होम', Search: 'खोजें', 'My List': 'मेरी सूची', Following: 'फॉलो कर रहे हैं', Profile: 'प्रोफ़ाइल', Rewards: 'रिवॉर्ड', Wallet: 'वॉलेट', Discover: 'खोजें', Recommended: 'अनुशंसित', Back: 'वापस', Episodes: 'एपिसोड', Episode: 'एपिसोड', Share: 'शेयर', Download: 'डाउनलोड', Speed: 'गति', Quality: 'गुणवत्ता', 'Previous episode': 'पिछला एपिसोड', 'Next episode': 'अगला एपिसोड', 'Playback failed': 'प्लेबैक विफल', 'Try again': 'फिर कोशिश करें' },
+};
+
+const sharedUiTranslations: Partial<Record<Locale, Record<string, string>>> = {
+  English: { Settings: 'Settings', Language: 'Language', Notifications: 'Notifications', Downloads: 'Downloads', 'Watch History': 'Watch History', Profile: 'Profile', Rewards: 'Rewards', Wallet: 'Wallet', 'My List': 'My List', Following: 'Following', VIP: 'VIP', 'Referral / Invite': 'Referral / Invite', 'Edit Profile': 'Edit Profile', 'Sign in': 'Sign in', 'Sign Out': 'Sign out', Delete: 'Delete', Share: 'Share', Download: 'Download', Episode: 'Episode', Episodes: 'Episodes', 'Previous episode': 'Previous episode', 'Next episode': 'Next episode', Quality: 'Quality', Speed: 'Speed', Search: 'Search', Back: 'Back', Home: 'Home', Discover: 'Discover', Recommended: 'Recommended', 'No downloads yet': 'No downloads yet' },
+  Türkçe: { Settings: 'Ayarlar', Language: 'Dil', Notifications: 'Bildirimler', Downloads: 'İndirilenler', 'Watch History': 'İzleme geçmişi', Profile: 'Profil', Rewards: 'Ödüller', Wallet: 'Cüzdan', 'My List': 'Listem', Following: 'Takip', VIP: 'VIP', 'Referral / Invite': 'Davet et', 'Edit Profile': 'Profili düzenle', 'Sign in': 'Giriş yap', 'Sign Out': 'Çıkış yap', Delete: 'Sil', Share: 'Paylaş', Download: 'İndir', Episode: 'Bölüm', Episodes: 'Bölümler', 'Previous episode': 'Önceki bölüm', 'Next episode': 'Sonraki bölüm', Quality: 'Kalite', Speed: 'Hız', Search: 'Ara', Back: 'Geri', Home: 'Ana Sayfa', Discover: 'Keşfet', Recommended: 'Önerilen', 'No downloads yet': 'Henüz indirme yok' },
+  Español: { Settings: 'Ajustes', Language: 'Idioma', Notifications: 'Notificaciones', Downloads: 'Descargas', 'Watch History': 'Historial', Profile: 'Perfil', Rewards: 'Recompensas', Wallet: 'Billetera', 'My List': 'Mi lista', Following: 'Siguiendo', VIP: 'VIP', 'Referral / Invite': 'Referir / Invitar', 'Edit Profile': 'Editar perfil', 'Sign in': 'Iniciar sesión', 'Sign Out': 'Cerrar sesión', Delete: 'Eliminar', Share: 'Compartir', Download: 'Descargar', Episode: 'Episodio', Episodes: 'Episodios', 'Previous episode': 'Episodio anterior', 'Next episode': 'Siguiente episodio', Quality: 'Calidad', Speed: 'Velocidad', Search: 'Buscar', Back: 'Atrás', Home: 'Inicio', Discover: 'Descubrir', Recommended: 'Recomendado', 'No downloads yet': 'Aún no hay descargas' },
+  Português: { Settings: 'Configurações', Language: 'Idioma', Notifications: 'Notificações', Downloads: 'Downloads', 'Watch History': 'Histórico', Profile: 'Perfil', Rewards: 'Recompensas', Wallet: 'Carteira', 'My List': 'Minha lista', Following: 'Seguindo', VIP: 'VIP', 'Referral / Invite': 'Indicar / Convidar', 'Edit Profile': 'Editar perfil', 'Sign in': 'Entrar', 'Sign Out': 'Sair', Delete: 'Excluir', Share: 'Compartilhar', Download: 'Baixar', Episode: 'Episódio', Episodes: 'Episódios', 'Previous episode': 'Episódio anterior', 'Next episode': 'Próximo episódio', Quality: 'Qualidade', Speed: 'Velocidade', Search: 'Pesquisar', Back: 'Voltar', Home: 'Início', Discover: 'Descobrir', Recommended: 'Recomendado', 'No downloads yet': 'Nenhum download ainda' },
+  Français: { Settings: 'Paramètres', Language: 'Langue', Notifications: 'Notifications', Downloads: 'Téléchargements', 'Watch History': 'Historique', Profile: 'Profil', Rewards: 'Récompenses', Wallet: 'Portefeuille', 'My List': 'Ma liste', Following: 'Suivis', VIP: 'VIP', 'Referral / Invite': 'Parrainer / Inviter', 'Edit Profile': 'Modifier le profil', 'Sign in': 'Se connecter', 'Sign Out': 'Se déconnecter', Delete: 'Supprimer', Share: 'Partager', Download: 'Télécharger', Episode: 'Épisode', Episodes: 'Épisodes', 'Previous episode': 'Épisode précédent', 'Next episode': 'Épisode suivant', Quality: 'Qualité', Speed: 'Vitesse', Search: 'Rechercher', Back: 'Retour', Home: 'Accueil', Discover: 'Découvrir', Recommended: 'Recommandé', 'No downloads yet': 'Aucun téléchargement' },
+  Deutsch: { Settings: 'Einstellungen', Language: 'Sprache', Notifications: 'Benachrichtigungen', Downloads: 'Downloads', 'Watch History': 'Verlauf', Profile: 'Profil', Rewards: 'Belohnungen', Wallet: 'Wallet', 'My List': 'Meine Liste', Following: 'Folge ich', VIP: 'VIP', 'Referral / Invite': 'Empfehlen / Einladen', 'Edit Profile': 'Profil bearbeiten', 'Sign in': 'Anmelden', 'Sign Out': 'Abmelden', Delete: 'Löschen', Share: 'Teilen', Download: 'Herunterladen', Episode: 'Episode', Episodes: 'Episoden', 'Previous episode': 'Vorherige Episode', 'Next episode': 'Nächste Episode', Quality: 'Qualität', Speed: 'Geschwindigkeit', Search: 'Suchen', Back: 'Zurück', Home: 'Startseite', Discover: 'Entdecken', Recommended: 'Empfohlen', 'No downloads yet': 'Noch keine Downloads' },
+  'Bahasa Indonesia': { Settings: 'Pengaturan', Language: 'Bahasa', Notifications: 'Notifikasi', Downloads: 'Unduhan', 'Watch History': 'Riwayat tontonan', Profile: 'Profil', Rewards: 'Hadiah', Wallet: 'Dompet', 'My List': 'Daftar Saya', Following: 'Mengikuti', VIP: 'VIP', 'Referral / Invite': 'Rujuk / Undang', 'Edit Profile': 'Edit profil', 'Sign in': 'Masuk', 'Sign Out': 'Keluar', Delete: 'Hapus', Share: 'Bagikan', Download: 'Unduh', Episode: 'Episode', Episodes: 'Episode', 'Previous episode': 'Episode sebelumnya', 'Next episode': 'Episode berikutnya', Quality: 'Kualitas', Speed: 'Kecepatan', Search: 'Cari', Back: 'Kembali', Home: 'Beranda', Discover: 'Temukan', Recommended: 'Rekomendasi', 'No downloads yet': 'Belum ada unduhan' },
+  '日本語': { Settings: '設定', Language: '言語', Notifications: '通知', Downloads: 'ダウンロード', 'Watch History': '視聴履歴', Profile: 'プロフィール', Rewards: 'リワード', Wallet: 'ウォレット', 'My List': 'マイリスト', Following: 'フォロー中', VIP: 'VIP', 'Referral / Invite': '紹介 / 招待', 'Edit Profile': 'プロフィールを編集', 'Sign in': 'ログイン', 'Sign Out': 'ログアウト', Delete: '削除', Share: '共有', Download: 'ダウンロード', Episode: 'エピソード', Episodes: 'エピソード', 'Previous episode': '前のエピソード', 'Next episode': '次のエピソード', Quality: '画質', Speed: '速度', Search: '検索', Back: '戻る', Home: 'ホーム', Discover: '見つける', Recommended: 'おすすめ', 'No downloads yet': 'ダウンロードはありません' },
+  '繁體中文': { Settings: '設定', Language: '語言', Notifications: '通知', Downloads: '下載', 'Watch History': '觀看記錄', Profile: '個人資料', Rewards: '獎勵', Wallet: '錢包', 'My List': '我的片單', Following: '關注中', VIP: 'VIP', 'Referral / Invite': '推薦 / 邀請', 'Edit Profile': '編輯個人資料', 'Sign in': '登入', 'Sign Out': '登出', Delete: '刪除', Share: '分享', Download: '下載', Episode: '集', Episodes: '集數', 'Previous episode': '上一集', 'Next episode': '下一集', Quality: '畫質', Speed: '速度', Search: '搜尋', Back: '返回', Home: '首頁', Discover: '探索', Recommended: '推薦', 'No downloads yet': '尚無下載' },
+  '简体中文': { Settings: '设置', Language: '语言', Notifications: '通知', Downloads: '下载', 'Watch History': '观看记录', Profile: '个人资料', Rewards: '奖励', Wallet: '钱包', 'My List': '我的片单', Following: '关注中', VIP: 'VIP', 'Referral / Invite': '推荐 / 邀请', 'Edit Profile': '编辑个人资料', 'Sign in': '登录', 'Sign Out': '退出登录', Delete: '删除', Share: '分享', Download: '下载', Episode: '集', Episodes: '集数', 'Previous episode': '上一集', 'Next episode': '下一集', Quality: '画质', Speed: '速度', Search: '搜索', Back: '返回', Home: '首页', Discover: '发现', Recommended: '推荐', 'No downloads yet': '暂无下载' },
+  '한국어': { Settings: '설정', Language: '언어', Notifications: '알림', Downloads: '다운로드', 'Watch History': '시청 기록', Profile: '프로필', Rewards: '보상', Wallet: '지갑', 'My List': '내 목록', Following: '팔로잉', VIP: 'VIP', 'Referral / Invite': '추천 / 초대', 'Edit Profile': '프로필 편집', 'Sign in': '로그인', 'Sign Out': '로그아웃', Delete: '삭제', Share: '공유', Download: '다운로드', Episode: '에피소드', Episodes: '에피소드', 'Previous episode': '이전 에피소드', 'Next episode': '다음 에피소드', Quality: '화질', Speed: '속도', Search: '검색', Back: '뒤로', Home: '홈', Discover: '탐색', Recommended: '추천', 'No downloads yet': '다운로드 없음' },
+  'ภาษาไทย': { Settings: 'การตั้งค่า', Language: 'ภาษา', Notifications: 'การแจ้งเตือน', Downloads: 'ดาวน์โหลด', 'Watch History': 'ประวัติการรับชม', Profile: 'โปรไฟล์', Rewards: 'รางวัล', Wallet: 'กระเป๋าเงิน', 'My List': 'รายการของฉัน', Following: 'กำลังติดตาม', VIP: 'VIP', 'Referral / Invite': 'แนะนำ / เชิญ', 'Edit Profile': 'แก้ไขโปรไฟล์', 'Sign in': 'เข้าสู่ระบบ', 'Sign Out': 'ออกจากระบบ', Delete: 'ลบ', Share: 'แชร์', Download: 'ดาวน์โหลด', Episode: 'ตอน', Episodes: 'ตอน', 'Previous episode': 'ตอนก่อนหน้า', 'Next episode': 'ตอนถัดไป', Quality: 'คุณภาพ', Speed: 'ความเร็ว', Search: 'ค้นหา', Back: 'ย้อนกลับ', Home: 'หน้าหลัก', Discover: 'ค้นพบ', Recommended: 'แนะนำ', 'No downloads yet': 'ยังไม่มีดาวน์โหลด' },
+  Italiano: { Settings: 'Impostazioni', Language: 'Lingua', Notifications: 'Notifiche', Downloads: 'Download', 'Watch History': 'Cronologia', Profile: 'Profilo', Rewards: 'Ricompense', Wallet: 'Portafoglio', 'My List': 'La mia lista', Following: 'Seguiti', VIP: 'VIP', 'Referral / Invite': 'Invita', 'Edit Profile': 'Modifica profilo', 'Sign in': 'Accedi', 'Sign Out': 'Esci', Delete: 'Elimina', Share: 'Condividi', Download: 'Scarica', Episode: 'Episodio', Episodes: 'Episodi', 'Previous episode': 'Episodio precedente', 'Next episode': 'Episodio successivo', Quality: 'Qualità', Speed: 'Velocità', Search: 'Cerca', Back: 'Indietro', Home: 'Home', Discover: 'Scopri', Recommended: 'Consigliati', 'No downloads yet': 'Nessun download' },
+  Melayu: { Settings: 'Tetapan', Language: 'Bahasa', Notifications: 'Pemberitahuan', Downloads: 'Muat turun', 'Watch History': 'Sejarah tontonan', Profile: 'Profil', Rewards: 'Ganjaran', Wallet: 'Dompet', 'My List': 'Senarai Saya', Following: 'Mengikuti', VIP: 'VIP', 'Referral / Invite': 'Rujuk / Jemput', 'Edit Profile': 'Edit profil', 'Sign in': 'Log masuk', 'Sign Out': 'Log keluar', Delete: 'Padam', Share: 'Kongsi', Download: 'Muat turun', Episode: 'Episod', Episodes: 'Episod', 'Previous episode': 'Episod sebelumnya', 'Next episode': 'Episod seterusnya', Quality: 'Kualiti', Speed: 'Kelajuan', Search: 'Cari', Back: 'Kembali', Home: 'Laman Utama', Discover: 'Teroka', Recommended: 'Disyorkan', 'No downloads yet': 'Tiada muat turun' },
+  العربية: { Settings: 'الإعدادات', Language: 'اللغة', Notifications: 'الإشعارات', Downloads: 'التنزيلات', 'Watch History': 'سجل المشاهدة', Profile: 'الملف الشخصي', Rewards: 'المكافآت', Wallet: 'المحفظة', 'My List': 'قائمتي', Following: 'المتابعة', VIP: 'VIP', 'Referral / Invite': 'إحالة / دعوة', 'Edit Profile': 'تعديل الملف الشخصي', 'Sign in': 'تسجيل الدخول', 'Sign Out': 'تسجيل الخروج', Delete: 'حذف', Share: 'مشاركة', Download: 'تنزيل', Episode: 'حلقة', Episodes: 'الحلقات', 'Previous episode': 'الحلقة السابقة', 'Next episode': 'الحلقة التالية', Quality: 'الجودة', Speed: 'السرعة', Search: 'بحث', Back: 'رجوع', Home: 'الرئيسية', Discover: 'اكتشف', Recommended: 'مقترح', 'No downloads yet': 'لا توجد تنزيلات' },
+  'Tiếng Việt': { Settings: 'Cài đặt', Language: 'Ngôn ngữ', Notifications: 'Thông báo', Downloads: 'Tải xuống', 'Watch History': 'Lịch sử xem', Profile: 'Hồ sơ', Rewards: 'Phần thưởng', Wallet: 'Ví', 'My List': 'Danh sách của tôi', Following: 'Đang theo dõi', VIP: 'VIP', 'Referral / Invite': 'Giới thiệu / Mời', 'Edit Profile': 'Chỉnh sửa hồ sơ', 'Sign in': 'Đăng nhập', 'Sign Out': 'Đăng xuất', Delete: 'Xóa', Share: 'Chia sẻ', Download: 'Tải xuống', Episode: 'Tập', Episodes: 'Tập phim', 'Previous episode': 'Tập trước', 'Next episode': 'Tập tiếp theo', Quality: 'Chất lượng', Speed: 'Tốc độ', Search: 'Tìm kiếm', Back: 'Quay lại', Home: 'Trang chủ', Discover: 'Khám phá', Recommended: 'Đề xuất', 'No downloads yet': 'Chưa có lượt tải xuống' },
+  'हिन्दी': { Settings: 'सेटिंग्स', Language: 'भाषा', Notifications: 'सूचनाएं', Downloads: 'डाउनलोड', 'Watch History': 'देखने का इतिहास', Profile: 'प्रोफ़ाइल', Rewards: 'रिवॉर्ड', Wallet: 'वॉलेट', 'My List': 'मेरी सूची', Following: 'फॉलो कर रहे हैं', VIP: 'VIP', 'Referral / Invite': 'रेफर / आमंत्रित करें', 'Edit Profile': 'प्रोफ़ाइल संपादित करें', 'Sign in': 'साइन इन', 'Sign Out': 'साइन आउट', Delete: 'हटाएं', Share: 'शेयर', Download: 'डाउनलोड', Episode: 'एपिसोड', Episodes: 'एपिसोड', 'Previous episode': 'पिछला एपिसोड', 'Next episode': 'अगला एपिसोड', Quality: 'गुणवत्ता', Speed: 'गति', Search: 'खोजें', Back: 'वापस', Home: 'होम', Discover: 'खोजें', Recommended: 'अनुशंसित', 'No downloads yet': 'अभी कोई डाउनलोड नहीं' },
+};
+
+const languagePageTranslations: Record<Locale, Record<string, string>> = {
+  English: { 'Back to Profile': 'Back to Profile', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.' },
+  Türkçe: { 'Back to Profile': 'Profile dön', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'Seçilen dil bu cihazda saklanır. Gerçek alternatif ses parçası yoksa video sesi değişmez.' },
+  Español: { 'Back to Profile': 'Volver al perfil', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'El idioma seleccionado se guarda en este dispositivo. El audio del video no cambia sin una pista alternativa real.' },
+  Português: { 'Back to Profile': 'Voltar ao perfil', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'O idioma selecionado é salvo neste dispositivo. O áudio do vídeo não muda sem uma faixa alternativa real.' },
+  Français: { 'Back to Profile': 'Retour au profil', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'La langue sélectionnée est enregistrée sur cet appareil. L’audio ne change pas sans une vraie piste alternative.' },
+  Deutsch: { 'Back to Profile': 'Zurück zum Profil', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'Die ausgewählte Sprache wird auf diesem Gerät gespeichert. Die Audiospur ändert sich nur bei einer echten Alternative.' },
+  'Bahasa Indonesia': { 'Back to Profile': 'Kembali ke profil', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'Bahasa yang dipilih disimpan di perangkat ini. Audio video tidak berubah tanpa trek alternatif yang nyata.' },
+  '日本語': { 'Back to Profile': 'プロフィールに戻る', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': '選択した言語はこの端末に保存されます。実際の別音声がない限り動画の音声は変わりません。' },
+  '繁體中文': { 'Back to Profile': '返回個人資料', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': '選擇的語言會儲存在此裝置。沒有真實替代音軌時，影片音訊不會改變。' },
+  '简体中文': { 'Back to Profile': '返回个人资料', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': '所选语言会保存在此设备。没有真实替代音轨时，视频音频不会改变。' },
+  '한국어': { 'Back to Profile': '프로필로 돌아가기', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': '선택한 언어는 이 기기에 저장됩니다. 실제 대체 오디오 트랙이 없으면 영상 음성은 바뀌지 않습니다.' },
+  'ภาษาไทย': { 'Back to Profile': 'กลับไปที่โปรไฟล์', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'ภาษาที่เลือกจะบันทึกในอุปกรณ์นี้ เสียงวิดีโอจะไม่เปลี่ยนหากไม่มีแทร็กเสียงอื่นจริง' },
+  Italiano: { 'Back to Profile': 'Torna al profilo', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'La lingua selezionata viene salvata su questo dispositivo. L’audio non cambia senza una traccia alternativa reale.' },
+  Melayu: { 'Back to Profile': 'Kembali ke profil', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'Bahasa yang dipilih disimpan pada peranti ini. Audio video tidak berubah tanpa trek alternatif sebenar.' },
+  العربية: { 'Back to Profile': 'العودة إلى الملف الشخصي', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'يتم حفظ اللغة المحددة على هذا الجهاز. لن يتغير صوت الفيديو دون مسار صوتي بديل حقيقي.' },
+  'Tiếng Việt': { 'Back to Profile': 'Quay lại hồ sơ', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'Ngôn ngữ đã chọn được lưu trên thiết bị. Âm thanh video không đổi nếu không có bản âm thanh thay thế thật.' },
+  'हिन्दी': { 'Back to Profile': 'प्रोफ़ाइल पर वापस जाएं', 'Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.': 'चुनी गई भाषा इस डिवाइस पर सहेजी जाती है। वास्तविक वैकल्पिक ऑडियो ट्रैक के बिना वीडियो की आवाज़ नहीं बदलेगी।' },
+};
+const additionalUiTranslations: Record<Locale, Record<string, string>> = {
+  English: { 'For You': 'For You' }, Türkçe: { 'For You': 'Senin İçin' }, Español: { 'For You': 'Para ti' }, Português: { 'For You': 'Para você' }, Français: { 'For You': 'Pour vous' }, Deutsch: { 'For You': 'Für dich' }, 'Bahasa Indonesia': { 'For You': 'Untuk Anda' }, '日本語': { 'For You': 'あなたへ' }, '繁體中文': { 'For You': '為你推薦' }, '简体中文': { 'For You': '为你推荐' }, '한국어': { 'For You': '추천' }, 'ภาษาไทย': { 'For You': 'สำหรับคุณ' }, Italiano: { 'For You': 'Per te' }, Melayu: { 'For You': 'Untuk Anda' }, العربية: { 'For You': 'من أجلك' }, 'Tiếng Việt': { 'For You': 'Dành cho bạn' }, 'हिन्दी': { 'For You': 'आपके लिए' },
+};
+
+const createTranslator = (locale: Locale) => (text: string) => {
+  const translated = translations[locale][text] ?? sharedUiTranslations[locale]?.[text] ?? languagePageTranslations[locale][text] ?? additionalUiTranslations[locale][text];
+  if (translated) return translated;
+  if (import.meta.env.DEV) console.warn(`[i18n] Missing ${locale} translation: ${text}`);
+  return `[${text}]`;
+};
+
+function AuthAction({ children, className }: { children: ReactNode; className?: string }) {
+  if (!authConfigured) {
+    return <button type="button" disabled title="Authentication is not configured. Set VITE_CLERK_PUBLISHABLE_KEY." className={`${className ?? ''} cursor-not-allowed opacity-60`}>{children}</button>;
+  }
+  return <SignInButton mode="modal"><button type="button" className={className}>{children}</button></SignInButton>;
+}
+
 type Episode = {
   number: number;
   title: string;
@@ -280,6 +368,9 @@ type AppContextValue = {
   isFollowing: (id: string) => boolean;
   miniPlayer: { dramaId: string; episode: number; title: string; source: string; currentTime: number; playing: boolean } | null;
   setMiniPlayer: (player: AppContextValue['miniPlayer']) => void;
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
+  t: (text: string) => string;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -288,6 +379,10 @@ function useAppValue() {
   const context = useContext(AppContext);
   if (!context) throw new Error('VEYRA app context is missing');
   return context;
+}
+
+function useT() {
+  return useAppValue().t;
 }
 
 function Poster({ drama, className = '', showTitle = true }: { drama: Drama; className?: string; showTitle?: boolean }) {
@@ -316,36 +411,48 @@ function Logo() {
     </Link>
   );
 }
-
+function HeaderSearch() {
+  const t = useT();
+  const [, navigate] = useLocation();
+  const [value, setValue] = useState('');
+  return (
+    <form className="relative hidden sm:block" onSubmit={(event) => { event.preventDefault(); navigate(value.trim() ? `/search?q=${encodeURIComponent(value.trim())}` : '/search'); }}>
+      <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/35" size={14} />
+      <input value={value} onChange={(event) => setValue(event.target.value)} onFocus={(event) => event.currentTarget.scrollIntoView({ block: 'nearest' })} placeholder={t('Search')} aria-label={t('Search')} className="h-9 w-[9rem] rounded-full border border-white/10 bg-white/[.04] pl-9 pr-3 text-xs text-white outline-none placeholder:text-white/35 focus:border-[#ff4fc3]/60 md:w-[12rem]" />
+    </form>
+  );
+}
 function PageFrame({ children }: { children: ReactNode }) {
+  const t = useT();
   return (
     <div className="grain min-h-[100dvh] bg-[#07080c]">
       <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[#07080c]/88 backdrop-blur-xl">
         <div className="mx-auto flex h-[4.25rem] max-w-[1240px] items-center justify-between px-4 lg:px-7">
           <Logo />
           <nav className="hidden items-center gap-6 lg:flex">
-            <Link href="/" className="text-[13px] text-white/65 transition-colors hover:text-white">Home</Link>
-            <Link href="/for-you" className="text-[13px] text-white/65 transition-colors hover:text-white">Senin İçin</Link>
-            <Link href="/rewards" className="text-[13px] text-white/65 transition-colors hover:text-white">Rewards</Link>
-            <Link href="/wallet" className="text-[13px] text-white/65 transition-colors hover:text-white">Wallet</Link>
-            <Link href="/vip" className="text-[13px] font-semibold text-[#ff4fc3] transition-colors hover:text-white">VIP</Link>
+            <Link href="/" className="text-[13px] text-white/65 transition-colors hover:text-white">{t('Home')}</Link>
+            <Link href="/for-you" className="text-[13px] text-white/65 transition-colors hover:text-white">{t('For You')}</Link>
+            <Link href="/rewards" className="text-[13px] text-white/65 transition-colors hover:text-white">{t('Rewards')}</Link>
+            <Link href="/wallet" className="text-[13px] text-white/65 transition-colors hover:text-white">{t('Wallet')}</Link>
+            <Link href="/vip" className="text-[13px] font-semibold text-[#ff4fc3] transition-colors hover:text-white">{t('VIP')}</Link>
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/search" aria-label="Search dramas" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#ff4fc3]/50 hover:text-[#ff4fc3]" data-testid="link-search-button"><Search size={16} strokeWidth={2}/></Link>
+            <HeaderSearch />
+            <Link href="/search" aria-label={t('Search')} className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#ff4fc3]/50 hover:text-[#ff4fc3] sm:hidden" data-testid="link-search-button"><Search size={16} strokeWidth={2}/></Link>
             <Link href="/saved" aria-label="My List" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#ff4fc3]/50 hover:text-[#ff4fc3]"><Bookmark size={16}/></Link>
             <Link href="/settings/notifications" aria-label="Notifications" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/65 transition-all hover:border-[#ff4fc3]/50 hover:text-[#ff4fc3]"><Bell size={16}/></Link>
             <Show when="signed-in"><UserButton appearance={{ elements: { avatarBox: 'h-8 w-8' } }} /></Show>
-            <Show when="signed-out"><SignInButton mode="modal"><button type="button" className="hidden h-9 rounded-full border border-white/10 px-3 text-xs text-white/70 transition-colors hover:border-[#ff4fc3]/60 hover:text-white sm:block">Sign in</button></SignInButton></Show>
+            <Show when="signed-out"><AuthAction className="hidden h-9 rounded-full border border-white/10 px-3 text-xs text-white/70 transition-colors hover:border-[#ff4fc3]/60 hover:text-white sm:block">Sign in</AuthAction></Show>
           </div>
         </div>
       </header>
       <main className="mx-auto max-w-[1240px] px-4 pb-28 pt-6 md:px-7 md:pb-12 md:pt-9">{children}</main>
       <nav className="veyra-bottom-nav glass fixed inset-x-3 bottom-3 z-40 flex h-[3.9rem] items-center justify-around rounded-2xl md:hidden">
-        <MobileNavLink href="/" icon={<HomeIcon size={18}/>} label="Home" />
-        <MobileNavLink href="/for-you" icon={<Sparkles size={18}/>} label="Senin İçin" />
-        <MobileNavLink href="/rewards" icon={<Gift size={18}/>} label="Ödüller" />
-        <MobileNavLink href="/following" icon={<UsersRound size={18}/>} label="Takip" />
-        <MobileNavLink href="/profile" icon={<UserCircle size={18}/>} label="Profil" />
+        <MobileNavLink href="/" icon={<HomeIcon size={18}/>} label={t('Home')} />
+        <MobileNavLink href="/for-you" icon={<Sparkles size={18}/>} label={t('For You')} />
+        <MobileNavLink href="/rewards" icon={<Gift size={18}/>} label={t('Rewards')} />
+        <MobileNavLink href="/following" icon={<UsersRound size={18}/>} label={t('Following')} />
+        <MobileNavLink href="/profile" icon={<UserCircle size={18}/>} label={t('Profile')} />
       </nav>
     </div>
   );
@@ -361,34 +468,35 @@ function MobileNavLink({ href, icon, label }: { href: string; icon: ReactNode; l
 }
 
 function SectionHeader({ eyebrow, title, href = '/search' }: { eyebrow?: string; title: string; href?: string }) {
+  const t = useT();
   return (
     <div className="mb-4 flex items-end justify-between">
       <div>
-        {eyebrow && <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{eyebrow}</p>}
-        <h2 className="mt-1 font-display text-[1.65rem] leading-none tracking-[-.035em] text-[#f7f2ff]">{title}</h2>
+        {eyebrow && <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{t(eyebrow)}</p>}
+        <h2 className="mt-1 font-display text-[1.65rem] leading-none tracking-[-.035em] text-[#f7f2ff]">{t(title)}</h2>
       </div>
       <Link href={href} className="group inline-flex items-center gap-1 pb-0.5 text-xs text-white/45 transition-colors hover:text-white" data-testid={`link-see-${title.toLowerCase().replaceAll(' ', '-')}`}>
-        See all <ChevronRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+        {t('See all')} <ChevronRight size={13} className="transition-transform group-hover:translate-x-0.5" />
       </Link>
     </div>
   );
 }
 
-function DramaCard({ drama, compact = false }: { drama: Drama; compact?: boolean }) {
+function DramaCard({ drama, compact = false, href, stretch = false, searchCard = false }: { drama: Drama; compact?: boolean; href?: string; stretch?: boolean; searchCard?: boolean }) {
   const { isSaved, toggleSaved } = useAppValue();
   const saved = isSaved(drama.id);
   return (
-    <article className={`group relative shrink-0 ${compact ? 'w-[146px]' : 'w-[158px] sm:w-[190px]'}`} data-testid={`card-drama-${drama.id}`}>
-      <Link href={`/watch/${drama.id}/1`} className="block" data-testid={`link-drama-${drama.id}`}>
-        <Poster drama={drama} className={`${compact ? 'aspect-[.69]' : 'aspect-[.72]'} transition-transform duration-500 group-hover:-translate-y-1 group-hover:shadow-2xl`} />
-        <div className="mt-2.5 pr-7">
-          <h3 className="truncate font-display text-[15px] leading-tight text-white/90">{drama.title}</h3>
-          <p className="mt-1 truncate text-[11px] text-white/40">{drama.genre.join(' · ')} <span className="text-white/20">·</span> {drama.episodeCount} eps</p>
+    <article className={`group relative ${stretch ? 'w-full' : `shrink-0 ${compact ? 'w-[146px]' : 'w-[158px] sm:w-[190px]'}`}`} data-testid={`card-drama-${drama.id}`}>
+      <Link href={href ?? `/watch/${drama.id}/1`} className="block" data-testid={`link-drama-${drama.id}`}>
+        <Poster drama={drama} className={`${searchCard ? 'aspect-[.68]' : compact ? 'aspect-[.69]' : 'aspect-[.72]'} transition-transform duration-500 group-hover:-translate-y-1 group-hover:shadow-2xl`} />
+        <div className={`${searchCard ? 'mt-2 px-0.5' : 'mt-2.5 pr-7'}`}>
+          <h3 className={`${searchCard ? 'line-clamp-2 min-h-[2.1rem] text-[13px]' : 'truncate text-[15px]'} font-display leading-[1.05] text-white/90`}>{drama.title}</h3>
+          <p className={`${searchCard ? 'mt-1 min-h-[1.8rem] whitespace-normal text-[10px] leading-[1.25]' : 'mt-1 truncate text-[11px]'} text-white/40`}>{drama.genre.join(' · ')} <span className="text-white/20">·</span> {drama.episodeCount} eps</p>
         </div>
       </Link>
       <button
         type="button"
-        className={`absolute right-1 top-2 grid h-8 w-8 place-items-center rounded-full border backdrop-blur-md transition-all ${saved ? 'border-[#ff4fc3]/50 bg-[#ff4fc3] text-[#171720]' : 'border-white/20 bg-[#111118]/45 text-white/75 hover:border-white/60 hover:text-white'}`}
+        className={`absolute right-1.5 top-1.5 grid ${searchCard ? 'h-7 w-7' : 'h-8 w-8'} place-items-center rounded-full border backdrop-blur-md transition-all ${saved ? 'border-[#ff4fc3]/50 bg-[#ff4fc3] text-[#171720]' : 'border-white/20 bg-[#111118]/45 text-white/75 hover:border-white/60 hover:text-white'}`}
         onClick={() => toggleSaved(drama.id)}
         aria-label={saved ? `Remove ${drama.title} from My List` : `Save ${drama.title}`}
         data-testid={`button-save-${drama.id}`}
@@ -400,6 +508,7 @@ function DramaCard({ drama, compact = false }: { drama: Drama; compact?: boolean
 }
 
 function HomePage() {
+  const t = useT();
   const { isSaved, toggleSaved } = useAppValue();
   const { savedIds, followingIds } = useAppValue();
   const featured = dramas[0];
@@ -419,10 +528,10 @@ function HomePage() {
       <section className="rounded-[1.2rem] border border-white/[.08] bg-[#1a1c28]/70 p-3 md:p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
-            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Trending now</p>
-            <h2 className="mt-1 font-display text-2xl text-white">Fresh picks</h2>
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{t('Trending now')}</p>
+            <h2 className="mt-1 font-display text-2xl text-white">{t('Fresh picks')}</h2>
           </div>
-          <Link href="/discover" className="text-xs text-white/45 hover:text-white">Browse all</Link>
+          <Link href="/discover" className="text-xs text-white/45 hover:text-white">{t('Browse all')}</Link>
         </div>
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {dramas.slice(0, 9).map((drama) => (
@@ -431,7 +540,7 @@ function HomePage() {
                 <Poster drama={drama} className="aspect-[0.7]" showTitle={false} />
                 <div className="p-2">
                   <p className="truncate font-display text-[12px] text-white/90">{drama.title}</p>
-                  <p className="mt-0.5 truncate text-[10px] text-white/40">{drama.genre.join(' · ')}</p>
+                  <p className="mt-0.5 truncate text-[10px] text-white/40">{drama.episodeCount} episodes <span className="text-white/20">·</span> Free start</p>
                 </div>
               </div>
             </Link>
@@ -441,7 +550,7 @@ function HomePage() {
 
       {continueWatching.length > 0 && (
         <section>
-          <SectionHeader eyebrow="Pick up where you left off" title="Continue Watching" />
+          <SectionHeader eyebrow={t('Pick up where you left off')} title={t('Continue Watching')} />
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {continueWatching.map((drama) => <DramaCard drama={drama} key={drama.id} />)}
           </div>
@@ -460,10 +569,10 @@ function HomePage() {
       <section className="rounded-[1.25rem] border border-white/[.08] bg-[#1a1c28]/70 p-4">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">House picks</p>
-            <h2 className="mt-1 font-display text-xl text-white">Short stories</h2>
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{t('House picks')}</p>
+            <h2 className="mt-1 font-display text-xl text-white">{t('Short stories')}</h2>
           </div>
-          <Link href="/search" className="text-xs text-white/45 hover:text-white">Explore all</Link>
+          <Link href="/search" className="text-xs text-white/45 hover:text-white">{t('Explore all')}</Link>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {dramas.slice(0, 6).map((drama) => (
@@ -506,6 +615,7 @@ function DramaDetailPage() {
   const [resumeEpisode, setResumeEpisode] = useState(1);
   const [episodeFilter, setEpisodeFilter] = useState<'All' | 'Free' | 'Locked' | 'Watched' | 'Unwatched'>('All');
   const { isFollowing, toggleFollowing } = useAppValue();
+  const t = useT();
   const following = isFollowing(drama.id);
 
   useEffect(() => {
@@ -529,7 +639,7 @@ function DramaDetailPage() {
 
   return (
     <div className="animate-rise">
-      <button type="button" onClick={() => window.history.length > 1 ? window.history.back() : navigate('/')} className="mb-7 inline-flex items-center gap-2 text-xs text-white/50 transition-colors hover:text-white" data-testid="link-detail-back"><ArrowLeft size={15} /> Back</button>
+      <button type="button" onClick={() => window.history.length > 1 ? window.history.back() : navigate('/')} className="mb-7 inline-flex items-center gap-2 text-xs text-white/50 transition-colors hover:text-white" data-testid="link-detail-back"><ArrowLeft size={15} /> {t('Back')}</button>
       
       {/* Main Drama Info */}
       <section className="relative overflow-hidden rounded-[1.5rem] border border-white/[.08] bg-[#1c1b27]">
@@ -549,15 +659,15 @@ function DramaDetailPage() {
             {/* Action Buttons */}
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href={`/watch/${drama.id}/${resumeEpisode}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-[#ff4fc3] px-5 text-sm font-semibold text-[#171720] transition-all hover:bg-[#ff8bdd]" data-testid="link-detail-play">
-                <Play size={15} fill="currentColor" /> {resumeEpisode > 1 ? `Continue episode ${resumeEpisode}` : 'Play episode 1'}
+                <Play size={15} fill="currentColor" /> {resumeEpisode > 1 ? `${t('Continue episode')} ${resumeEpisode}` : t('Play episode 1')}
               </Link>
               <button type="button" onClick={() => toggleSaved(drama.id)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-all ${saved ? 'border-[#ff4fc3]/60 bg-[#ff4fc3]/15 text-[#ff4fc3]' : 'border-white/15 bg-white/[.06] text-white/80 hover:border-white/35'}`} aria-label={saved ? 'Remove from My List' : 'Save to My List'} data-testid="button-detail-save">
                 {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-                {saved ? 'In My List' : 'My List'}
+                {saved ? t('In My List') : t('My List')}
               </button>
               <button type="button" onClick={() => toggleFollowing(drama.id)} className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm transition-all ${following ? 'border-[#ff4fc3]/60 bg-[#ff4fc3]/15 text-[#ff4fc3]' : 'border-white/15 bg-white/[.06] text-white/80 hover:border-white/35'}`} aria-label={following ? 'Unfollow' : 'Follow'}>
                 {following ? <UsersRound size={16} /> : <UsersRound size={16} />}
-                {following ? 'Following' : 'Follow'}
+                {following ? t('Following status') : t('Follow')}
               </button>
               <button type="button" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/[.05] text-white/75 transition-all hover:border-white/40" aria-label="Share">
                 <Share2 size={17} />
@@ -570,17 +680,17 @@ function DramaDetailPage() {
       {/* Additional Info */}
       <section className="mt-10 grid gap-6 md:grid-cols-3">
         <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
-          <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Runtime</p>
-          <p className="mt-2 font-display text-xl text-white">{drama.episodeCount * 8} min total</p>
-          <p className="mt-1 text-xs text-white/40">~8 min per episode</p>
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">{t('Runtime')}</p>
+          <p className="mt-2 font-display text-xl text-white">{drama.episodeCount * 8} {t('min total')}</p>
+          <p className="mt-1 text-xs text-white/40">~8 {t('min per episode')}</p>
         </div>
         <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
-          <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Status</p>
-          <p className="mt-2 font-display text-xl text-white">Ongoing</p>
-          <p className="mt-1 text-xs text-white/40">New episodes weekly</p>
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">{t('Status')}</p>
+          <p className="mt-2 font-display text-xl text-white">{t('Ongoing')}</p>
+          <p className="mt-1 text-xs text-white/40">{t('New episodes weekly')}</p>
         </div>
         <div className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
-          <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">Progress</p>
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#ff4fc3]">{t('Progress')}</p>
           <p className="mt-2 font-display text-xl text-white">{Math.round((resumeEpisode / drama.episodeCount) * 100)}%</p>
           <p className="mt-1 text-xs text-white/40">{resumeEpisode} of {drama.episodeCount} watched</p>
         </div>
@@ -590,8 +700,8 @@ function DramaDetailPage() {
       <section className="mt-10">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Watch in order</p>
-            <h2 className="mt-1 font-display text-2xl text-white">Episodes</h2>
+            <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{t('Watch in order')}</p>
+            <h2 className="mt-1 font-display text-2xl text-white">{t('Episodes')}</h2>
           </div>
           <div className="flex gap-2">
             {(['All', 'Free', 'Locked', 'Watched', 'Unwatched'] as const).map((filter) => (
@@ -613,7 +723,7 @@ function DramaDetailPage() {
 
       {/* Related Dramas */}
       <section className="mt-10">
-        <SectionHeader eyebrow="More like this" title="Related dramas" />
+        <SectionHeader eyebrow={t('More like this')} title={t('Related dramas')} />
         <div className="scrollbar-none -mx-5 flex gap-4 overflow-x-auto px-5 pb-3 md:mx-0 md:grid md:grid-cols-4 md:gap-5 md:overflow-visible md:px-0 lg:grid-cols-5">
           {dramas.filter(d => d.id !== drama.id).slice(0, 5).map((relatedDrama) => <DramaCard drama={relatedDrama} key={relatedDrama.id} />)}
         </div>
@@ -737,6 +847,7 @@ function ForYouPage() {
 }
 
 function SearchPage() {
+  const t = useT();
   const [query, setQuery] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '');
   const [activeGenre, setActiveGenre] = useState(() => new URLSearchParams(window.location.search).get('genre') ?? 'All');
   const [sortBy, setSortBy] = useState<'Popular' | 'Trending' | 'Newest' | 'Top Rated'>('Popular');
@@ -746,12 +857,6 @@ function SearchPage() {
   });
   
   const genres = ['All', 'Thriller', 'Romance', 'Mystery', 'Drama', 'Sci-fi', 'Noir'];
-  const popularSearches = [
-    'Billionaire', 'CEO', 'Revenge', 'Mafia', 'Fake Marriage',
-    'Hidden Identity', 'Secret Baby', 'Rebirth', 'Time Travel', 'Werewolf',
-    'Secret Heir', 'Contract Marriage'
-  ];
-
   const results = useMemo(() => {
     let filtered = dramas.filter((drama) => {
       const matchesQuery = `${drama.title} ${drama.eyebrow} ${drama.genre.join(' ')}`.toLowerCase().includes(query.toLowerCase());
@@ -794,18 +899,19 @@ function SearchPage() {
 
   return (
     <div className="animate-rise">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Explore VEYRA</p><h1 className="mt-1 font-display text-2xl text-white">Search</h1></div>
-        <Link href="/" aria-label="Back to Home" className="grid h-9 w-9 place-items-center rounded-full border border-white/10 text-white/60"><ArrowLeft size={16} /></Link>
-      </div>
-
-      <label className="relative block">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/35" size={18} />
+      <form className="sticky top-[4.25rem] z-30 -mx-4 -mt-6 mb-4 flex items-center gap-2 border-b border-white/[.06] bg-[#07080c]/95 px-4 py-3 backdrop-blur-xl md:-mx-7 md:-mt-9 md:px-7" onSubmit={(event) => { event.preventDefault(); handleSearch(query); }}>
+        <Link href="/" aria-label={t('Back')} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 text-white/60"><ArrowLeft size={16} /></Link>
+        <label className="relative min-w-0 flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35" size={16} />
         <input 
           value={query} 
-          onChange={(event) => setQuery(event.target.value)} 
-          placeholder="Search titles, moods, genres..." 
-          className="h-14 w-full rounded-2xl border border-white/10 bg-white/[.05] pl-12 pr-4 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-[#ff4fc3]/60" 
+          onChange={(event) => setQuery(event.target.value)}
+          onFocus={(event) => {
+            const input = event.currentTarget;
+            window.setTimeout(() => input.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120);
+          }}
+          placeholder={t('Search titles, moods, genres...')}
+          className="h-10 w-full rounded-xl border border-white/10 bg-white/[.05] pl-10 pr-3 text-sm text-white outline-none transition-colors placeholder:text-white/30 focus:border-[#ff4fc3]/60"
           data-testid="input-search" 
         />
         {query && (
@@ -818,7 +924,9 @@ function SearchPage() {
             ✕
           </button>
         )}
-      </label>
+        </label>
+        <button type="submit" className="h-10 shrink-0 rounded-xl bg-[#ff4fc3] px-4 text-xs font-semibold text-[#171720]">{t('Search')}</button>
+      </form>
 
       {/* Recent Searches */}
       {!query && recentSearches.length > 0 && (
@@ -842,24 +950,7 @@ function SearchPage() {
         </div>
       )}
 
-      {/* Popular Searches */}
-      {!query && (
-        <div className="mt-8">
-          <p className="mb-3 font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/45">Popular searches</p>
-          <div className="flex flex-wrap gap-2">
-            {popularSearches.map((search) => (
-              <button
-                key={search}
-                type="button"
-                onClick={() => handleSearch(search)}
-                className="rounded-full border border-white/10 bg-white/[.03] px-3 py-1.5 text-xs text-white/65 transition-colors hover:border-[#ff4fc3]/50 hover:text-white"
-              >
-                {search}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {!query && <section className="mt-4"><div className="mb-4 flex items-center justify-between"><h2 className="font-display text-xl text-white">{t('Recommended')}</h2><span className="text-xs text-white/40">{dramas.length} {t('stories')}</span></div><div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">{dramas.map((drama) => <DramaCard drama={drama} searchCard stretch href={`/drama/${drama.id}`} key={drama.id} />)}</div></section>}
 
       {/* Genre Filters */}
       <div className="scrollbar-none -mx-5 mt-6 flex gap-2 overflow-x-auto px-5 pb-2">
@@ -895,12 +986,12 @@ function SearchPage() {
       <div className="mt-10">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="font-display text-2xl text-white">
-            {query || activeGenre !== 'All' ? `${results.length} stories found` : 'The full collection'}
+            {query || activeGenre !== 'All' ? `${results.length} ${t('stories found')}` : t('The full collection')}
           </h2>
         </div>
         {results.length > 0 ? (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {results.map((drama) => <DramaCard drama={drama} key={drama.id} />)}
+          <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 md:grid-cols-5">
+            {results.map((drama) => <DramaCard drama={drama} searchCard stretch href={`/drama/${drama.id}`} key={drama.id} />)}
           </div>
         ) : (
           <EmptySearch onReset={() => { setQuery(''); setActiveGenre('All'); }} />
@@ -922,6 +1013,7 @@ function EmptySearch({ onReset }: { onReset: () => void }) {
 }
 
 function DiscoverPage() {
+  const t = useT();
   const genres = [
     'Romance', 'Mystery', 'Thriller', 'Revenge', 'CEO', 'Billionaire',
     'Mafia', 'Fantasy', 'Rebirth', 'Time Travel', 'Hidden Identity',
@@ -945,13 +1037,13 @@ function DiscoverPage() {
     <div className="animate-rise">
       <div className="mb-9">
         <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Explore the collection</p>
-        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Discover<span className="text-[#ff4fc3]">.</span></h1>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">{t('Discover')}<span className="text-[#ff4fc3]">.</span></h1>
         <p className="mt-4 text-sm text-white/45">Find your next favorite story by genre, trope, or category.</p>
       </div>
 
       {/* Categories */}
       <section className="mb-12">
-        <SectionHeader eyebrow="Browse by" title="Categories" />
+        <SectionHeader eyebrow={t('Browse by')} title={t('Categories')} />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((category) => (
             <Link 
@@ -968,7 +1060,7 @@ function DiscoverPage() {
 
       {/* Genres */}
       <section className="mb-12">
-        <SectionHeader eyebrow="Browse by mood" title="Genres" />
+        <SectionHeader eyebrow={t('Browse by mood')} title={t('Genres')} />
         <div className="flex flex-wrap gap-2">
           {genres.map((genre) => (
             <Link
@@ -984,7 +1076,7 @@ function DiscoverPage() {
 
       {/* Tropes */}
       <section className="mb-12">
-        <SectionHeader eyebrow="Story elements" title="Tropes" />
+        <SectionHeader eyebrow={t('Story elements')} title={t('Tropes')} />
         <div className="flex flex-wrap gap-2">
           {tropes.map((trope) => (
             <Link
@@ -1048,6 +1140,7 @@ function DiscoverPage() {
 
 function SavedPage() {
   const { savedIds, toggleSaved } = useAppValue();
+  const t = useT();
   const [filter, setFilter] = useState<'All' | 'Watching' | 'Completed' | 'Downloaded'>('All');
   const savedDramas = dramas.filter((drama) => savedIds.includes(drama.id));
   
@@ -1069,7 +1162,7 @@ function SavedPage() {
     <div className="animate-rise">
       <div className="mb-9">
         <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your VEYRA collection</p>
-        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">My List<span className="text-[#ff4fc3]">.</span></h1>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">{t('My List')}<span className="text-[#ff4fc3]">.</span></h1>
         <p className="mt-4 text-sm text-white/45">{savedDramas.length ? `${savedDramas.length} stories waiting for you` : 'Save something for a later night.'}</p>
       </div>
 
@@ -1123,6 +1216,7 @@ function SavedPage() {
 
 function FollowingPage() {
   const { followingIds } = useAppValue();
+  const t = useT();
   const [filter, setFilter] = useState<'All' | 'Watching' | 'Completed' | 'Downloaded'>('All');
   const following = dramas.filter((drama) => followingIds.includes(drama.id));
 
@@ -1144,7 +1238,7 @@ function FollowingPage() {
     <div className="animate-rise">
       <div className="mb-9">
         <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your watch circle</p>
-        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Following<span className="text-[#ff4fc3]">.</span></h1>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">{t('Following')}<span className="text-[#ff4fc3]">.</span></h1>
         <p className="mt-4 text-sm text-white/45">{following.length} stories in your circle</p>
       </div>
 
@@ -1179,6 +1273,7 @@ function FollowingPage() {
 }
 
 function RewardsPage() {
+  const t = useT();
   const [status, setStatus] = useState<'loading' | 'signed-out' | 'ready'>('loading');
   const [coinBalance, setCoinBalance] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -1214,10 +1309,10 @@ function RewardsPage() {
     // Initialize missions if empty
     if (storedMissions.length === 0) {
       const initialMissions = [
-        { id: 1, name: 'Watch 3 Episodes', description: 'Watch 3 complete episodes', target: 3, progress: 0, reward: 50, completed: false },
-        { id: 2, name: 'Daily Login', description: 'Log in for 7 consecutive days', target: 7, progress: storedStreak, reward: 100, completed: storedStreak >= 7 },
-        { id: 3, name: 'Follow 5 Dramas', description: 'Add 5 dramas to your list', target: 5, progress: 0, reward: 30, completed: false },
-        { id: 4, name: 'Share a Drama', description: 'Share a drama with friends', target: 1, progress: 0, reward: 20, completed: false },
+        { id: 1, name: t('Watch 3 Episodes'), description: t('Watch 3 complete episodes'), target: 3, progress: 0, reward: 50, completed: false },
+        { id: 2, name: t('Daily Login'), description: t('Log in for 7 consecutive days'), target: 7, progress: storedStreak, reward: 100, completed: storedStreak >= 7 },
+        { id: 3, name: t('Follow 5 Dramas'), description: t('Add 5 dramas to your list'), target: 5, progress: 0, reward: 30, completed: false },
+        { id: 4, name: t('Share a Drama'), description: t('Share a drama with friends'), target: 1, progress: 0, reward: 20, completed: false },
       ];
       setMissions(initialMissions);
       localStorage.setItem('veyra:missions', JSON.stringify(initialMissions));
@@ -1251,7 +1346,7 @@ function RewardsPage() {
     setBonusHistory(newHistory);
     localStorage.setItem('veyra:bonus-history', JSON.stringify(newHistory));
     
-    setMessage(`+${reward} coins added to your wallet!`);
+    setMessage(`+${reward} ${t('coins added to your wallet')}`);
   };
 
   const completeMission = (missionId: number) => {
@@ -1271,7 +1366,7 @@ function RewardsPage() {
       setBonusHistory(newHistory);
       localStorage.setItem('veyra:bonus-history', JSON.stringify(newHistory));
       
-      setMessage(`+${mission.reward} coins for completing ${mission.name}!`);
+      setMessage(`+${mission.reward} ${t('coins for completing')} ${mission.name}`);
     }
   };
 
@@ -1285,7 +1380,7 @@ function RewardsPage() {
     setBonusHistory(newHistory);
     localStorage.setItem('veyra:bonus-history', JSON.stringify(newHistory));
     
-    setMessage(`+${reward} coins for watching!`);
+    setMessage(`+${reward} ${t('coins for watching')}`);
   };
 
   if (status === 'signed-out') return <AuthPrompt title="Rewards are waiting" copy="Sign in to collect coins, complete missions, and keep your balance across devices." />;
@@ -1294,8 +1389,8 @@ function RewardsPage() {
     <div className="animate-rise">
       <div className="mb-9">
         <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#b78cff]">Your VEYRA wallet</p>
-        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">Rewards<span className="text-[#b78cff]">.</span></h1>
-        <p className="mt-4 text-sm text-white/45">Watch, return, and unlock more stories.</p>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-[#f7f2ff] sm:text-[4.2rem]">{t('Rewards')}<span className="text-[#b78cff]">.</span></h1>
+        <p className="mt-4 text-sm text-white/45">{t('Watch, return, and unlock more stories.')}</p>
       </div>
       
       {message && (
@@ -1306,7 +1401,7 @@ function RewardsPage() {
 
       {/* Coin Balance */}
       <div className="mb-8 rounded-[1.5rem] border border-white/[.08] bg-gradient-to-br from-[#b78cff]/20 via-[#ff4fc3]/10 to-transparent p-6">
-        <p className="text-[10px] uppercase tracking-[.2em] text-white/45">Current balance</p>
+        <p className="text-[10px] uppercase tracking-[.2em] text-white/45">{t('Current balance')}</p>
         <div className="mt-2 flex items-center gap-2 font-display text-4xl text-white">
           <Coins size={30} className="text-[#b78cff]" />
           {coinBalance}
@@ -1315,7 +1410,7 @@ function RewardsPage() {
 
       {/* 7-Day Streak */}
       <section className="mb-8">
-        <SectionHeader eyebrow="Daily rewards" title="7-Day Streak" />
+        <SectionHeader eyebrow={t('Daily rewards')} title={t('7-Day Streak')} />
         <div className="grid grid-cols-7 gap-2">
           {Array.from({ length: 7 }, (_, i) => {
             const day = i + 1;
@@ -1337,9 +1432,9 @@ function RewardsPage() {
                       : 'border-white/10 bg-white/[.02] text-white/30'
                 }`}
               >
-                <p className="font-mono-ui text-[10px]">Day {day}</p>
+                <p className="font-mono-ui text-[10px]">{t('Day')} {day}</p>
                 <p className="mt-1 font-display text-lg">{item.reward}</p>
-                <p className="mt-1 text-[9px]">coins</p>
+                <p className="mt-1 text-[9px]">{t('coins')}</p>
                 {item.claimed && (
                   <div className="absolute inset-0 flex items-center justify-center bg-[#70d59b]/30">
                     <Check size={20} />
@@ -1353,7 +1448,7 @@ function RewardsPage() {
 
       {/* Watch & Earn */}
       <section className="mb-8">
-        <SectionHeader eyebrow="Quick rewards" title="Watch & Earn" />
+        <SectionHeader eyebrow={t('Quick rewards')} title={t('Watch & Earn')} />
         <div className="grid gap-3 sm:grid-cols-2">
           <button
             type="button"
@@ -1361,22 +1456,22 @@ function RewardsPage() {
             className="flex items-center justify-between rounded-xl border border-white/[.08] bg-white/[.03] p-4 text-left transition-colors hover:border-[#ff4fc3]/40"
           >
             <div>
-              <p className="font-display text-lg text-white/90">Watch Episode</p>
-              <p className="mt-1 text-xs text-white/40">Watch a complete episode to earn coins</p>
+              <p className="font-display text-lg text-white/90">{t('Watch Episode')}</p>
+              <p className="mt-1 text-xs text-white/40">{t('Watch a complete episode to earn coins')}</p>
             </div>
             <div className="text-right">
               <p className="font-display text-xl text-[#b78cff]">+10</p>
-              <p className="text-[10px] text-white/30">coins</p>
+              <p className="text-[10px] text-white/30">{t('coins')}</p>
             </div>
           </button>
           <div className="flex items-center justify-between rounded-xl border border-white/[.08] bg-white/[.03] p-4">
             <div>
-              <p className="font-display text-lg text-white/90">Ad Boost</p>
-              <p className="mt-1 text-xs text-white/40">Watch an ad for bonus coins</p>
+              <p className="font-display text-lg text-white/90">{t('Ad Boost')}</p>
+              <p className="mt-1 text-xs text-white/40">{t('Watch an ad for bonus coins')}</p>
             </div>
             <div className="text-right">
               <p className="font-display text-xl text-[#b78cff]">+25</p>
-              <p className="text-[10px] text-white/30">coins</p>
+              <p className="text-[10px] text-white/30">{t('coins')}</p>
             </div>
           </div>
         </div>
@@ -1384,13 +1479,13 @@ function RewardsPage() {
 
       {/* Missions */}
       <section className="mb-8">
-        <SectionHeader eyebrow="Complete tasks" title="Missions" />
+        <SectionHeader eyebrow={t('Complete tasks')} title={t('Missions')} />
         <div className="space-y-3">
           {missions.length > 0 ? missions.map((mission) => (
             <div key={mission.id} className="flex items-center justify-between rounded-xl border border-white/[.08] bg-white/[.03] p-4">
               <div className="flex-1">
-                <p className="font-display text-lg text-white/90">{mission.name}</p>
-                <p className="mt-1 text-xs text-white/40">{mission.description}</p>
+                <p className="font-display text-lg text-white/90">{t(mission.name)}</p>
+                <p className="mt-1 text-xs text-white/40">{t(mission.description)}</p>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
                   <div 
                     className="h-full rounded-full bg-[#ff4fc3] transition-all" 
@@ -1407,18 +1502,18 @@ function RewardsPage() {
                     onClick={() => completeMission(mission.id)}
                     className="mt-1 rounded-full bg-[#ff4fc3] px-3 py-1 text-[10px] font-semibold text-[#171720]"
                   >
-                    Claim
+                    {t('Claim')}
                   </button>
                 )}
                 {mission.completed && (
-                  <p className="mt-1 text-[10px] text-[#70d59b]">Completed</p>
+                  <p className="mt-1 text-[10px] text-[#70d59b]">{t('Completed')}</p>
                 )}
               </div>
             </div>
           )) : (
             <div className="rounded-xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
               <Gift size={24} className="mx-auto text-white/30" />
-              <p className="mt-3 text-sm text-white/40">Missions will appear here soon</p>
+              <p className="mt-3 text-sm text-white/40">{t('Missions will appear here soon')}</p>
             </div>
           )}
         </div>
@@ -1426,18 +1521,18 @@ function RewardsPage() {
 
       {/* Bonus History */}
       <section className="mb-8">
-        <SectionHeader eyebrow="Your earnings" title="Bonus History" />
+        <SectionHeader eyebrow={t('Your earnings')} title={t('Bonus History')} />
         <div className="space-y-2">
           {bonusHistory.length > 0 ? bonusHistory.slice(0, 10).map((item, index) => (
             <div key={index} className="flex items-center justify-between rounded-lg border border-white/[.06] bg-white/[.02] p-3">
               <div>
                 <p className="text-sm text-white/90">{item.reward}</p>
-                <p className="text-[10px] text-white/30">{item.source} · {new Date(item.date).toLocaleDateString()}</p>
+                <p className="text-[10px] text-white/30">{t(item.source)} · {new Date(item.date).toLocaleDateString()}</p>
               </div>
               <p className="font-mono-ui text-sm text-[#b78cff]">+{item.amount}</p>
             </div>
           )) : (
-            <p className="text-sm text-white/40">No bonus history yet. Start earning!</p>
+            <p className="text-sm text-white/40">{t('No bonus history yet. Start earning!')}</p>
           )}
         </div>
       </section>
@@ -1449,30 +1544,31 @@ function ProfilePage() {
   const { isSignedIn, user } = useUser();
   const { signOut } = useClerk();
   const { savedIds } = useAppValue();
+  const t = useT();
   const [watchHistory, setWatchHistory] = useState<Array<{ dramaId: string; episode: number; date: string }>>(() => {
     const stored = localStorage.getItem('veyra:watch-history');
     return stored ? JSON.parse(stored) : [];
   });
   
   const profileSections = [
-    { icon: <Bookmark size={18} />, label: 'My List', value: String(savedIds.length), href: '/saved' },
-    { icon: <UsersRound size={18} />, label: 'Following', value: 'View all', href: '/following' },
-    { icon: <Clock3 size={18} />, label: 'Watch History', value: `${watchHistory.length} episodes`, href: '/history' },
-    { icon: <Download size={18} />, label: 'Downloads', value: 'View library', href: '/downloads' },
-    { icon: <Gift size={18} />, label: 'Rewards', value: 'Collect coins', href: '/rewards' },
-    { icon: <Wallet size={18} />, label: 'Wallet', value: 'View balance', href: '/wallet' },
-    { icon: <Sparkles size={18} />, label: 'VIP', value: 'Unlock all', href: '/vip' },
+    { icon: <Bookmark size={18} />, label: t('My List'), value: String(savedIds.length), href: '/saved' },
+    { icon: <UsersRound size={18} />, label: t('Following'), value: t('View all'), href: '/following' },
+    { icon: <Clock3 size={18} />, label: t('Watch History'), value: `${watchHistory.length} ${t('Episodes').toLowerCase()}`, href: '/history' },
+    { icon: <Download size={18} />, label: t('Downloads'), value: t('View library'), href: '/downloads' },
+    { icon: <Gift size={18} />, label: t('Rewards'), value: t('Collect coins'), href: '/rewards' },
+    { icon: <Wallet size={18} />, label: t('Wallet'), value: t('View balance'), href: '/wallet' },
+    { icon: <Sparkles size={18} />, label: t('VIP'), value: t('Unlock all'), href: '/vip' },
   ];
 
   const settingsSections = [
-    { icon: <Bell size={18} />, label: 'Notifications', href: '/settings/notifications' },
-    { icon: <Languages size={18} />, label: 'Language', href: '/settings/language' },
-    { icon: <Settings size={18} />, label: 'Settings', href: '/settings' },
-    { icon: <Share2 size={18} />, label: 'Referral / Invite', href: '/referral' },
-    { icon: <ShieldCheck size={18} />, label: 'Help / FAQ', href: '/help' },
-    { icon: <Upload size={18} />, label: 'Feedback', href: '/feedback' },
-    { icon: <Lock size={18} />, label: 'Privacy', href: '/privacy' },
-    { icon: <FileText size={18} />, label: 'Terms', href: '/terms' },
+    { icon: <Bell size={18} />, label: t('Notifications'), href: '/settings/notifications' },
+    { icon: <Languages size={18} />, label: t('Language'), href: '/settings/language' },
+    { icon: <Settings size={18} />, label: t('Settings'), href: '/settings' },
+    { icon: <Share2 size={18} />, label: t('Referral / Invite'), href: '/referral' },
+    { icon: <ShieldCheck size={18} />, label: t('Help / FAQ'), href: '/help' },
+    { icon: <Upload size={18} />, label: t('Feedback'), href: '/feedback' },
+    { icon: <Lock size={18} />, label: t('Privacy'), href: '/privacy' },
+    { icon: <FileText size={18} />, label: t('Terms'), href: '/terms' },
   ];
 
   return (
@@ -1483,18 +1579,18 @@ function ProfilePage() {
           <UserCircle size={30} />
         </div>
         <div>
-          <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your profile</p>
-          <h1 className="mt-1 font-display text-3xl text-white">{user?.firstName ?? user?.username ?? 'Guest viewer'}</h1>
-          <p className="mt-1 text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? 'Guest account · local data only'}</p>
+          <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{t('Your profile')}</p>
+          <h1 className="mt-1 font-display text-3xl text-white">{user?.firstName ?? user?.username ?? t('Guest viewer')}</h1>
+          <p className="mt-1 text-xs text-white/40">{user?.primaryEmailAddress?.emailAddress ?? t('Guest account · local data only')}</p>
           <p className="mt-1 font-mono-ui text-[10px] text-white/30">UID: {user?.id ?? 'guest-local'}</p>
         </div>
-        <Link href="/profile/edit" className="ml-auto rounded-full border border-white/10 px-3 py-2 text-xs text-white/60 hover:border-[#ff4fc3]/50 hover:text-white">Edit Profile</Link>
+        <Link href="/profile/edit" className="ml-auto rounded-full border border-white/10 px-3 py-2 text-xs text-white/60 hover:border-[#ff4fc3]/50 hover:text-white">{t('Edit Profile')}</Link>
       </div>
 
       {!isSignedIn && (
         <section className="mb-8 flex items-center justify-between gap-4 rounded-2xl border border-[#ff4fc3]/25 bg-[#ff4fc3]/[.06] p-5">
-          <div><p className="font-display text-lg text-white">Sync your VEYRA profile</p><p className="mt-1 text-xs text-white/50">Sign in to keep My List, Following, history and rewards across devices.</p></div>
-          <SignInButton mode="modal"><button type="button" className="shrink-0 rounded-full bg-[#ff4fc3] px-4 py-2 text-xs font-semibold text-[#171720]">Sign in</button></SignInButton>
+          <div><p className="font-display text-lg text-white">{t('Sync your VEYRA profile')}</p><p className="mt-1 text-xs text-white/50">{t('Sign in to keep My List, Following, history and rewards across devices.')}</p></div>
+          <AuthAction className="shrink-0 rounded-full bg-[#ff4fc3] px-4 py-2 text-xs font-semibold text-[#171720]">{authConfigured ? t('Sign in') : t('Auth unavailable')}</AuthAction>
         </section>
       )}
 
@@ -1525,23 +1621,23 @@ function ProfilePage() {
 
       {/* Account Info */}
       <section className="mb-8 rounded-2xl border border-white/[.08] bg-white/[.02] p-6">
-        <h3 className="font-display text-lg text-white">Account Information</h3>
+        <h3 className="font-display text-lg text-white">{t('Account Information')}</h3>
         <div className="mt-4 space-y-3">
           <div className="flex items-center justify-between py-2 border-b border-white/[.06]">
-            <span className="text-sm text-white/60">Username</span>
-            <span className="text-sm text-white/90">{user?.username ?? 'Not set'}</span>
+            <span className="text-sm text-white/60">{t('Username')}</span>
+            <span className="text-sm text-white/90">{user?.username ?? t('Not set')}</span>
           </div>
           <div className="flex items-center justify-between py-2 border-b border-white/[.06]">
-            <span className="text-sm text-white/60">Email</span>
-            <span className="text-sm text-white/90">{user?.primaryEmailAddress?.emailAddress ?? 'Not set'}</span>
+            <span className="text-sm text-white/60">{t('Email')}</span>
+            <span className="text-sm text-white/90">{user?.primaryEmailAddress?.emailAddress ?? t('Not set')}</span>
           </div>
           <div className="flex items-center justify-between py-2 border-b border-white/[.06]">
-            <span className="text-sm text-white/60">Provider</span>
-            <span className="text-sm text-white/90">{user?.externalAccounts?.[0]?.provider ?? 'Email'}</span>
+            <span className="text-sm text-white/60">{t('Provider')}</span>
+            <span className="text-sm text-white/90">{user?.externalAccounts?.[0]?.provider ?? t('Email')}</span>
           </div>
           <div className="flex items-center justify-between py-2">
-            <span className="text-sm text-white/60">Member since</span>
-            <span className="text-sm text-white/90">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Recent'}</span>
+            <span className="text-sm text-white/60">{t('Member since')}</span>
+            <span className="text-sm text-white/90">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : t('Recent')}</span>
           </div>
         </div>
       </section>
@@ -1589,8 +1685,8 @@ function ProfilePage() {
 
       {/* Sign Out */}
       <section className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
-        <h3 className="font-display text-lg text-red-400">Danger Zone</h3>
-        <p className="mt-2 text-sm text-white/40">These actions are irreversible. Please be certain.</p>
+        <h3 className="font-display text-lg text-red-400">{t('Danger Zone')}</h3>
+        <p className="mt-2 text-sm text-white/40">{t('These actions are irreversible. Please be certain.')}</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <button type="button" className="rounded-full border border-red-500/30 px-4 py-2 text-sm text-red-400 transition-colors hover:border-red-500/60 hover:bg-red-500/10">
             Delete Account
@@ -1610,7 +1706,7 @@ function ProfileStat({ label, value, href }: { label: string; value: string; hre
 }
 
 function AuthPrompt({ title, copy }: { title: string; copy: string }) {
-  return <div className="mx-auto max-w-xl rounded-[1.5rem] border border-white/[.08] bg-white/[.03] px-6 py-16 text-center"><UserCircle size={28} className="mx-auto text-[#ff4fc3]" /><h1 className="mt-5 font-display text-3xl text-white">{title}</h1><p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/45">{copy}</p><SignInButton mode="modal"><button type="button" className="mt-7 rounded-full bg-[#ff4fc3] px-5 py-3 text-sm font-semibold text-[#171720]">Sign in to continue</button></SignInButton></div>;
+  return <div className="mx-auto max-w-xl rounded-[1.5rem] border border-white/[.08] bg-white/[.03] px-6 py-16 text-center"><UserCircle size={28} className="mx-auto text-[#ff4fc3]" /><h1 className="mt-5 font-display text-3xl text-white">{title}</h1><p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-white/45">{copy}</p><AuthAction className="mt-7 rounded-full bg-[#ff4fc3] px-5 py-3 text-sm font-semibold text-[#171720]">{authConfigured ? 'Sign in to continue' : 'Authentication is not configured'}</AuthAction></div>;
 }
 
 function AdminPage() {
@@ -1676,6 +1772,7 @@ function WatchPage() {
   const [, navigate] = useLocation();
   const drama = dramas.find((entry) => entry.id === dramaId) ?? dramas[0];
   const { setMiniPlayer } = useAppValue();
+  const t = useT();
   const selectedNumber = Math.max(1, Number(episodeParam) || 1);
   const episodeIndex = Math.min(selectedNumber - 1, drama.episodes.length - 1);
   const episode = drama.episodes[episodeIndex];
@@ -1738,7 +1835,15 @@ function WatchPage() {
     const history = JSON.parse(localStorage.getItem('veyra:watch-history') ?? '[]') as Array<{ dramaId: string; episode: number; date: string }>;
     const nextHistory = [{ dramaId: drama.id, episode: episode.number, date: new Date().toISOString() }, ...history.filter((entry) => !(entry.dramaId === drama.id && entry.episode === episode.number))].slice(0, 50);
     localStorage.setItem('veyra:watch-history', JSON.stringify(nextHistory));
-  }, [progressKey, drama.id, episode.number, episode.videoSources, quality]);
+  }, [progressKey, drama.id, episode.number]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    const frame = window.requestAnimationFrame(() => {
+      playerRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [drama.id, episode.number]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -1756,6 +1861,10 @@ function WatchPage() {
       if (wasPlaying) void video.play().catch(() => undefined);
     }, { once: true });
   }, [episode.videoSources, episode.videoUrl, quality]);
+
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.playbackRate = playbackRate;
+  }, [episode.number, playbackRate]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -1962,14 +2071,9 @@ function WatchPage() {
     pokeControls();
     const frame = frameRef.current;
     const video = videoRef.current;
-    const orientation = screen.orientation as ScreenOrientation & { lock?: (orientation: 'landscape' | 'portrait' | 'any') => Promise<void>; unlock?: () => void };
-
     if (isFullscreen) {
       setIsFullscreen(false);
       window.VeyraNative?.setFullscreen?.(false);
-      if (orientation && typeof orientation.unlock === 'function') {
-        orientation.unlock();
-      }
       try {
         if (document.fullscreenElement) await document.exitFullscreen();
       } catch {
@@ -1983,17 +2087,11 @@ function WatchPage() {
     setIsFullscreen(true);
     if (window.VeyraNative?.setFullscreen) {
       window.VeyraNative.setFullscreen(true);
-      if (orientation && typeof orientation.lock === 'function') {
-        void orientation.lock('landscape');
-      }
       return;
     }
     try {
       if (frame?.requestFullscreen) {
         await frame.requestFullscreen();
-        if (orientation && typeof orientation.lock === 'function') {
-          void orientation.lock('landscape');
-        }
       }
     } catch {
       // Keep the app-level immersive layout even when WebView fullscreen is unavailable.
@@ -2059,9 +2157,13 @@ function WatchPage() {
     setPlaying(false);
     setProgress(100);
     setCurrentTime(duration);
-    setEpisodeFinished(true);
     setControlsVisible(true);
     saveProgress(duration || 0);
+    if (nextEpisode) {
+      navigateEpisode(nextEpisode.number);
+      return;
+    }
+    setEpisodeFinished(true);
   };
 
   const handleRetry = () => {
@@ -2120,7 +2222,7 @@ function WatchPage() {
                 key={`${drama.id}-${episode.number}`}
                 ref={videoRef}
                 className="absolute inset-0 h-full w-full bg-[#09090d] object-cover"
-                src={episode.videoUrl}
+                src={episode.videoSources[quality] ?? episode.videoUrl}
                 poster={drama.image}
                 playsInline
                 preload="metadata"
@@ -2161,7 +2263,7 @@ function WatchPage() {
                 <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
                   <div className="flex flex-col items-center gap-3">
                     <span className="h-11 w-11 animate-spin rounded-full border-2 border-white/15 border-t-[#ff4fc3]" aria-hidden="true" />
-                    <span className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-white/50">Loading episode</span>
+                    <span className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-white/50">{t('Loading episode')}</span>
                   </div>
                 </div>
               )}
@@ -2171,11 +2273,11 @@ function WatchPage() {
                 <div className="absolute inset-0 z-40 grid place-items-center bg-[#0d0d13]/88 px-6 backdrop-blur-sm">
                   <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-[#111118]/92 p-6 text-center shadow-2xl" data-testid="player-error-card">
                     <AlertTriangle size={26} className="mx-auto text-[#ff4fc3]" />
-                    <h3 className="mt-3 font-display text-xl">Playback failed</h3>
+                    <h3 className="mt-3 font-display text-xl">{t('Playback failed')}</h3>
                     <p className="mt-2 text-xs leading-relaxed text-white/55">{loadError}</p>
                     <div className="mt-5 flex items-center justify-center gap-2">
                       <button type="button" onClick={handleRetry} className="inline-flex items-center gap-1.5 rounded-full bg-[#ff4fc3] px-4 py-2 text-xs font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]" data-testid="button-player-retry">
-                        <RotateCw size={13} /> Try again
+                        <RotateCw size={13} /> {t('Try again')}
                       </button>
                       <Link href={`/drama/${drama.id}`} className="rounded-full border border-white/15 px-4 py-2 text-xs text-white/70 transition-colors hover:border-white/40 hover:text-white">Back to story</Link>
                     </div>
@@ -2236,7 +2338,7 @@ function WatchPage() {
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"
                         >
                           <Share2 size={14} />
-                          Share
+                          {t('Share')}
                         </button>
                         <button
                           type="button"
@@ -2247,7 +2349,7 @@ function WatchPage() {
                           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06]"
                         >
                           <Download size={14} />
-                          Download
+                          {t('Download')}
                         </button>
                         <button
                           type="button"
@@ -2259,7 +2361,7 @@ function WatchPage() {
                         >
                           <span className="flex items-center gap-3">
                             <Zap size={14} />
-                            Speed
+                            {t('Speed')}
                           </span>
                           <span className="text-white/45">{playbackRate}x</span>
                         </button>
@@ -2273,7 +2375,7 @@ function WatchPage() {
                         >
                           <span className="flex items-center gap-3">
                             <SlidersHorizontal size={14} />
-                            Quality
+                            {t('Quality')}
                           </span>
                           <span className="text-white/45">{quality}</span>
                         </button>
@@ -2283,7 +2385,7 @@ function WatchPage() {
                       <div data-player-ui className="absolute right-0 top-11 z-50 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111118]/95 p-1 shadow-2xl backdrop-blur-xl">
                         <button type="button" onClick={() => setSpeedOpen(false)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs text-white/60 hover:bg-white/[.06]">
                           <ArrowLeft size={14} />
-                          Playback speed
+                          {t('Playback speed')}
                         </button>
                         {[0.5, 0.75, 1, 1.25, 1.5, 2].map((speed) => (
                           <button key={speed} type="button" onClick={() => setSpeed(speed)} className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs hover:bg-white/[.06] ${speed === playbackRate ? 'text-[#ff4fc3]' : 'text-white/85'}`}>
@@ -2297,7 +2399,7 @@ function WatchPage() {
                       <div data-player-ui className="absolute right-0 top-11 z-50 w-48 overflow-hidden rounded-2xl border border-white/10 bg-[#111118]/95 p-1 shadow-2xl backdrop-blur-xl">
                         <button type="button" onClick={() => setQualityOpen(false)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs text-white/60 hover:bg-white/[.06]">
                           <ArrowLeft size={14} />
-                          Video quality
+                          {t('Video quality')}
                         </button>
                         {(['540p', '720p', '1080p'] as VideoQuality[]).map((option) => {
                           const available = Boolean(episode.videoSources[option]);
@@ -2305,9 +2407,9 @@ function WatchPage() {
                           const disabled = !available || locked;
                           return (
                             <button key={option} type="button" disabled={disabled} onClick={() => selectQuality(option)} className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs ${disabled ? 'cursor-not-allowed text-white/25' : 'text-white/85 hover:bg-white/[.06]'}`}>
-                              <span>{locked ? `${option} · VIP` : option}</span>
+                              <span>{locked ? `${option} · ${t('VIP')}` : option}</span>
                               <span className="flex items-center gap-1.5">
-                                {disabled && <span className="text-[9px]">{locked ? 'VIP locked' : 'Unavailable'}</span>}
+                                {disabled && <span className="text-[9px]">{locked ? t('VIP locked') : t('Unavailable')}</span>}
                                 {!disabled && option === quality && <Check size={14} />}
                               </span>
                             </button>
@@ -2352,8 +2454,8 @@ function WatchPage() {
                         <span className="shrink-0 font-mono-ui text-[10px] text-white/35">{episode.number} / {drama.episodeCount}</span>
                       </div>
                       <div className="mt-3 flex items-center justify-between gap-3 text-xs">
-                        {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 transition-colors hover:text-white" data-testid="link-player-previous-mobile">Previous episode</Link> : <span className="text-white/15">First episode</span>}
-                        {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#ff4fc3] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]" data-testid="link-player-next-mobile">Next Episode <ChevronRight size={13} /></Link> : <span className="text-white/35">{episodeFinished ? 'End of story' : 'Continue watching'}</span>}
+                        {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 transition-colors hover:text-white" data-testid="link-player-previous-mobile">{t('Previous episode')}</Link> : <span className="text-white/15">{t('First episode')}</span>}
+                        {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 rounded-full bg-[#ff4fc3] px-4 py-2 font-semibold text-[#171720] transition-colors hover:bg-[#ff8bdd]" data-testid="link-player-next-mobile">{t('Next Episode')} <ChevronRight size={13} /></Link> : <span className="text-white/35">{episodeFinished ? t('End of story') : t('Continue Watching')}</span>}
                       </div>
                     </>
                   )}
@@ -2387,8 +2489,8 @@ function WatchPage() {
           </div>
           <div className="hidden border-t border-white/[.08] px-5 py-4 lg:block">
             <div className="flex items-center justify-between text-xs">
-              {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 hover:text-white" data-testid="link-player-previous">Previous</Link> : <span className="text-white/15">Previous</span>}
-              {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 text-[#ff4fc3] hover:text-white" data-testid="link-player-next">Next episode <ChevronRight size={13} /></Link> : <span className="text-white/15">End of story</span>}
+              {previousEpisode ? <Link href={`/watch/${drama.id}/${previousEpisode.number}`} className="text-white/45 hover:text-white" data-testid="link-player-previous">{t('Previous episode')}</Link> : <span className="text-white/15">{t('Previous episode')}</span>}
+              {nextEpisode ? <Link href={`/watch/${drama.id}/${nextEpisode.number}`} className="inline-flex items-center gap-1 text-[#ff4fc3] hover:text-white" data-testid="link-player-next">{t('Next episode')} <ChevronRight size={13} /></Link> : <span className="text-white/15">{t('End of story')}</span>}
             </div>
           </div>
         </aside>
@@ -2399,6 +2501,7 @@ function WatchPage() {
 
 
 function WalletPage() {
+  const t = useT();
   const [balance, setBalance] = useState<number>(() => Number(localStorage.getItem('veyra:coins') ?? 0));
   const [transactionHistory, setTransactionHistory] = useState<Array<{ date: string; type: string; amount: number; description: string }>>(() => {
     const stored = localStorage.getItem('veyra:transactions');
@@ -2437,14 +2540,14 @@ function WalletPage() {
   return (
     <div className="animate-rise">
       <div className="mb-8">
-        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your wallet</p>
-        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-white sm:text-[4rem]">Coins<span className="text-[#ff4fc3]">.</span></h1>
+        <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{t('Your wallet')}</p>
+        <h1 className="mt-2 font-display text-[3rem] leading-[.9] tracking-[-.06em] text-white sm:text-[4rem]">{t('Coins')}<span className="text-[#ff4fc3]">.</span></h1>
         <p className="mt-3 text-sm text-white/45">Unlock more episodes and keep watching without interruption.</p>
       </div>
 
       {/* Current Balance */}
       <div className="mb-8 rounded-[1.5rem] border border-white/[.08] bg-gradient-to-br from-[#ff4fc3]/20 via-[#9f7cff]/10 to-transparent p-6">
-        <p className="text-[10px] uppercase tracking-[.2em] text-white/45">Current balance</p>
+        <p className="text-[10px] uppercase tracking-[.2em] text-white/45">{t('Current balance')}</p>
         <div className="mt-2 flex items-center gap-2 font-display text-4xl text-white">
           <Coins size={30} className="text-[#ff4fc3]" />
           {balance}
@@ -2701,21 +2804,27 @@ function VipPage() {
   );
 }
 
-function LanguagePage(){ const langs=['English','Türkçe','Español','Português','Français','Deutsch','हिन्दी','Bahasa Indonesia']; return <SimpleSettingsPage title="Language" icon={<Languages size={18}/>}>{<div className="grid grid-cols-2 gap-2">{langs.map(x=><button key={x} type="button" className={`rounded-xl border p-3 text-left text-xs ${x==='English'?'border-[#ff4fc3] bg-[#ff4fc3]/10 text-white':'border-white/[.08] bg-white/[.02] text-white/65'}`}>{x}</button>)}</div>}</SimpleSettingsPage>; }
+function LanguagePage(){
+  const langs: Locale[] = ['English','Türkçe','Español','Português','Français','Deutsch','Bahasa Indonesia','日本語','繁體中文','简体中文','한국어','ภาษาไทย','Italiano','Melayu','العربية','Tiếng Việt','हिन्दी'];
+  const { locale, setLocale } = useAppValue();
+  const t = useT();
+  return <SimpleSettingsPage title="Language" icon={<Languages size={18}/>}><div className="grid grid-cols-2 gap-2">{langs.map((language) => <button key={language} type="button" onClick={() => setLocale(language)} aria-pressed={locale === language} className={`rounded-xl border p-3 text-left text-xs ${locale === language ? 'border-[#ff4fc3] bg-[#ff4fc3]/10 text-white' : 'border-white/[.08] bg-white/[.02] text-white/65'}`}>{language}</button>)}</div><p className="mt-4 text-xs text-white/40">{t('Selected language is saved on this device. Video audio tracks remain unchanged unless a real alternate track exists.')}</p></SimpleSettingsPage>;
+}
 
 function HistoryPage() {
+  const t = useT();
   const history = JSON.parse(localStorage.getItem('veyra:watch-history') ?? '[]') as Array<{ dramaId: string; episode: number; date: string }>;
   return (
     <div className="animate-rise">
-      <Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45"><ArrowLeft size={14} /> Back to Profile</Link>
-      <div className="mt-7"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">Your viewing trail</p><h1 className="mt-1 font-display text-3xl">Watch History</h1></div>
+      <Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45"><ArrowLeft size={14} /> {t('Back to Profile')}</Link>
+      <div className="mt-7"><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">{t('Your viewing trail')}</p><h1 className="mt-1 font-display text-3xl">{t('Watch History')}</h1></div>
       <div className="mt-7 space-y-2">
         {history.length ? history.map((entry) => {
           const drama = dramas.find((item) => item.id === entry.dramaId);
           const episode = drama?.episodes.find((item) => item.number === entry.episode);
           if (!drama || !episode) return null;
-          return <Link key={`${entry.dramaId}-${entry.episode}`} href={`/watch/${drama.id}/${episode.number}`} className="flex items-center gap-3 rounded-xl border border-white/[.08] bg-white/[.02] p-3 hover:bg-white/[.05]"><div className="h-14 w-24 shrink-0 rounded-lg bg-cover bg-center" style={{ backgroundImage: `url("${drama.image}")` }} /><div className="min-w-0 flex-1"><p className="truncate font-display text-sm text-white/90">{drama.title}</p><p className="mt-1 truncate text-xs text-white/45">Episode {episode.number}: {episode.title}</p></div><ChevronRight size={15} className="text-white/30" /></Link>;
-        }) : <div className="rounded-xl border border-dashed border-white/15 p-8 text-center text-sm text-white/40">Your watched episodes will appear here.</div>}
+          return <Link key={`${entry.dramaId}-${entry.episode}`} href={`/watch/${drama.id}/${episode.number}`} className="flex items-center gap-3 rounded-xl border border-white/[.08] bg-white/[.02] p-3 hover:bg-white/[.05]"><div className="h-14 w-24 shrink-0 rounded-lg bg-cover bg-center" style={{ backgroundImage: `url("${drama.image}")` }} /><div className="min-w-0 flex-1"><p className="truncate font-display text-sm text-white/90">{drama.title}</p><p className="mt-1 truncate text-xs text-white/45">{t('Episode')} {episode.number}: {episode.title}</p></div><ChevronRight size={15} className="text-white/30" /></Link>;
+        }) : <div className="rounded-xl border border-dashed border-white/15 p-8 text-center text-sm text-white/40">{t('Your watched episodes will appear here.')}</div>}
       </div>
     </div>
   );
@@ -2729,6 +2838,7 @@ function EditProfilePage() {
 }
 
 function DownloadsPage() {
+  const t = useT();
   const [downloads, setDownloads] = useState<Array<{
     id: string;
     dramaId: string;
@@ -2760,7 +2870,7 @@ function DownloadsPage() {
   return (
     <div className="animate-rise max-w-2xl">
       <Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45">
-        <ArrowLeft size={14} /> Back to Profile
+        <ArrowLeft size={14} /> {t('Back to Profile')}
       </Link>
       <div className="mt-7 flex items-center gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff4fc3]/12 text-[#ff4fc3]">
@@ -2768,7 +2878,7 @@ function DownloadsPage() {
         </div>
         <div>
           <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA</p>
-          <h1 className="mt-1 font-display text-3xl">Downloads</h1>
+          <h1 className="mt-1 font-display text-3xl">{t('Downloads')}</h1>
         </div>
       </div>
 
@@ -2777,7 +2887,7 @@ function DownloadsPage() {
         <section className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-white/40">Storage used</p>
+              <p className="text-xs text-white/40">{t('Storage used')}</p>
               <p className="mt-1 font-display text-2xl text-white">{storageUsed} MB / {storageLimit} MB</p>
             </div>
             <div className="h-12 w-12">
@@ -2799,15 +2909,15 @@ function DownloadsPage() {
             </div>
           </div>
           <p className="mt-3 text-xs text-white/30">
-            Downloads are stored locally on your device. Storage varies by device.
+            {t('Downloads are stored locally on your device. Storage varies by device.')}
           </p>
         </section>
 
         {/* Download Status */}
         <section>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-display text-lg text-white">Your downloads</h3>
-            <span className="text-xs text-white/40">{downloads.length} episodes</span>
+            <h3 className="font-display text-lg text-white">{t('Your downloads')}</h3>
+            <span className="text-xs text-white/40">{downloads.length} {t('Episodes').toLowerCase()}</span>
           </div>
           
           {downloads.length > 0 ? (
@@ -2817,7 +2927,7 @@ function DownloadsPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                       <p className="font-display text-sm text-white/90">{download.dramaTitle}</p>
-                      <p className="mt-1 text-xs text-white/40">Episode {download.episode}: {download.episodeTitle}</p>
+                      <p className="mt-1 text-xs text-white/40">{t('Episode')} {download.episode}: {download.episodeTitle}</p>
                       <div className="mt-2 flex items-center gap-2">
                         {download.status === 'downloading' && (
                           <>
@@ -2831,26 +2941,26 @@ function DownloadsPage() {
                           </>
                         )}
                         {download.status === 'downloaded' && (
-                          <span className="text-[10px] text-[#70d59b]">Downloaded</span>
+                          <span className="text-[10px] text-[#70d59b]">{t('Downloaded')}</span>
                         )}
                         {download.status === 'failed' && (
-                          <span className="text-[10px] text-red-400">Failed</span>
+                          <span className="text-[10px] text-red-400">{t('Failed')}</span>
                         )}
                         {download.status === 'pending' && (
-                          <span className="text-[10px] text-white/30">Pending</span>
+                          <span className="text-[10px] text-white/30">{t('Pending')}</span>
                         )}
                       </div>
                       <p className="mt-1 text-[10px] text-white/30">{download.size} · {new Date(download.date).toLocaleDateString()}</p>
                     </div>
                     <div className="flex gap-2">
-                      {download.status === 'failed' && <span className="text-xs text-white/40">Retry from the player</span>}
+                      {download.status === 'failed' && <span className="text-xs text-white/40">{t('Retry from the player')}</span>}
                       {download.status === 'downloaded' && (
                         <button
                           type="button"
                           onClick={() => deleteDownload(download.id)}
                           className="text-xs text-red-400 hover:text-red-300"
                         >
-                          Delete
+                          {t('Delete')}
                         </button>
                       )}
                     </div>
@@ -2861,21 +2971,21 @@ function DownloadsPage() {
           ) : (
             <div className="rounded-xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
               <Download size={24} className="mx-auto text-white/30" />
-              <p className="mt-3 text-sm text-white/40">No downloads yet</p>
-              <p className="mt-1 text-xs text-white/30">Download episodes to watch offline</p>
+              <p className="mt-3 text-sm text-white/40">{t('No downloads yet')}</p>
+              <p className="mt-1 text-xs text-white/30">{t('Download episodes to watch offline')}</p>
             </div>
           )}
         </section>
 
         {/* Download Info */}
         <section className="rounded-2xl border border-white/[.08] bg-white/[.02] p-5">
-          <h3 className="font-display text-sm text-white/90">About downloads</h3>
+          <h3 className="font-display text-sm text-white/90">{t('About downloads')}</h3>
           <ul className="mt-3 space-y-2 text-xs text-white/40">
-            <li>• Downloaded episodes can be watched without an internet connection</li>
-            <li>• Downloads are stored on your device and count against local storage</li>
-            <li>• Download quality matches your current streaming quality setting</li>
-            <li>• Downloads may be removed if storage space is needed</li>
-            <li>• Not all content may be available for download due to licensing</li>
+            <li>• {t('Downloaded episodes can be watched without an internet connection')}</li>
+            <li>• {t('Downloads are stored on your device and count against local storage')}</li>
+            <li>• {t('Download quality matches your current streaming quality setting')}</li>
+            <li>• {t('Downloads may be removed if storage space is needed')}</li>
+            <li>• {t('Not all content may be available for download due to licensing')}</li>
           </ul>
         </section>
 
@@ -2884,7 +2994,7 @@ function DownloadsPage() {
           <div className="flex items-start gap-3">
             <Sparkles size={18} className="text-[#b78cff] mt-0.5" />
             <div>
-                <p className="font-display text-sm text-white/90">Secure downloads</p>
+                <p className="font-display text-sm text-white/90">{t('Secure downloads')}</p>
               <p className="mt-2 text-xs text-white/60">
                 Android downloads use the native DownloadManager. Offline playback and authenticated media delivery require a configured backend media entitlement service.
               </p>
@@ -3063,6 +3173,7 @@ function ReferralPage() {
 }
 
 function NotificationsPage() {
+  const t = useT();
   const [notifications, setNotifications] = useState<Array<{
     id: string;
     type: 'New episode' | 'New series' | 'Reward earned' | 'Streak reminder' | 'VIP reward' | 'System' | 'Promotional';
@@ -3101,7 +3212,7 @@ function NotificationsPage() {
   return (
     <div className="animate-rise max-w-2xl">
       <Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45">
-        <ArrowLeft size={14} /> Back to Profile
+        <ArrowLeft size={14} /> {t('Back to Profile')}
       </Link>
       <div className="mt-7 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -3110,7 +3221,7 @@ function NotificationsPage() {
           </div>
           <div>
             <p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA</p>
-            <h1 className="mt-1 font-display text-3xl">Notifications</h1>
+            <h1 className="mt-1 font-display text-3xl">{t('Notifications')}</h1>
           </div>
         </div>
         {unreadCount > 0 && (
@@ -3119,7 +3230,7 @@ function NotificationsPage() {
             onClick={markAllAsRead}
             className="text-xs text-[#ff4fc3] hover:text-white"
           >
-            Mark all read
+            {t('Mark all read')}
           </button>
         )}
       </div>
@@ -3128,7 +3239,7 @@ function NotificationsPage() {
         {unreadCount > 0 && (
           <div className="mb-4 flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[#ff4fc3]" />
-            <span className="text-xs text-white/60">{unreadCount} unread notification{unreadCount > 1 ? 's' : ''}</span>
+                  <span className="text-xs text-white/60">{unreadCount} {t(unreadCount > 1 ? 'unread notifications' : 'unread notification')}</span>
           </div>
         )}
 
@@ -3182,7 +3293,7 @@ function NotificationsPage() {
           )) : (
             <div className="rounded-xl border border-dashed border-white/15 bg-white/[.02] p-8 text-center">
               <Bell size={24} className="mx-auto text-white/30" />
-              <p className="mt-3 text-sm text-white/40">No notifications yet</p>
+              <p className="mt-3 text-sm text-white/40">{t('No notifications yet')}</p>
             </div>
           )}
         </div>
@@ -3190,8 +3301,8 @@ function NotificationsPage() {
     </div>
   );
 }
-function SettingsPage(){ return <SimpleSettingsPage title="Settings" icon={<Settings size={18}/>}>{<div className="space-y-2"><Link href="/settings/language" className="block rounded-xl border border-white/[.08] p-4 text-sm">Language</Link><Link href="/settings/notifications" className="block rounded-xl border border-white/[.08] p-4 text-sm">Notifications</Link><Link href="/privacy" className="block rounded-xl border border-white/[.08] p-4 text-sm">Privacy Policy</Link><Link href="/terms" className="block rounded-xl border border-white/[.08] p-4 text-sm">Terms of Service</Link><Link href="/feedback" className="block rounded-xl border border-white/[.08] p-4 text-sm">Feedback</Link></div>}</SimpleSettingsPage>; }
-function SimpleSettingsPage({title,icon,children}:{title:string;icon:ReactNode;children:ReactNode}){ return <div className="animate-rise max-w-2xl"><Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45"><ArrowLeft size={14}/> Back to Profile</Link><div className="mt-7 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff4fc3]/12 text-[#ff4fc3]">{icon}</div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA</p><h1 className="mt-1 font-display text-3xl">{title}</h1></div></div><div className="mt-7 rounded-2xl border border-white/[.08] bg-white/[.02] p-5">{children}</div></div>; }
+function SettingsPage(){ const t = useT(); return <SimpleSettingsPage title="Settings" icon={<Settings size={18}/>}><div className="space-y-2"><Link href="/settings/language" className="block rounded-xl border border-white/[.08] p-4 text-sm">{t('Language')}</Link><Link href="/settings/notifications" className="block rounded-xl border border-white/[.08] p-4 text-sm">{t('Notifications')}</Link><Link href="/privacy" className="block rounded-xl border border-white/[.08] p-4 text-sm">{t('Privacy')}</Link><Link href="/terms" className="block rounded-xl border border-white/[.08] p-4 text-sm">{t('Terms')}</Link><Link href="/feedback" className="block rounded-xl border border-white/[.08] p-4 text-sm">{t('Feedback')}</Link></div></SimpleSettingsPage>; }
+function SimpleSettingsPage({title,icon,children}:{title:string;icon:ReactNode;children:ReactNode}){ const t = useT(); return <div className="animate-rise max-w-2xl"><Link href="/profile" className="inline-flex items-center gap-2 text-xs text-white/45"><ArrowLeft size={14}/> {t('Back to Profile')}</Link><div className="mt-7 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff4fc3]/12 text-[#ff4fc3]">{icon}</div><div><p className="font-mono-ui text-[9px] uppercase tracking-[.2em] text-[#ff4fc3]">VEYRA</p><h1 className="mt-1 font-display text-3xl">{t(title)}</h1></div></div><div className="mt-7 rounded-2xl border border-white/[.08] bg-white/[.02] p-5">{children}</div></div>; }
 function InfoPage({title,text}:{title:string;text:string}){ return <SimpleSettingsPage title={title} icon={<ShieldCheck size={18}/>}>{<p className="text-sm leading-7 text-white/60">{text}</p>}</SimpleSettingsPage>; }
 
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {
@@ -3241,7 +3352,19 @@ function AuthenticatedApp() {
     try { return JSON.parse(localStorage.getItem('veyra:following') ?? '[]') as string[]; } catch { return []; }
   });
   const [miniPlayer, setMiniPlayer] = useState<AppContextValue['miniPlayer']>(null);
+  const [locale, setLocaleState] = useState<Locale>(() => (localStorage.getItem('veyra:locale') as Locale | null) ?? 'English');
   const { isSignedIn } = useAuth();
+  const setLocale = (nextLocale: Locale) => {
+    setLocaleState(nextLocale);
+    localStorage.setItem('veyra:locale', nextLocale);
+    document.documentElement.lang = nextLocale === 'Türkçe' ? 'tr' : nextLocale === 'Español' ? 'es' : nextLocale === 'Português' ? 'pt' : nextLocale === 'Français' ? 'fr' : nextLocale === 'Deutsch' ? 'de' : nextLocale === 'Bahasa Indonesia' ? 'id' : nextLocale === '日本語' ? 'ja' : nextLocale === '繁體中文' ? 'zh-TW' : nextLocale === '简体中文' ? 'zh-CN' : nextLocale === '한국어' ? 'ko' : nextLocale === 'ภาษาไทย' ? 'th' : nextLocale === 'Italiano' ? 'it' : nextLocale === 'Melayu' ? 'ms' : nextLocale === 'العربية' ? 'ar' : nextLocale === 'Tiếng Việt' ? 'vi' : nextLocale === 'हिन्दी' ? 'hi' : 'en';
+    window.dispatchEvent(new CustomEvent('veyra-locale-change', { detail: nextLocale }));
+  };
+  useEffect(() => {
+    const languageCode = locale === 'Türkçe' ? 'tr' : locale === 'Español' ? 'es' : locale === 'Português' ? 'pt' : locale === 'Français' ? 'fr' : locale === 'Deutsch' ? 'de' : locale === 'Bahasa Indonesia' ? 'id' : locale === '日本語' ? 'ja' : locale === '繁體中文' ? 'zh-TW' : locale === '简体中文' ? 'zh-CN' : locale === '한국어' ? 'ko' : locale === 'ภาษาไทย' ? 'th' : locale === 'Italiano' ? 'it' : locale === 'Melayu' ? 'ms' : locale === 'العربية' ? 'ar' : locale === 'Tiếng Việt' ? 'vi' : locale === 'हिन्दी' ? 'hi' : 'en';
+    document.documentElement.lang = languageCode;
+    document.documentElement.dir = locale === 'العربية' ? 'rtl' : 'ltr';
+  }, [locale]);
   useEffect(() => {
     if (!isSignedIn) return;
     fetch('/api/me/list', { credentials: 'include' }).then((response) => response.ok ? response.json() : []).then((items: Array<{ slug?: string }>) => {
@@ -3278,7 +3401,10 @@ function AuthenticatedApp() {
     isFollowing: (id) => followingIds.includes(id),
     miniPlayer,
     setMiniPlayer,
-  }), [followingIds, isSignedIn, miniPlayer, savedIds]);
+    locale,
+    t: createTranslator(locale),
+    setLocale,
+  }), [followingIds, isSignedIn, locale, miniPlayer, savedIds]);
   return <QueryClientProvider client={queryClient}><TooltipProvider><AppContext.Provider value={value}><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><AppRouter /></WouterRouter><MiniPlayer /></AppContext.Provider><Toaster /></TooltipProvider></QueryClientProvider>;
 }
 
@@ -3300,8 +3426,7 @@ function MiniPlayer() {
 }
 
 function App() {
-  const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
-  return <ClerkProvider publishableKey={publishableKey}><AuthenticatedApp /></ClerkProvider>;
+  return <ClerkProvider publishableKey={clerkPublishableKey}><AuthenticatedApp /></ClerkProvider>;
 }
 
 export default App;

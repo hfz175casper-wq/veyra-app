@@ -3,7 +3,6 @@ package app.veyra.mobile;
 import android.os.Bundle;
 import android.app.DownloadManager;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Environment;
 import android.view.View;
@@ -71,9 +70,7 @@ public class MainActivity extends BridgeActivity {
             getWindow().getDecorView().setSystemUiVisibility(fullscreen
                     ? View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                     : View.SYSTEM_UI_FLAG_VISIBLE);
-            setRequestedOrientation(fullscreen
-                    ? ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                    : ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+                setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR);
         });
     }
 
